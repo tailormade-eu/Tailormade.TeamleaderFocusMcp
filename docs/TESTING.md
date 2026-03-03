@@ -50,7 +50,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_task_action` | close (task_id) | ✅ | `tasks.update` confirmed working |
-| `teamleader_task_action` | close (task_number from tree) | ❌ | |
+| `teamleader_task_action` | close (task_number from tree) | ✅ | Fixed v1.3.1: filter open tasks in resolveTaskFromTree |
 | `teamleader_task_action` | create (project_id + group_id) | ✅ | |
 | `teamleader_task_action` | create (project_id only, no group) | ❌ | |
 | `teamleader_task_action` | move_time | ✅ | delete + recreate on new task, verified via get_timetracking |
@@ -151,6 +151,5 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `task_action close` via task_number (needs fresh tree)
-2. `load_tasks` only_open=false + force_refresh
-3. `teamleader_find_task` — full flow (cache miss → group → task)
+1. `load_tasks` only_open=false + force_refresh
+2. `teamleader_find_task` — full flow (cache miss → group → task)
