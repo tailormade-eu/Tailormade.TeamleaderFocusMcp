@@ -1,7 +1,7 @@
 {
   "name": "@tailormade/teamleader-focus-mcp",
-  "version": "1.3.0",
-  "description": "MCP server for Teamleader Focus CRM - Extended with Time Tracking and Projects v2. Based on globodai-mcp-teamleader with additions from Tailormade CSV Importer implementation.",
+  "version": "2.0.0",
+  "description": "MCP server for Teamleader Focus CRM API — 107 tools covering contacts, companies, deals, tickets, invoices, meetings, projects, time tracking, files, notes, and smart cache-first task resolution.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -30,15 +30,15 @@
     "projects",
     "tailormade"
   ],
-  "author": "Tailormade (based on Globodai MCP)",
+  "author": "Tailormade",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tailormade-eu/teamleader-focus-mcp.git"
+    "url": "git+https://github.com/tailormade-eu/Tailormade.TeamleaderFocusMcp.git"
   },
-  "homepage": "https://github.com/tailormade-eu/teamleader-focus-mcp#readme",
+  "homepage": "https://github.com/tailormade-eu/Tailormade.TeamleaderFocusMcp#readme",
   "bugs": {
-    "url": "https://github.com/tailormade-eu/teamleader-focus-mcp/issues"
+    "url": "https://github.com/tailormade-eu/Tailormade.TeamleaderFocusMcp/issues"
   },
   "engines": {
     "node": ">=20.0.0"
