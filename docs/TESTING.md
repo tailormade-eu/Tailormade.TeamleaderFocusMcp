@@ -311,6 +311,15 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
 | `projects-v2/projectLines.create` | Does NOT exist — was wrong endpoint. Use `projectGroups.create` for groups and `tasks.create` for tasks |
 | `projects-v2/projectGroups.delete` | Requires `delete_strategy` param: `"ungroup_tasks_and_materials"` or `"delete_tasks_and_materials"` |
+| `invoices.registerPayment` | Uses `paid_at` (not `payment_date`), nested `payment` object (not flat params) |
+| `invoices.creditPartially` | `unit_price.tax: "excluding"` (not a currency field) |
+| `tickets.list` | Customer filter = `relates_to: {type, id}`, status filter = `exclude.status_ids` array |
+| `projects.close` | Requires `closing_strategy` param |
+| `projects.delete` | Requires `delete_strategy` param |
+| `projects.assign` | Uses `assignee: {type, id}` object |
+| `projects.addCustomer` | Uses `customer: {type, id}` object |
+| `projectGroups.update` | Uses `start_date`/`end_date` (not `starts_on`/`due_on`) |
+| `files.upload` | Two-step: get pre-signed URL via API, then binary POST to that URL (no auth needed) |
 
 ---
 

@@ -137,6 +137,37 @@ Used by humans and AI to get IDs for direct calls.
 - Use `toFilterDate()` helper (strips milliseconds) — NOT `.toISOString()`
 - Milliseconds cause dedup mismatches
 
+### `invoices.registerPayment`
+
+- Use `paid_at` (NOT `payment_date`)
+- Nested object: `{ payment: { amount: { amount, currency }, paid_at, payment_method_id } }`
+
+### `invoices.creditPartially`
+
+- Line item tax: `unit_price.tax: "excluding"` (NOT a currency field)
+
+### `tickets.list`
+
+- Customer filter: `relates_to: { type, id }` (NOT `customer_id`)
+- Status filter: `exclude.status_ids` array (no direct status filter)
+
+### `projects.close` / `projects.delete`
+
+- `close` requires `closing_strategy`: `"mark_tasks_and_materials_as_done"` or `"none"`
+- `delete` requires `delete_strategy`: `"unlink_tasks_and_time_trackings"` or `"delete_tasks_and_time_trackings"`
+
+### `projects.assign` / `projects.addCustomer`
+
+- `assignee: { type, id }` and `customer: { type, id }` — always objects, never flat IDs
+
+### `projectGroups.update`
+
+- Use `start_date` / `end_date` (NOT `starts_on` / `due_on`)
+
+### `files.upload`
+
+- Two-step: `files.upload` returns pre-signed URL → binary POST to URL (no auth headers needed)
+
 ### General
 
 - All API calls are POST with JSON body

@@ -445,6 +445,41 @@ These are critical for any future development or debugging.
 - Returns `subject.type: "todo"` — the ID differs from the `nextgenTask` ID
 - Deduplication must match on **start time** (to second precision), not on subject ID
 
+### `invoices.registerPayment`
+
+- Uses `paid_at` (NOT `payment_date`)
+- Payment is a nested object: `{ payment: { amount: { amount, currency }, paid_at, payment_method_id } }`
+
+### `invoices.creditPartially`
+
+- Line item tax uses `unit_price.tax: "excluding"` (NOT a currency field)
+
+### `tickets.list`
+
+- Customer filter uses `relates_to: { type, id }` (NOT `customer_id`)
+- Status filter uses `exclude.status_ids` array (no direct status filter)
+
+### `projects.close`
+
+- Requires `closing_strategy`: `"mark_tasks_and_materials_as_done"` or `"none"`
+
+### `projects.delete`
+
+- Requires `delete_strategy`: `"unlink_tasks_and_time_trackings"` or `"delete_tasks_and_time_trackings"`
+
+### `projects.assign` / `projects.addCustomer`
+
+- `assign` uses `assignee: { type, id }` object
+- `addCustomer` / `removeCustomer` use `customer: { type, id }` object
+
+### `projectGroups.update`
+
+- Uses `start_date` / `end_date` (NOT `starts_on` / `due_on`)
+
+### `files.upload`
+
+- Two-step process: call `files.upload` to get a pre-signed URL, then POST binary directly to that URL (no auth needed for step 2)
+
 ### General
 
 - All API calls use **POST** with JSON body
