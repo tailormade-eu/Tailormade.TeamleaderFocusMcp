@@ -51,22 +51,22 @@ These legacy endpoints still exist in the Teamleader API but represent the old d
 Each domain has its own file in `src/tools/`. Export a `register*Tools(server, client)` function and import it in `src/index.ts`.
 
 ```
-src/tools/contacts.ts       → registerContactTools
-src/tools/companies.ts      → registerCompanyTools
-src/tools/deals.ts          → registerDealTools
-src/tools/tasks.ts          → registerTaskTools (legacy standalone tasks)
-src/tools/events.ts         → registerEventTools
-src/tools/invoices.ts       → registerInvoiceTools
-src/tools/timetracking.ts   → registerTimeTrackingTools (includes timers.*)
-src/tools/projects.ts       → registerProjectTools
-src/tools/resolve.ts        → registerResolveTools (smart tools)
-```
-
-**Planned (tasks/ folder):**
-```
-src/tools/tickets.ts        → registerTicketTools        (task 02)
-src/tools/meetings.ts       → registerMeetingTools       (task 04)
-src/tools/lookups.ts        → registerLookupTools        (task 09)
+src/tools/contacts.ts       → registerContactTools      (list, get, create, update, delete, link, unlink, tag/untag)
+src/tools/companies.ts      → registerCompanyTools      (list, get, create, update)
+src/tools/deals.ts          → registerDealTools         (list, get, create, update, delete, lose, win, move + lookups)
+src/tools/tasks.ts          → registerTaskTools         (standalone tasks: list, get, create, update, delete, complete, reopen, schedule)
+src/tools/events.ts         → registerEventTools        (list, get, create)
+src/tools/invoices.ts       → registerInvoiceTools      (list, get, create, book, send, delete, update, payment, credit + lookups)
+src/tools/timetracking.ts   → registerTimeTrackingTools (list, get, add, update, delete, timers.start/stop/current/update, resume)
+src/tools/projects.ts       → registerProjectTools      (full CRUD + lifecycle + relationships + task lifecycle)
+src/tools/resolve.ts        → registerResolveTools      (smart tools: find_task, log_time, load_tasks, task_action, cache_stats, clear_cache)
+src/tools/users.ts          → registerUserTools         (list, get)
+src/tools/tickets.ts        → registerTicketTools       (list, get, create, update, messages, reply, internal)
+src/tools/meetings.ts       → registerMeetingTools      (list, get, schedule, update, complete, delete, report)
+src/tools/departments.ts    → registerDepartmentTools   (list, get)
+src/tools/lookups.ts        → registerLookupTools       (activityTypes, taxRates, paymentTerms, ticketStatuses, products, productCategories, workTypes, teams, tags, expenses)
+src/tools/files.ts          → registerFileTools         (list, get, download, delete, upload)
+src/tools/notes.ts          → registerNoteTools         (list, create, update)
 ```
 
 ### Cache

@@ -471,6 +471,62 @@ export interface InvoiceCreateParams {
   note?: string;
 }
 
+// ─── Tickets ─────────────────────────────────────────────────────────────
+
+export interface Ticket {
+  id: string;
+  reference?: number;
+  subject: string;
+  description?: string;
+  status?: IdObject;
+  assignee?: IdObject | null;
+  customer: IdObject;
+  participant?: { customer: IdObject } | null;
+  project?: IdObject | null;
+  milestone?: IdObject | null;
+  last_message_at?: string | null;
+  created_at?: string;
+  closed_at?: string | null;
+  custom_fields?: Array<{
+    definition: IdObject;
+    value: unknown;
+  }>;
+}
+
+export interface TicketMessage {
+  message_id: string;
+  body: string;
+  raw_body?: string;
+  type: "customer" | "internal" | "thirdParty";
+  created_at: string;
+  sent_by: IdObject;
+  ticket?: IdObject;
+  attachments?: IdObject[];
+}
+
+// ─── Meetings ────────────────────────────────────────────────────────────────
+
+export interface Meeting {
+  id: string;
+  title: string;
+  description?: string;
+  created_at?: string;
+  scheduled_at?: string;
+  duration?: { unit: string; value: number };
+  tracked_time?: { unit: string; value: number };
+  estimated_time?: { unit: string; value: number };
+  customer?: IdObject | null;
+  project?: IdObject | null;
+  milestone?: IdObject | null;
+  group?: IdObject | null;
+  attendees?: IdObject[];
+  status?: "open" | "done";
+  location?: unknown;
+  online_meeting_room?: unknown;
+  recurrence?: IdObject | null;
+  custom_fields?: Array<{ definition: IdObject; value: unknown }>;
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface TeamleaderListResponse<T> {

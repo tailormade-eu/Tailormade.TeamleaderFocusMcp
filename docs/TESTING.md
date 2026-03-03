@@ -145,156 +145,156 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_users` | Basic list | 📋 | |
-| `teamleader_list_users` | Filter by team_id | 📋 | |
-| `teamleader_get_user` | Get by ID | 📋 | |
+| `teamleader_list_users` | Basic list | ❌ | |
+| `teamleader_list_users` | Filter by team_id | ❌ | |
+| `teamleader_get_user` | Get by ID | ❌ | |
 
 ## Tickets (task 02 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_tickets` | Basic list | 📋 | |
-| `teamleader_list_tickets` | Filter by status / team / assignee | 📋 | |
-| `teamleader_get_ticket` | Get by ID (incl. messages) | 📋 | |
-| `teamleader_create_ticket` | Create (subject, customer, team_id) | 📋 | |
-| `teamleader_update_ticket` | Update status / assignee | 📋 | |
-| `teamleader_reply_ticket` | Reply (external message) | 📋 | |
-| `teamleader_internal_ticket` | Add internal note | 📋 | |
-| `teamleader_get_ticket_message` | Get single message by ID | 📋 | |
+| `teamleader_list_tickets` | Basic list | ❌ | |
+| `teamleader_list_tickets` | Filter by status / team / assignee | ❌ | |
+| `teamleader_get_ticket` | Get by ID (incl. messages) | ❌ | |
+| `teamleader_create_ticket` | Create (subject, customer, team_id) | ❌ | |
+| `teamleader_update_ticket` | Update status / assignee | ❌ | |
+| `teamleader_reply_ticket` | Reply (external message) | ❌ | |
+| `teamleader_internal_ticket` | Add internal note | ❌ | |
+| `teamleader_get_ticket_message` | Get single message by ID | ❌ | |
 
 ## Invoices — workflow (task 03 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_book_invoice` | Book draft invoice | 📋 | |
-| `teamleader_send_invoice` | Send via email | 📋 | |
-| `teamleader_delete_invoice` | Delete draft | 📋 | |
-| `teamleader_update_invoice` | Update line items / dates | 📋 | |
-| `teamleader_add_payment` | Register payment | 📋 | |
-| `teamleader_credit_invoice` | Full credit note | 📋 | |
-| `teamleader_credit_invoice_partially` | Partial credit note | 📋 | |
-| `teamleader_copy_invoice` | Copy to new draft | 📋 | |
-| `teamleader_list_mail_templates` | List mail templates | 📋 | |
-| `teamleader_list_payment_methods` | List payment methods | 📋 | |
+| `teamleader_book_invoice` | Book draft invoice | ❌ | |
+| `teamleader_send_invoice` | Send via email | ❌ | |
+| `teamleader_delete_invoice` | Delete draft | ❌ | |
+| `teamleader_update_invoice` | Update line items / dates | ❌ | |
+| `teamleader_add_payment` | Register payment | ❌ | |
+| `teamleader_credit_invoice` | Full credit note | ❌ | |
+| `teamleader_credit_invoice_partially` | Partial credit note | ❌ | |
+| `teamleader_copy_invoice` | Copy to new draft | ❌ | |
+| `teamleader_list_mail_templates` | List mail templates | ❌ | |
+| `teamleader_list_payment_methods` | List payment methods | ❌ | |
 
 ## Meetings (task 04 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_meetings` | Basic list | 📋 | |
-| `teamleader_get_meeting` | Get by ID | 📋 | |
-| `teamleader_schedule_meeting` | Schedule new meeting | 📋 | |
-| `teamleader_complete_meeting` | Mark as completed | 📋 | |
-| `teamleader_delete_meeting` | Delete | 📋 | |
-| `teamleader_update_meeting` | Update details | 📋 | |
-| `teamleader_add_meeting_report` | Add report/notes to meeting | 📋 | |
+| `teamleader_list_meetings` | Basic list | ❌ | |
+| `teamleader_get_meeting` | Get by ID | ❌ | |
+| `teamleader_schedule_meeting` | Schedule new meeting | ❌ | |
+| `teamleader_complete_meeting` | Mark as completed | ❌ | |
+| `teamleader_delete_meeting` | Delete | ❌ | |
+| `teamleader_update_meeting` | Update details | ❌ | |
+| `teamleader_add_meeting_report` | Add report/notes to meeting | ❌ | |
 
 ## Standalone Tasks — complete (task 05 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_get_task` | Get by ID | 📋 | |
-| `teamleader_update_task` | Update description / due date | 📋 | |
-| `teamleader_delete_task` | Delete | 📋 | |
-| `teamleader_complete_task` | Mark as completed | 📋 | |
-| `teamleader_reopen_task` | Reopen completed task | 📋 | |
-| `teamleader_schedule_task` | Schedule task | 📋 | |
+| `teamleader_get_task` | Get by ID | ❌ | |
+| `teamleader_update_task` | Update description / due date | ❌ | |
+| `teamleader_delete_task` | Delete | ❌ | |
+| `teamleader_complete_task` | Mark as completed | ❌ | |
+| `teamleader_reopen_task` | Reopen completed task | ❌ | |
+| `teamleader_schedule_task` | Schedule task | ❌ | |
 
 ## Deals — workflow (task 06 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_delete_deal` | Delete deal | 📋 | |
-| `teamleader_lose_deal` | Mark as lost (reason_id optional) | 📋 | |
-| `teamleader_win_deal` | Mark as won | 📋 | |
-| `teamleader_move_deal` | Move to different phase | 📋 | |
-| `teamleader_list_lost_reasons` | List lost reason IDs | 📋 | |
-| `teamleader_list_deal_phases` | List deal phase IDs | 📋 | |
-| `teamleader_list_deal_sources` | List deal source IDs | 📋 | |
-| `teamleader_list_deal_pipelines` | List deal pipeline IDs | 📋 | |
+| `teamleader_delete_deal` | Delete deal | ❌ | |
+| `teamleader_lose_deal` | Mark as lost (reason_id optional) | ❌ | |
+| `teamleader_win_deal` | Mark as won | ❌ | |
+| `teamleader_move_deal` | Move to different phase | ❌ | |
+| `teamleader_list_lost_reasons` | List lost reason IDs | ❌ | |
+| `teamleader_list_deal_phases` | List deal phase IDs | ❌ | |
+| `teamleader_list_deal_sources` | List deal source IDs | ❌ | |
+| `teamleader_list_deal_pipelines` | List deal pipeline IDs | ❌ | |
 
 ## Departments (task 07 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_departments` | Basic list | 📋 | |
-| `teamleader_get_department` | Get by ID | 📋 | |
+| `teamleader_list_departments` | Basic list | ❌ | |
+| `teamleader_get_department` | Get by ID | ❌ | |
 
 ## Companies + Contacts — extended CRUD (task 08 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_update_company` | Update company details | 📋 | |
-| `teamleader_delete_contact` | Delete contact | 📋 | |
-| `teamleader_link_contact_to_company` | Link contact to company | 📋 | |
-| `teamleader_unlink_contact_from_company` | Unlink contact from company | 📋 | |
-| `teamleader_update_contact_company_link` | Update link (role/position) | 📋 | |
-| `teamleader_tag_contact` | Add tag to contact | 📋 | |
-| `teamleader_untag_contact` | Remove tag from contact | 📋 | |
+| `teamleader_update_company` | Update company details | ❌ | |
+| `teamleader_delete_contact` | Delete contact | ❌ | |
+| `teamleader_link_contact_to_company` | Link contact to company | ❌ | |
+| `teamleader_unlink_contact_from_company` | Unlink contact from company | ❌ | |
+| `teamleader_update_contact_company_link` | Update link (role/position) | ❌ | |
+| `teamleader_tag_contact` | Add tag to contact | ❌ | |
+| `teamleader_untag_contact` | Remove tag from contact | ❌ | |
 
 ## Lookup Lists (task 09 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_activity_types` | List activity types (for events) | 📋 | |
-| `teamleader_list_tax_rates` | List tax rates (for invoices) | 📋 | |
-| `teamleader_list_payment_terms` | List payment terms | 📋 | |
-| `teamleader_list_ticket_statuses` | List ticket statuses | 📋 | |
-| `teamleader_list_products` | List products (for invoice line items) | 📋 | |
-| `teamleader_list_product_categories` | List product categories | 📋 | |
+| `teamleader_list_activity_types` | List activity types (for events) | ❌ | |
+| `teamleader_list_tax_rates` | List tax rates (for invoices) | ❌ | |
+| `teamleader_list_payment_terms` | List payment terms | ❌ | |
+| `teamleader_list_ticket_statuses` | List ticket statuses | ❌ | |
+| `teamleader_list_products` | List products (for invoice line items) | ❌ | |
+| `teamleader_list_product_categories` | List product categories | ❌ | |
 
 ## Projects — lifecycle (task 10 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_close_project` | Close project | 📋 | |
-| `teamleader_reopen_project` | Reopen project | 📋 | |
-| `teamleader_delete_project` | Delete project | 📋 | |
-| `teamleader_duplicate_project` | Duplicate project | 📋 | |
-| `teamleader_add_customer_to_project` | Add customer relationship | 📋 | |
-| `teamleader_remove_customer_from_project` | Remove customer relationship | 📋 | |
-| `teamleader_add_deal_to_project` | Link deal to project | 📋 | |
-| `teamleader_remove_deal_from_project` | Unlink deal from project | 📋 | |
-| `teamleader_add_owner_to_project` | Add owner/member | 📋 | |
-| `teamleader_remove_owner_from_project` | Remove owner/member | 📋 | |
-| `teamleader_update_project_group` | Update group/phase details | 📋 | |
-| `teamleader_complete_project_task` | Mark task as done | 📋 | |
-| `teamleader_reopen_project_task` | Reopen done task | 📋 | |
-| `teamleader_delete_project_task` | Delete task | 📋 | |
-| `teamleader_remove_task_from_group` | Move task out of group | 📋 | |
+| `teamleader_close_project` | Close project | ❌ | |
+| `teamleader_reopen_project` | Reopen project | ❌ | |
+| `teamleader_delete_project` | Delete project | ❌ | |
+| `teamleader_duplicate_project` | Duplicate project | ❌ | |
+| `teamleader_add_customer_to_project` | Add customer relationship | ❌ | |
+| `teamleader_remove_customer_from_project` | Remove customer relationship | ❌ | |
+| `teamleader_add_deal_to_project` | Link deal to project | ❌ | |
+| `teamleader_remove_deal_from_project` | Unlink deal from project | ❌ | |
+| `teamleader_add_owner_to_project` | Add owner/member | ❌ | |
+| `teamleader_remove_owner_from_project` | Remove owner/member | ❌ | |
+| `teamleader_update_project_group` | Update group/phase details | ❌ | |
+| `teamleader_complete_project_task` | Mark task as done | ❌ | |
+| `teamleader_reopen_project_task` | Reopen done task | ❌ | |
+| `teamleader_delete_project_task` | Delete task | ❌ | |
+| `teamleader_remove_task_from_group` | Move task out of group | ❌ | |
 
 ## Timers — complete (task 11 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_current_timer` | Get currently running timer | 📋 | |
-| `teamleader_update_timer` | Update running timer description | 📋 | |
-| `teamleader_resume_timetracking` | Resume a past time entry | 📋 | |
+| `teamleader_current_timer` | Get currently running timer | ❌ | |
+| `teamleader_update_timer` | Update running timer description | ❌ | |
+| `teamleader_resume_timetracking` | Resume a past time entry | ❌ | |
 
 ## Files (task 12 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_files` | List files for subject | 📋 | |
-| `teamleader_get_file` | Get file metadata by ID | 📋 | |
-| `teamleader_download_file` | Get download URL | 📋 | |
-| `teamleader_delete_file` | Delete file | 📋 | |
-| `teamleader_upload_file` | Upload file (multipart — needs client.ts extension) | 📋 | |
+| `teamleader_list_files` | List files for subject | ❌ | |
+| `teamleader_get_file` | Get file metadata by ID | ❌ | |
+| `teamleader_download_file` | Get download URL | ❌ | |
+| `teamleader_delete_file` | Delete file | ❌ | |
+| `teamleader_upload_file` | Upload file (multipart — needs client.ts extension) | ❌ | |
 
 ## Misc Lookups (task 13 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_teams` | List teams (for tickets) | 📋 | |
-| `teamleader_list_tags` | List tags (for contacts/companies) | 📋 | |
-| `teamleader_list_expenses` | List expense entries | 📋 | |
+| `teamleader_list_teams` | List teams (for tickets) | ❌ | |
+| `teamleader_list_tags` | List tags (for contacts/companies) | ❌ | |
+| `teamleader_list_expenses` | List expense entries | ❌ | |
 
 ## Notes (task 14 — not yet implemented)
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_notes` | List notes for contact/company/deal | 📋 | |
-| `teamleader_create_note` | Create note on subject | 📋 | |
+| `teamleader_list_notes` | List notes for contact/company/deal | ❌ | |
+| `teamleader_create_note` | Create note on subject | ❌ | |
 
 ---
 

@@ -133,4 +133,49 @@ export function registerCompanyTools(
       };
     }
   );
+
+  // ── Update Company ──────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_update_company",
+    "Update an existing company in Teamleader Focus",
+    {
+      id: z.string().describe("The company ID to update"),
+      name: z.string().optional().describe("Company name"),
+      email: z.string().optional().describe("Primary email address"),
+      phone: z.string().optional().describe("Phone number"),
+      vat_number: z.string().optional().describe("VAT number"),
+      website: z.string().optional().describe("Website URL"),
+      language: z.string().optional().describe("Language code (e.g. 'en', 'fr', 'nl')"),
+      tags: z.array(z.string()).optional().describe("Tags to assign"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { id: params.id };
+
+      if (params.name) body.name = params.name;
+      if (params.email) {
+        body.emails = [{ type: "primary", email: params.email }];
+      }
+      if (params.phone) {
+        body.telephones = [{ type: "phone", number: params.phone }];
+      }
+      if (params.vat_number) body.vat_number = params.vat_number;
+      if (params.website) body.website = params.website;
+      if (params.language) body.language = params.language;
+      if (params.tags) body.tags = params.tags;
+
+      await client.request({
+        endpoint: "companies.update",
+        body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Company ${params.id} updated` }),
+          },
+        ],
+      };
+    }
+  );
 }

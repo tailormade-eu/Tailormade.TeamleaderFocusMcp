@@ -94,6 +94,12 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_get_contact` | Get full details of a specific contact by ID |
 | `teamleader_create_contact` | Create a new contact (first name, last name, email, phone, tags, language) |
 | `teamleader_update_contact` | Update an existing contact |
+| `teamleader_delete_contact` | Delete a contact |
+| `teamleader_link_contact_to_company` | Link a contact to a company (with optional position/decision_maker) |
+| `teamleader_unlink_contact_from_company` | Unlink a contact from a company |
+| `teamleader_update_contact_company_link` | Update position or decision_maker on an existing link |
+| `teamleader_tag_contact` | Add tags to a contact |
+| `teamleader_untag_contact` | Remove tags from a contact |
 
 ### Companies
 
@@ -102,6 +108,7 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_list_companies` | List companies with filtering by term, tags, or VAT number |
 | `teamleader_get_company` | Get full details of a specific company by ID |
 | `teamleader_create_company` | Create a new company (name, email, phone, VAT, website, tags) |
+| `teamleader_update_company` | Update an existing company |
 
 ### Deals
 
@@ -111,13 +118,27 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_get_deal` | Get full details of a specific deal by ID |
 | `teamleader_create_deal` | Create a new deal (title, customer, phase, value, probability) |
 | `teamleader_update_deal` | Update an existing deal (title, value, dates, responsible user) |
+| `teamleader_delete_deal` | Delete a deal |
+| `teamleader_lose_deal` | Mark a deal as lost (optional reason_id + extra_info) |
+| `teamleader_win_deal` | Mark a deal as won |
+| `teamleader_move_deal` | Move a deal to a different phase |
+| `teamleader_list_lost_reasons` | List available lost reasons (for deals.lose) |
+| `teamleader_list_deal_phases` | List deal phases (for deals.move/create) |
+| `teamleader_list_deal_sources` | List deal sources (for deals.create) |
+| `teamleader_list_deal_pipelines` | List deal pipelines |
 
-### Tasks (legacy)
+### Tasks (standalone)
 
 | Tool | Description |
 |------|-------------|
 | `teamleader_list_tasks` | List tasks with optional filtering and pagination |
-| `teamleader_create_task` | Create a new task with description, due date, and assignee |
+| `teamleader_create_task` | Create a new task |
+| `teamleader_get_task` | Get full details of a specific task by ID |
+| `teamleader_update_task` | Update task title, description, due date, or assignee |
+| `teamleader_delete_task` | Delete a task |
+| `teamleader_complete_task` | Mark a task as completed |
+| `teamleader_reopen_task` | Reopen a completed task |
+| `teamleader_schedule_task` | Schedule a task as a calendar event |
 
 ### Events
 
@@ -127,6 +148,18 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_get_event` | Get full details of a specific event by ID |
 | `teamleader_create_event` | Create a new calendar event (title, activity type, start/end, attendees) |
 
+### Meetings
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_meetings` | List meetings with filter by employee, date range, or term |
+| `teamleader_get_meeting` | Get full details of a specific meeting |
+| `teamleader_schedule_meeting` | Schedule a new meeting with attendees and optional customer/deal |
+| `teamleader_update_meeting` | Update meeting details |
+| `teamleader_complete_meeting` | Mark a meeting as done |
+| `teamleader_delete_meeting` | Delete a meeting |
+| `teamleader_create_meeting_report` | Create a report attached to a contact, company, or deal |
+
 ### Invoices
 
 | Tool | Description |
@@ -134,6 +167,33 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_list_invoices` | List invoices with filtering by status, date range, or department |
 | `teamleader_get_invoice` | Get full details of a specific invoice by ID |
 | `teamleader_create_invoice` | Create a new draft invoice with line items |
+| `teamleader_book_invoice` | Book a draft invoice (→ outstanding) |
+| `teamleader_send_invoice` | Send invoice via email |
+| `teamleader_send_invoice_peppol` | Send invoice via Peppol e-invoicing |
+| `teamleader_delete_invoice` | Delete a draft invoice |
+| `teamleader_update_invoice` | Update a draft invoice |
+| `teamleader_update_booked_invoice` | Update limited fields on a booked invoice |
+| `teamleader_register_payment` | Register a payment on an invoice |
+| `teamleader_remove_payments` | Remove all payments from an invoice |
+| `teamleader_copy_invoice` | Copy an invoice to a new draft |
+| `teamleader_credit_invoice` | Create a full credit note |
+| `teamleader_credit_invoice_partially` | Create a partial credit note |
+| `teamleader_download_invoice` | Get a temporary download URL (PDF/UBL) |
+| `teamleader_list_mail_templates` | List mail templates (for invoice sending) |
+| `teamleader_list_payment_methods` | List payment methods (for registering payments) |
+
+### Tickets
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_tickets` | List tickets with filter by customer, project, or status |
+| `teamleader_get_ticket` | Get full details of a specific ticket |
+| `teamleader_create_ticket` | Create a new ticket (subject, customer, team, assignee) |
+| `teamleader_update_ticket` | Update ticket subject, description, status, or assignee |
+| `teamleader_list_ticket_messages` | List messages on a ticket (filter by type or date) |
+| `teamleader_get_ticket_message` | Get a single message by ID |
+| `teamleader_reply_ticket` | Add a customer-visible reply to a ticket |
+| `teamleader_internal_message_ticket` | Add an internal/private message to a ticket |
 
 ### Time Tracking
 
@@ -144,8 +204,11 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_add_timetracking` | Add a new time entry (user, work type, start/end, subject) |
 | `teamleader_update_timetracking` | Update an existing time entry |
 | `teamleader_delete_timetracking` | Delete a time entry |
-| `teamleader_start_timer` | Start a new timer via `timers.start` (one active timer per user) |
-| `teamleader_stop_timer` | Stop the current running timer via `timers.stop` |
+| `teamleader_start_timer` | Start a running timer (one active timer per user) |
+| `teamleader_stop_timer` | Stop the current running timer |
+| `teamleader_get_current_timer` | Get the currently running timer |
+| `teamleader_update_timer` | Update a running timer (work type, subject, description) |
+| `teamleader_resume_timetracking` | Start a new timer from an existing time entry |
 
 ### Projects v2
 
@@ -155,10 +218,74 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_get_project_v2` | Get full details of a specific project by ID |
 | `teamleader_create_project_v2` | Create a new project with customer, dates, and responsible user |
 | `teamleader_update_project_v2` | Update an existing project |
+| `teamleader_close_project_v2` | Close a project |
+| `teamleader_reopen_project_v2` | Reopen a closed project |
+| `teamleader_delete_project_v2` | Delete a project |
+| `teamleader_duplicate_project_v2` | Duplicate a project to a new draft |
+| `teamleader_add_project_customer` | Add a customer (company/contact) to a project |
+| `teamleader_remove_project_customer` | Remove a customer from a project |
+| `teamleader_add_project_deal` | Link a deal to a project |
+| `teamleader_remove_project_deal` | Unlink a deal from a project |
+| `teamleader_add_project_owner` | Add an owner/member to a project |
+| `teamleader_remove_project_owner` | Remove an owner/member from a project |
+| `teamleader_assign_project` | Assign a user or team to a project |
+| `teamleader_unassign_project` | Unassign a user or team from a project |
 | `teamleader_list_project_groups` | List project groups (phases/milestones) for a project |
 | `teamleader_create_project_group` | Create a new group (phase) within a project |
+| `teamleader_update_project_group` | Update a project group title, description, or dates |
 | `teamleader_list_project_tasks_v2` | List tasks by project or project group |
 | `teamleader_create_project_task_v2` | Create a task within a project or group |
+| `teamleader_complete_project_task` | Mark a project task as complete |
+| `teamleader_reopen_project_task` | Reopen a completed project task |
+| `teamleader_delete_project_task` | Delete a project task |
+| `teamleader_remove_task_from_group` | Remove a task from its group |
+
+### Users
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_users` | List all users in the account |
+| `teamleader_get_user` | Get full details of a specific user by ID |
+
+### Departments
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_departments` | List all departments |
+| `teamleader_get_department` | Get full details of a specific department |
+
+### Files
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_files` | List files attached to a contact, company, deal, invoice, project, or ticket |
+| `teamleader_get_file` | Get file metadata (name, size, mime type, uploader) |
+| `teamleader_download_file` | Get a temporary download URL for a file |
+| `teamleader_delete_file` | Delete a file |
+| `teamleader_upload_file` | Upload a file to an entity (two-step: get URL, then upload) |
+
+### Notes
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_notes` | List notes for a contact, company, deal, or project |
+| `teamleader_create_note` | Create a note on a contact, company, deal, or project |
+| `teamleader_update_note` | Update an existing note by ID |
+
+### Lookup Lists
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_activity_types` | List activity types (needed for events.create) |
+| `teamleader_list_tax_rates` | List tax rates (needed for invoice line items) |
+| `teamleader_list_payment_terms` | List payment terms (needed for invoices) |
+| `teamleader_list_ticket_statuses` | List ticket statuses (needed for tickets.update) |
+| `teamleader_list_products` | List products (for invoice line items) |
+| `teamleader_list_product_categories` | List product categories |
+| `teamleader_list_work_types` | List work types (for time tracking) |
+| `teamleader_list_teams` | List teams (needed for tickets) |
+| `teamleader_list_tags` | List all tags used in the account |
+| `teamleader_list_expenses` | List expense entries with optional filters |
 
 ### Smart Resolution (Cache-first)
 

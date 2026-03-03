@@ -25,6 +25,13 @@ import { registerInvoiceTools } from "./tools/invoices.js";
 import { registerTimeTrackingTools } from "./tools/timetracking.js";
 import { registerProjectTools } from "./tools/projects.js";
 import { registerResolveTools, initializeCache } from "./tools/resolve.js";
+import { registerUserTools } from "./tools/users.js";
+import { registerTicketTools } from "./tools/tickets.js";
+import { registerMeetingTools } from "./tools/meetings.js";
+import { registerDepartmentTools } from "./tools/departments.js";
+import { registerLookupTools } from "./tools/lookups.js";
+import { registerFileTools } from "./tools/files.js";
+import { registerNoteTools } from "./tools/notes.js";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -69,6 +76,13 @@ async function main(): Promise<void> {
   registerTimeTrackingTools(server, client);
   registerProjectTools(server, client);
   registerResolveTools(server, client);
+  registerUserTools(server, client);
+  registerTicketTools(server, client);
+  registerMeetingTools(server, client);
+  registerDepartmentTools(server, client);
+  registerLookupTools(server, client);
+  registerFileTools(server, client);
+  registerNoteTools(server, client);
 
   // Initialize cache (active user + work types)
   await initializeCache(client);
