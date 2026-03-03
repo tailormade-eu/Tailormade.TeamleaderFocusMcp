@@ -130,3 +130,10 @@
 [23:09:00] 
 ▶️  Task [07] Departments — list + info tools
 [23:09:00]    🤖 Invoking Claude CLI...
+      Klaar. Task 07 samenvatting:
+      
+      - **`src/tools/departments.ts`** aangemaakt met 2 tools:
+        - `teamleader_list_departments` — filter op status, sorteer op name/created_at/default_department
+        - `teamleader_get_department` — volledige details (adres, emails, telefoons, banking, fiscal regime)
+      - Geregistreerd in `src/index.ts`
+      - Typecheck + build slagen

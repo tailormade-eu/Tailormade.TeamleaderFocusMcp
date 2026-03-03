@@ -182,4 +182,171 @@ export function registerContactTools(
       };
     }
   );
+
+  // ── Delete Contact ──────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_delete_contact",
+    "Delete a contact from Teamleader Focus",
+    {
+      id: z.string().describe("The contact ID to delete"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "contacts.delete",
+        body: { id: params.id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Contact ${params.id} deleted` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Link Contact to Company ─────────────────────────────────────────────
+  server.tool(
+    "teamleader_link_contact_to_company",
+    "Link a contact to a company in Teamleader Focus",
+    {
+      id: z.string().describe("The contact ID"),
+      company_id: z.string().describe("The company ID to link to"),
+      position: z.string().optional().describe("Position/role at the company (e.g. 'CEO')"),
+      decision_maker: z.boolean().optional().describe("Whether this contact is a decision maker"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {
+        id: params.id,
+        company_id: params.company_id,
+      };
+      if (params.position) body.position = params.position;
+      if (params.decision_maker !== undefined) body.decision_maker = params.decision_maker;
+
+      await client.request({
+        endpoint: "contacts.linkToCompany",
+        body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Contact ${params.id} linked to company ${params.company_id}` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Unlink Contact from Company ─────────────────────────────────────────
+  server.tool(
+    "teamleader_unlink_contact_from_company",
+    "Unlink a contact from a company in Teamleader Focus",
+    {
+      id: z.string().describe("The contact ID"),
+      company_id: z.string().describe("The company ID to unlink from"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "contacts.unlinkFromCompany",
+        body: { id: params.id, company_id: params.company_id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Contact ${params.id} unlinked from company ${params.company_id}` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Update Contact-Company Link ─────────────────────────────────────────
+  server.tool(
+    "teamleader_update_contact_company_link",
+    "Update the link between a contact and a company (position, decision maker)",
+    {
+      id: z.string().describe("The contact ID"),
+      company_id: z.string().describe("The company ID"),
+      position: z.string().optional().describe("Position/role at the company (e.g. 'CEO')"),
+      decision_maker: z.boolean().optional().describe("Whether this contact is a decision maker"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {
+        id: params.id,
+        company_id: params.company_id,
+      };
+      if (params.position) body.position = params.position;
+      if (params.decision_maker !== undefined) body.decision_maker = params.decision_maker;
+
+      await client.request({
+        endpoint: "contacts.updateCompanyLink",
+        body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Contact-company link updated for ${params.id} ↔ ${params.company_id}` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Tag Contact ─────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_tag_contact",
+    "Add one or more tags to a contact in Teamleader Focus",
+    {
+      id: z.string().describe("The contact ID"),
+      tags: z.array(z.string()).describe("Tags to add (e.g. ['prospect', 'expo'])"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "contacts.tag",
+        body: { id: params.id, tags: params.tags },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Tags added to contact ${params.id}: ${params.tags.join(", ")}` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Untag Contact ───────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_untag_contact",
+    "Remove one or more tags from a contact in Teamleader Focus",
+    {
+      id: z.string().describe("The contact ID"),
+      tags: z.array(z.string()).describe("Tags to remove (e.g. ['prospect', 'expo'])"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "contacts.untag",
+        body: { id: params.id, tags: params.tags },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Tags removed from contact ${params.id}: ${params.tags.join(", ")}` }),
+          },
+        ],
+      };
+    }
+  );
 }
