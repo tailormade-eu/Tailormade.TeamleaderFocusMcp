@@ -11,11 +11,11 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_find_task` | Company resolve (cache miss) | ✅ | |
 | `teamleader_find_task` | Company resolve (cache hit) | ✅ | |
 | `teamleader_find_task` | Group found in 1 project → auto-pick | ✅ | Ontwikkeling → auto-picked Access Application |
-| `teamleader_find_task` | Group found in multiple projects → ask project_selection | ❌ | |
+| `teamleader_find_task` | Group found in multiple projects → ask project_selection | ⚠️ | Not testable with BRN: no duplicate group names across projects |
 | `teamleader_find_task` | Group not found → ask confirm_create_group | ✅ | Lists projects + asks project_selection |
 | `teamleader_find_task` | Task: 1 exact match → auto-pick | ✅ | Tijdregistratie: Ontwikkeling |
 | `teamleader_find_task` | Task: multiple matches → ask task_selection | ✅ | Collection → 4 matches shown |
-| `teamleader_find_task` | Task: no match, tasks exist → ask confirm_create_task | ❌ | |
+| `teamleader_find_task` | Task: no match, tasks exist → ask confirm_create_task | ✅ | Shows existing tasks + asks confirm_create_task=true |
 | `teamleader_find_task` | Task: no tasks in group → auto-create | ❌ | |
 | `teamleader_find_task` | only_open=false includes done tasks | ❌ | |
 | `teamleader_load_tasks` | Full tree load (cache miss) | ✅ | Tested on BV Belgian Recycle Network |
@@ -151,5 +151,5 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `teamleader_find_task` — group in multiple projects → project_selection
-2. `teamleader_find_task` — task no match → confirm_create_task
+1. `teamleader_find_task` — only_open=false includes done tasks
+2. `teamleader_find_task` — group in multiple projects (needs company with duplicate group names)
