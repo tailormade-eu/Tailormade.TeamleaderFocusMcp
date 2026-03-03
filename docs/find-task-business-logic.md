@@ -319,8 +319,9 @@ Set `force=true` to skip both dedup and overlap checks entirely.
 | Action | Required params | Description |
 |--------|----------------|-------------|
 | `close` | `company_name`, `task_number` or `task_id` | Close a task (set status to done) |
-| `create` | `company_name`, `project_id`, `group_id`, `task_title` | Create a new task in a project/group |
+| `create` | `company_name`, `project_id`, `task_title` (`group_id` optional) | Create a new task in a project or group |
 | `move_time` | `company_name`, `time_entry_id`, `new_task_number` or `new_task_id` | Move a time entry to a different task |
+| `delete_group` | `company_name`, `group_id` | Delete a project group/phase (tasks are ungrouped, not deleted) |
 
 ### task_number vs task_id
 
@@ -336,7 +337,10 @@ When using `task_number`, ensure `teamleader_load_tasks(visual=true)` was called
 | Endpoint | Quirk |
 |----------|-------|
 | `projects-v2/projectLines.list` | `project_id` must be top-level in body, NOT inside `filter`. `project_group_id` is not a server-side filter — filter client-side on `l.group?.id`. |
+| `projects-v2/projectLines.create` | **Does not exist.** Use `projectGroups.create` for groups and `tasks.create` for tasks. |
+| `projects-v2/projectGroups.create` | Correct endpoint for creating groups. Fields: `project_id`, `title`, `start_date`, `end_date`. |
+| `projects-v2/projectGroups.delete` | Requires `delete_strategy` param: `"ungroup_tasks_and_materials"` (safe) or `"delete_tasks_and_materials"`. |
 | `projects-v2/tasks.list` | Filter by `ids` works server-side. Status is NOT a server-side filter. |
-| `projects-v2/tasks.create` | Use `group_id` (not `project_group_id`). Use `tasks.create` (not `projectLines.create`). |
+| `projects-v2/tasks.create` | Use `group_id` (not `project_group_id`). Use `assignees: [{type, id}]` (not `assignee_id`). |
 | `timeTracking.list` | Returns `subject.type: "todo"` — ID differs from `nextgenTask` ID. Dedup on start time, not subject ID. |
 | `timeTracking.add` | Times must be formatted without milliseconds for accurate dedup matching. Use `toFilterDate()`. |

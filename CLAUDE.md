@@ -78,10 +78,20 @@ Used by humans and AI to get IDs for direct calls.
 - `ids` array filter works server-side
 - Status is NOT a server-side filter — filter client-side after fetch
 
+### `projects-v2/projectGroups.create`
+
+- Use `start_date` / `end_date` (NOT `starts_on` / `due_on`)
+- Use `projectGroups.create` (NOT `projectLines.create` — does not exist)
+
+### `projects-v2/projectGroups.delete`
+
+- Requires `delete_strategy`: `"ungroup_tasks_and_materials"` or `"delete_tasks_and_materials"`
+
 ### `projects-v2/tasks.create`
 
 - Use `group_id` field (NOT `project_group_id`)
-- Use `tasks.create` endpoint (NOT `projectLines.create`)
+- Use `assignees: [{ type: "user", id }]` (NOT `assignee_id`)
+- Use `tasks.create` endpoint (NOT `projectLines.create` — does not exist)
 
 ### `timeTracking.list`
 
@@ -247,7 +257,7 @@ npx @modelcontextprotocol/inspector node dist/index.js
 ## Common Pitfalls
 
 1. **Do not** put `project_id` inside `filter` in `projectLines.list` — it must be top-level
-2. **Do not** use `projectLines.create` for tasks — use `tasks.create`
+2. **Do not** use `projectLines.create` — it does not exist. Use `projectGroups.create` for groups, `tasks.create` for tasks
 3. **Do not** use `project_group_id` as server-side filter — filter client-side
 4. **Do not** use `.toISOString()` for Teamleader time comparisons — use `toFilterDate()` (strips ms)
 5. **Do not** match dedup on subject ID from `timeTracking.list` — match on start time
