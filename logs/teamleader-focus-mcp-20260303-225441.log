@@ -90,3 +90,19 @@
 [23:04:40] 
 ▶️  Task [05] Standalone Tasks — complete CRUD
 [23:04:40]    🤖 Invoking Claude CLI...
+      Done. Samenvatting:
+      
+      **6 nieuwe tools toegevoegd** aan `src/tools/tasks.ts`:
+      
+      | Tool | Endpoint | Actie |
+      |------|----------|-------|
+      | `teamleader_get_task` | `tasks.info` | Task details ophalen |
+      | `teamleader_update_task` | `tasks.update` | Task bijwerken |
+      | `teamleader_delete_task` | `tasks.delete` | Task verwijderen |
+      | `teamleader_complete_task` | `tasks.complete` | Task afronden |
+      | `teamleader_reopen_task` | `tasks.reopen` | Afgeronde task heropenen |
+      | `teamleader_schedule_task` | `tasks.schedule` | Task inplannen als event |
+      
+      **Bonus fix**: `teamleader_create_task` gecorrigeerd — API vereist `title` (niet `description` als veldnaam), plus `due_on` en `work_type_id` als verplichte velden.
+      
+      Build + typecheck geslaagd.

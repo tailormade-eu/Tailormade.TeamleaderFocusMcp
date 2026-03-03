@@ -11,6 +11,10 @@ import type {
   TeamleaderInfoResponse,
 } from "../types/index.js";
 
+function respond(text: string) {
+  return { content: [{ type: "text" as const, text }] };
+}
+
 export function registerDealTools(
   server: McpServer,
   client: TeamleaderClient
@@ -216,17 +220,161 @@ export function registerDealTools(
         body,
       });
 
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              success: true,
-              message: `Deal ${params.id} updated`,
-            }),
-          },
-        ],
-      };
+      return respond(`Deal ${params.id} updated.`);
+    }
+  );
+
+  // ── Delete Deal ─────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_delete_deal",
+    "Delete a deal from Teamleader Focus. This action is irreversible.",
+    {
+      id: z.string().describe("The deal ID to delete"),
+    },
+    async (params) => {
+      await client.request<void>({
+        endpoint: "deals.delete",
+        body: { id: params.id },
+      });
+      return respond(`Deal ${params.id} deleted.`);
+    }
+  );
+
+  // ── Lose Deal ───────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_lose_deal",
+    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs.",
+    {
+      id: z.string().describe("The deal ID to mark as lost"),
+      reason_id: z.string().optional().describe("Lost reason ID (use teamleader_list_lost_reasons to find IDs)"),
+      extra_info: z.string().optional().describe("Additional info about why the deal was lost"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { id: params.id };
+      if (params.reason_id) body.reason_id = params.reason_id;
+      if (params.extra_info) body.extra_info = params.extra_info;
+
+      await client.request<void>({
+        endpoint: "deals.lose",
+        body,
+      });
+      return respond(`Deal ${params.id} marked as lost.`);
+    }
+  );
+
+  // ── Win Deal ────────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_win_deal",
+    "Mark a deal as won.",
+    {
+      id: z.string().describe("The deal ID to mark as won"),
+    },
+    async (params) => {
+      await client.request<void>({
+        endpoint: "deals.win",
+        body: { id: params.id },
+      });
+      return respond(`Deal ${params.id} marked as won.`);
+    }
+  );
+
+  // ── Move Deal ───────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_move_deal",
+    "Move a deal to a different phase in its pipeline. Use teamleader_list_deal_phases to get available phase IDs.",
+    {
+      id: z.string().describe("The deal ID to move"),
+      phase_id: z.string().describe("Target phase ID (use teamleader_list_deal_phases to find IDs)"),
+    },
+    async (params) => {
+      await client.request<void>({
+        endpoint: "deals.move",
+        body: { id: params.id, phase_id: params.phase_id },
+      });
+      return respond(`Deal ${params.id} moved to phase ${params.phase_id}.`);
+    }
+  );
+
+  // ── List Lost Reasons ──────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_lost_reasons",
+    "List available lost reasons for deals. Use the returned IDs with teamleader_lose_deal.",
+    {},
+    async () => {
+      const result = await client.request<TeamleaderListResponse<{ id: string; name: string }>>({
+        endpoint: "lostReasons.list",
+        body: { page: { size: 100, number: 1 } },
+      });
+
+      const reasons = result.data ?? [];
+      if (reasons.length === 0) return respond("No lost reasons found.");
+
+      const lines = reasons.map((r, i) => `${i + 1}. ${r.name} (${r.id})`);
+      return respond(`Lost reasons:\n${lines.join("\n")}`);
+    }
+  );
+
+  // ── List Deal Phases ───────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_deal_phases",
+    "List deal phases for a pipeline. Use the returned IDs with teamleader_move_deal or teamleader_create_deal.",
+    {
+      pipeline_id: z.string().optional().describe("Pipeline ID to filter phases (omit for all pipelines)"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { page: { size: 100, number: 1 } };
+      if (params.pipeline_id) {
+        body.filter = { pipeline_id: params.pipeline_id };
+      }
+
+      const result = await client.request<TeamleaderListResponse<{ id: string; name: string; pipeline: { type: string; id: string } }>>({
+        endpoint: "dealPhases.list",
+        body,
+      });
+
+      const phases = result.data ?? [];
+      if (phases.length === 0) return respond("No deal phases found.");
+
+      const lines = phases.map((p, i) => `${i + 1}. ${p.name} — pipeline: ${p.pipeline?.id ?? "?"} (${p.id})`);
+      return respond(`Deal phases:\n${lines.join("\n")}`);
+    }
+  );
+
+  // ── List Deal Sources ──────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_deal_sources",
+    "List available deal sources. Use the returned IDs when creating deals.",
+    {},
+    async () => {
+      const result = await client.request<TeamleaderListResponse<{ id: string; name: string }>>({
+        endpoint: "dealSources.list",
+        body: { page: { size: 100, number: 1 } },
+      });
+
+      const sources = result.data ?? [];
+      if (sources.length === 0) return respond("No deal sources found.");
+
+      const lines = sources.map((s, i) => `${i + 1}. ${s.name} (${s.id})`);
+      return respond(`Deal sources:\n${lines.join("\n")}`);
+    }
+  );
+
+  // ── List Deal Pipelines ────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_deal_pipelines",
+    "List all deal pipelines. Use the returned IDs with teamleader_list_deal_phases to see phases within a pipeline.",
+    {},
+    async () => {
+      const result = await client.request<TeamleaderListResponse<{ id: string; name: string }>>({
+        endpoint: "dealPipelines.list",
+        body: { page: { size: 100, number: 1 } },
+      });
+
+      const pipelines = result.data ?? [];
+      if (pipelines.length === 0) return respond("No deal pipelines found.");
+
+      const lines = pipelines.map((p, i) => `${i + 1}. ${p.name} (${p.id})`);
+      return respond(`Deal pipelines:\n${lines.join("\n")}`);
     }
   );
 }
