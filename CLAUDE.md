@@ -4,6 +4,33 @@ This file provides context for AI agents (Claude Code, CodingMachine) working on
 
 ---
 
+## Scope — What to Implement
+
+### In Scope
+
+- All `projects-v2/*` endpoints (the current projects API)
+- All `tasks.*` standalone task endpoints (NOT legacy)
+- All other current Teamleader Focus API endpoints (contacts, companies, deals, tickets, invoices, etc.)
+
+### Out of Scope (Legacy — Do NOT Implement)
+
+| Endpoint group | Reason |
+|----------------|--------|
+| `projects.*` (080-089) | Old project API, replaced by `projects-v2/*` |
+| `milestones.*` (078-079) | Old milestone API, replaced by project groups in `projects-v2` |
+
+These legacy endpoints still exist in the Teamleader API but represent the old data model. All new work uses `projects-v2/`.
+
+### Out of Scope (Niche / HR)
+
+| Endpoint group | Reason |
+|----------------|--------|
+| `users.*` HR fields | Only `users.list` and `users.info` are in scope |
+| `webhooks.*` | Infrastructure, not relevant for MCP |
+| `customFieldDefinitions.*` | Admin/schema management |
+
+---
+
 ## Language Rules
 
 - ALL tool descriptions (`server.tool()` second argument): **English**
