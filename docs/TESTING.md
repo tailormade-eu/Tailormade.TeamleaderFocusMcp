@@ -16,6 +16,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_find_task` | Task: 1 exact match → auto-pick | ✅ | Tijdregistratie: Ontwikkeling |
 | `teamleader_find_task` | Task: multiple matches → ask task_selection | ✅ | Collection → 4 matches shown |
 | `teamleader_find_task` | Task: no match, tasks exist → ask confirm_create_task | ✅ | Shows existing tasks + asks confirm_create_task=true |
+| `teamleader_find_task` | No projects for company → ask confirm_create_project | ❌ | |
 | `teamleader_find_task` | Task: no tasks in group → auto-create | ❌ | |
 | `teamleader_find_task` | only_open=false includes done tasks | ✅ | BRN Support: 2 done tasks shown; default only_open=true → hidden |
 | `teamleader_load_tasks` | Full tree load (cache miss) | ✅ | Tested on BV Belgian Recycle Network |
@@ -42,6 +43,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_log_time` | Exact duplicate blocked | ✅ | |
 | `teamleader_log_time` | Overlap warning + confirm_overlap | ✅ | |
 | `teamleader_log_time` | force=true skips dedup | ❌ | |
+| `teamleader_log_time` | date param (past date with HH:MM times) | ❌ | |
 | `teamleader_log_time` | work_type_id from task cache | ✅ | Verified: task tree + flat cache both propagate work_type_id |
 | `teamleader_log_time` | description stored | ✅ | Verified via list |
 
