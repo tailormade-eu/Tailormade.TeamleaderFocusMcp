@@ -54,8 +54,21 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_task_action` | create (project_id + group_id) | ✅ | |
 | `teamleader_task_action` | create (project_id only, no group) | ❌ | |
 | `teamleader_task_action` | move_time | ✅ | delete + recreate on new task, verified via get_timetracking |
+| `teamleader_task_action` | delete_group | ❌ | New in v1.3.1: projectLines.delete |
 | `teamleader_task_action` | tree cache invalidated after close | ✅ | invalidateTaskTree called |
 | `teamleader_task_action` | tree cache invalidated after create | ✅ | invalidateTaskTree called |
+| `teamleader_task_action` | tree cache invalidated after delete_group | ❌ | |
+
+## Tasks (Legacy API)
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_tasks` | Basic list (no filter) | ❌ | |
+| `teamleader_list_tasks` | Filter by customer_id + customer_type | ❌ | |
+| `teamleader_list_tasks` | Filter by term | ❌ | |
+| `teamleader_create_task` | Create (description only) | ❌ | |
+| `teamleader_create_task` | Create with assignee + due_on + work_type | ❌ | |
+| `teamleader_create_task` | Create linked to customer | ❌ | |
 
 ## Time Tracking (raw)
 

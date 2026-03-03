@@ -4,6 +4,20 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [1.3.1] - 2026-03-03
+
+### Bug Fixes
+
+- **`teamleader_log_time` — BUG-01**: Added `timeTracking.info` verification after `timeTracking.add`. Silent API acceptance no longer causes ghost entries after tree invalidation. Clear error shown with body sent + `force_refresh` suggestion.
+- **`resolveTaskFromTree`**: Fixed task numbering mismatch when using `task_number` in `task_action`. Now filters to open tasks only (matching visual tree output).
+- **Visual tree icons**: `done` and `cancelled` tasks showed as `[o]` in `only_open=false` mode. Fixed: `done → [x]`, `cancelled → [-]`. Legend updated.
+
+### Added
+
+- **`teamleader_task_action` — `delete_group`**: New action to delete a project group (phase) by `group_id`. Uses `projects-v2/projectLines.delete`. Invalidates task tree cache. `group_id` available from `load_tasks` YAML or visual tree.
+
+---
+
 ## [1.3.0] - 2026-03-03
 
 ### Added — Smart Task Tree + Improved Time Logging
@@ -22,6 +36,7 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
   - `close` — Close a task by ID or number from load_tasks list
   - `create` — Create a new task in a project/group
   - `move_time` — Move a time entry from one task to another
+  - `delete_group` — Delete a project group/phase by group_id (added in v1.3.1)
 - `teamleader_cache_stats` — Show cache statistics and cached tasks (with optional company filter)
 - `teamleader_clear_cache` — Clear the entire local cache
 
@@ -133,6 +148,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.3.1 | 2026-03-03 | Bug fixes (BUG-01, task numbering, icons) + delete_group action |
 | 1.3.0 | 2026-03-03 | Smart task tree, load_tasks, task_action, log_time improvements |
 | 1.2.0 | 2026-02-28 | Projects v2 module (8 tools) |
 | 1.1.0 | 2026-02-28 | Time tracking module (7 tools) |

@@ -169,7 +169,7 @@ These tools implement the recommended workflow for time logging. They maintain a
 | `teamleader_find_task` | Navigate Company > Project > Group > Task hierarchy interactively. Numbered selection when multiple options. Tasks auto-created if not found. |
 | `teamleader_log_time` | Register time for a task. Resolves from cache. Supports deduplication and overlap detection. |
 | `teamleader_load_tasks` | Load and display the full Project > Group > Task tree for a company. Cache-first (30 min TTL). Writes YAML with all IDs. |
-| `teamleader_task_action` | Maintenance actions on tasks: close, create, or move a time entry to a different task. |
+| `teamleader_task_action` | Maintenance actions on tasks: close, create, move a time entry, or delete a project group. |
 | `teamleader_cache_stats` | Show cache statistics and all cached tasks. |
 | `teamleader_clear_cache` | Clear the entire local cache (forces fresh API lookups on next call). |
 
