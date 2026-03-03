@@ -159,3 +159,18 @@
 [23:12:42] 
 ▶️  Task [09] Lookup lists — activity types, tax rates, statuses, products
 [23:12:42]    🤖 Invoking Claude CLI...
+      Klaar. Samenvatting:
+      
+      **`src/tools/lookups.ts`** — 7 read-only lookup tools:
+      
+      | Tool | Endpoint | Doel |
+      |------|----------|------|
+      | `teamleader_list_activity_types` | `activityTypes.list` | IDs voor events |
+      | `teamleader_list_tax_rates` | `taxRates.list` | IDs voor factuurregels |
+      | `teamleader_list_payment_terms` | `paymentTerms.list` | Types voor facturen |
+      | `teamleader_list_ticket_statuses` | `ticketStatus.list` | IDs voor tickets |
+      | `teamleader_list_products` | `products.list` | IDs voor factuurregels (filter op naam/categorie) |
+      | `teamleader_list_product_categories` | `productCategories.list` | IDs voor product filtering |
+      | `teamleader_list_work_types` | `workTypes.list` | IDs voor timetracking (cache-first) |
+      
+      Users tools overgeslagen — bestonden al uit task 01. Alle tools geven genummerde lijsten met IDs. Build slaagt.
