@@ -5,3 +5,5 @@ dist/
 .env.*
 !.env.example
 logs/
+.state.json
+coding-machine.json
