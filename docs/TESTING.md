@@ -12,9 +12,9 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_find_task` | Company resolve (cache hit) | ✅ | |
 | `teamleader_find_task` | Group found in 1 project → auto-pick | ✅ | Ontwikkeling → auto-picked Access Application |
 | `teamleader_find_task` | Group found in multiple projects → ask project_selection | ❌ | |
-| `teamleader_find_task` | Group not found → ask confirm_create_group | ❌ | |
+| `teamleader_find_task` | Group not found → ask confirm_create_group | ✅ | Lists projects + asks project_selection |
 | `teamleader_find_task` | Task: 1 exact match → auto-pick | ✅ | Tijdregistratie: Ontwikkeling |
-| `teamleader_find_task` | Task: multiple matches → ask task_selection | ❌ | |
+| `teamleader_find_task` | Task: multiple matches → ask task_selection | ✅ | Collection → 4 matches shown |
 | `teamleader_find_task` | Task: no match, tasks exist → ask confirm_create_task | ❌ | |
 | `teamleader_find_task` | Task: no tasks in group → auto-create | ❌ | |
 | `teamleader_find_task` | only_open=false includes done tasks | ❌ | |
@@ -151,5 +151,5 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `teamleader_find_task` — multiple task matches → task_selection
-2. `teamleader_find_task` — group not found → confirm_create_group
+1. `teamleader_find_task` — group in multiple projects → project_selection
+2. `teamleader_find_task` — task no match → confirm_create_task
