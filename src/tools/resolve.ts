@@ -1001,15 +1001,18 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         }
       }
 
-      // Helper: resolve task from tree by number
+      // Helper: resolve task from tree by number (matches visual numbering: open tasks only)
       const resolveTaskFromTree = (n: number) => {
         const tree = getTaskTree(companyId!);
         if (!tree) return null;
+        const open = new Set(["to_do", "in_progress", "on_hold"]);
         const flat: Array<{ project: TaskTreeProject; group?: TaskTreeGroup; task: TaskTreeTask }> = [];
         for (const proj of tree.projects) {
           for (const group of proj.groups)
-            for (const task of group.tasks) flat.push({ project: proj, group, task });
-          for (const task of proj.ungrouped) flat.push({ project: proj, task });
+            for (const task of group.tasks)
+              if (open.has(task.status)) flat.push({ project: proj, group, task });
+          for (const task of proj.ungrouped)
+            if (open.has(task.status)) flat.push({ project: proj, task });
         }
         return flat[n - 1] ?? null;
       };
