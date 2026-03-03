@@ -33,18 +33,36 @@ A **Teamleader Focus** account with API access:
 
 ## Quick Start
 
-### Build from source
+### Option A — npx (recommended, no install needed)
+
+Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "teamleader": {
+      "command": "npx",
+      "args": ["-y", "@tailormade/teamleader-focus-mcp"],
+      "env": {
+        "TEAMLEADER_CLIENT_ID": "your_client_id",
+        "TEAMLEADER_CLIENT_SECRET": "your_client_secret",
+        "TEAMLEADER_REFRESH_TOKEN": "your_refresh_token"
+      }
+    }
+  }
+}
+```
+
+### Option B — Build from source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Tailormade.TeamleaderFocusMcp.git
+git clone https://github.com/tailormade-eu/Tailormade.TeamleaderFocusMcp.git
 cd Tailormade.TeamleaderFocusMcp
 npm install
 npm run build
 ```
 
-### Claude Desktop / Claude Code
-
-Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.json`:
+Add to your Claude config:
 
 ```json
 {
