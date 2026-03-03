@@ -106,3 +106,27 @@
       **Bonus fix**: `teamleader_create_task` gecorrigeerd — API vereist `title` (niet `description` als veldnaam), plus `due_on` en `work_type_id` als verplichte velden.
       
       Build + typecheck geslaagd.
+[23:06:43]    ✅ Done: Standalone Tasks — complete CRUD
+[23:06:44] 
+▶️  Task [06] Deals — complete workflow (delete/lose/win/move)
+[23:06:44]    🤖 Invoking Claude CLI...
+      Klaar. Samenvatting:
+      
+      **8 nieuwe tools** toegevoegd aan `src/tools/deals.ts`:
+      
+      | Tool | Functie |
+      |------|---------|
+      | `teamleader_delete_deal` | Deal verwijderen |
+      | `teamleader_lose_deal` | Deal als verloren markeren (optioneel reason + extra_info) |
+      | `teamleader_win_deal` | Deal als gewonnen markeren |
+      | `teamleader_move_deal` | Deal naar andere fase verplaatsen |
+      | `teamleader_list_lost_reasons` | Verliesredenen ophalen |
+      | `teamleader_list_deal_phases` | Deal fases ophalen (optioneel per pipeline) |
+      | `teamleader_list_deal_sources` | Deal bronnen ophalen |
+      | `teamleader_list_deal_pipelines` | Deal pipelines ophalen |
+      
+      Geen wijzigingen in `index.ts` nodig — alles via bestaande `registerDealTools`. Build slaagt.
+[23:08:59]    ✅ Done: Deals — complete workflow (delete/lose/win/move)
+[23:09:00] 
+▶️  Task [07] Departments — list + info tools
+[23:09:00]    🤖 Invoking Claude CLI...

@@ -28,6 +28,7 @@ import { registerResolveTools, initializeCache } from "./tools/resolve.js";
 import { registerUserTools } from "./tools/users.js";
 import { registerTicketTools } from "./tools/tickets.js";
 import { registerMeetingTools } from "./tools/meetings.js";
+import { registerDepartmentTools } from "./tools/departments.js";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -75,6 +76,7 @@ async function main(): Promise<void> {
   registerUserTools(server, client);
   registerTicketTools(server, client);
   registerMeetingTools(server, client);
+  registerDepartmentTools(server, client);
 
   // Initialize cache (active user + work types)
   await initializeCache(client);
