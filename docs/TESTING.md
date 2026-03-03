@@ -35,8 +35,8 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_log_time` | task_name from flat cache | ✅ | Basic flow tested |
 | `teamleader_log_time` | task_id shortcut (1st call, tree fresh) | ✅ | Path + entry correct |
 | `teamleader_log_time` | task_id shortcut (after tree invalidated) | ✅ | Fixed v1.3.1: verification via timeTracking.info after add |
-| `teamleader_log_time` | Tree fallback (scoreTasksInTree) | ❌ | |
-| `teamleader_log_time` | confirm_task_match=N | ❌ | |
+| `teamleader_log_time` | Tree fallback (scoreTasksInTree) | ✅ | Ambiguous task_name → scored list shown |
+| `teamleader_log_time` | confirm_task_match=N | ✅ | Pick from list, full path shown, entry created |
 | `teamleader_log_time` | HH:MM time format | ✅ | |
 | `teamleader_log_time` | YYYY-MM-DD HH:MM format | ✅ | |
 | `teamleader_log_time` | Exact duplicate blocked | ✅ | |
@@ -151,7 +151,6 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `log_time` Tree fallback (scoreTasksInTree) + confirm_task_match
-3. `task_action close` via task_number (needs fresh tree)
-4. `load_tasks` only_open=false + force_refresh
-5. `teamleader_find_task` — full flow (cache miss → group → task)
+1. `task_action close` via task_number (needs fresh tree)
+2. `load_tasks` only_open=false + force_refresh
+3. `teamleader_find_task` — full flow (cache miss → group → task)
