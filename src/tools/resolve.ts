@@ -918,7 +918,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             for (let ti = 0; ti < group.tasks.length; ti++) {
               const task = group.tasks[ti];
               idx++;
-              const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : "o";
+              const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : task.status === "done" ? "x" : task.status === "cancelled" ? "-" : "o";
               treeLines.push(`    │    ${idx}. [${icon}] ${task.title}`);
             }
           }
@@ -926,12 +926,12 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             treeLines.push(`    └── [no group]`);
             for (const task of proj.ungrouped) {
               idx++;
-              const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : "o";
+              const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : task.status === "done" ? "x" : task.status === "cancelled" ? "-" : "o";
               treeLines.push(`         ${idx}. [${icon}] ${task.title}`);
             }
           }
         }
-        treeLines.push(`\nLegend: > in_progress  || on_hold  o to_do`);
+        treeLines.push(`\nLegend: > in_progress  || on_hold  o to_do  x done  - cancelled`);
         treeLines.push(`Select: task_selection=N  (_company_id="${companyId}")`);
         return respond(treeLines.join("\n"));
       }
