@@ -606,10 +606,31 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       };
       if (params.description) body.description = params.description;
 
+      console.error("[log_time] timeTracking.add body:", JSON.stringify(body));
+
       const result = await client.request<{ data: { id: string } }>({
         endpoint: "timeTracking.add",
         body,
       });
+
+      console.error("[log_time] timeTracking.add response:", JSON.stringify(result));
+
+      const entryId = result.data?.id;
+      if (!entryId) {
+        return respond(`❌ Time registration failed: API returned no entry ID.\nBody sent: ${JSON.stringify(body)}`);
+      }
+
+      // Verify entry exists (guard against silent failures)
+      try {
+        await client.request({ endpoint: "timeTracking.info", body: { id: entryId } });
+      } catch {
+        return respond(
+          `❌ Time registration returned ID ${entryId} but entry not found.\n` +
+          `Possible cause: invalid subject type/ID or work_type_id for this account.\n` +
+          `Body sent: ${JSON.stringify(body)}\n\n` +
+          `Try: teamleader_load_tasks(company_name="${params.company_name}", force_refresh=true) then retry.`
+        );
+      }
 
       // Update last_used
       upsertTask({ ...cached, last_used: new Date().toISOString() });
@@ -621,7 +642,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           `- Start  : ${startedAt}`,
           `- End    : ${endedAt}`,
           `- User   : ${user?.name ?? userId}`,
-          `- Entry  : ${result.data?.id ?? "?"}`,
+          `- Entry  : ${entryId}`,
         ].join("\n")
       );
     }
