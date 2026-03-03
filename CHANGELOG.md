@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [1.3.3] - 2026-03-03
+
+### Added
+
+- **`teamleader_task_action` — `move_to_group`**: Move an existing task to a different group using `projects-v2/projectLines.addToGroup`. Requires `task_id` (or `task_number`) + `group_id`. Invalidates task tree cache.
+
+---
+
 ## [1.3.2] - 2026-03-03
 
 ### Bug Fixes
@@ -167,6 +175,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.3.3 | 2026-03-03 | New: task_action move_to_group (projectLines.addToGroup) |
 | 1.3.2 | 2026-03-03 | Fix wrong API endpoints (projectGroups.create/delete, tasks.create) + crash fix |
 | 1.3.1 | 2026-03-03 | Bug fixes (BUG-01, task numbering, icons) + delete_group action |
 | 1.3.0 | 2026-03-03 | Smart task tree, load_tasks, task_action, log_time improvements |

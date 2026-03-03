@@ -57,6 +57,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_task_action` | create (project_id only, no group) | ✅ | Task created at project level, no group_id needed |
 | `teamleader_task_action` | move_time | ✅ | delete + recreate on new task, verified via get_timetracking |
 | `teamleader_task_action` | delete_group | ✅ | Fixed v1.3.2: projectGroups.delete + delete_strategy param |
+| `teamleader_task_action` | move_to_group | ✅ | New v1.3.3: projectLines.addToGroup — moves task to different group |
 | `teamleader_task_action` | tree cache invalidated after close | ✅ | invalidateTaskTree called |
 | `teamleader_task_action` | tree cache invalidated after create | ✅ | invalidateTaskTree called |
 | `teamleader_task_action` | tree cache invalidated after delete_group | ✅ | invalidateTaskTree called |

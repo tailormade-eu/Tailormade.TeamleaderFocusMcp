@@ -957,18 +957,19 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
     }
   );
 
-  // ── Task Action (close / create / move_time / delete_group) ─────────────
+  // ── Task Action (close / create / move_time / delete_group / move_to_group) ──
   server.tool(
     "teamleader_task_action",
     [
       "Maintenance actions on tasks:",
-      "  close        : mark task as done",
-      "  create       : create new task in a group (from load_tasks tree)",
-      "  move_time    : move time entry to a different task (delete + recreate)",
-      "  delete_group : delete a project group/phase by group_id (get ID from load_tasks YAML or previous find_task/load_tasks call)",
+      "  close         : mark task as done",
+      "  create        : create new task in a group (from load_tasks tree)",
+      "  move_time     : move time entry to a different task (delete + recreate)",
+      "  delete_group  : delete a project group/phase by group_id (get ID from load_tasks YAML or previous find_task/load_tasks call)",
+      "  move_to_group : move an existing task to a different group (uses projectLines.addToGroup)",
     ].join("\n"),
     {
-      action: z.enum(["close", "create", "move_time", "delete_group"]).describe("Action to perform"),
+      action: z.enum(["close", "create", "move_time", "delete_group", "move_to_group"]).describe("Action to perform"),
       // Shared
       company_name: z.string().describe("Company name (partial match)"),
       task_number: z.number().optional().describe("Task number from teamleader_load_tasks list"),
@@ -1107,6 +1108,16 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         await client.request({ endpoint: "projects-v2/projectGroups.delete", body: { id: params.group_id, delete_strategy: "ungroup_tasks_and_materials" } });
         invalidateTaskTree(companyId!);
         return respond(`✅ Group ${params.group_id} deleted.\n\nReload tree: teamleader_load_tasks(company_name="${companyName}", force_refresh=true)`);
+      }
+
+      // ── move_to_group ────────────────────────────────────────────────────
+      if (params.action === "move_to_group") {
+        const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
+        if (!taskId) return respond(`Provide task_id or task_number for move_to_group.`);
+        if (!params.group_id) return respond(`group_id required for move_to_group.`);
+        await client.request({ endpoint: "projects-v2/projectLines.addToGroup", body: { line_id: taskId, group_id: params.group_id } });
+        invalidateTaskTree(companyId!);
+        return respond(`✅ Task ${taskId} moved to group ${params.group_id}.\n\nReload tree: teamleader_load_tasks(company_name="${companyName}", force_refresh=true)`);
       }
 
       return respond(`Unknown action: ${params.action}`);
