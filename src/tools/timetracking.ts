@@ -267,7 +267,7 @@ export function registerTimeTrackingTools(
       if (params.description) body.description = params.description;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
-        endpoint: "timeTracking.start",
+        endpoint: "timers.start",
         body,
       });
 
@@ -291,8 +291,8 @@ export function registerTimeTrackingTools(
     },
     async (params) => {
       const result = await client.request<{ data: { id: string; type: string } }>({
-        endpoint: "timeTracking.stop",
-        body: { id: params.id },
+        endpoint: "timers.stop",
+        body: {},
       });
 
       return {
