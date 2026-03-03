@@ -11,7 +11,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_find_task` | Company resolve (cache miss) | ✅ | |
 | `teamleader_find_task` | Company resolve (cache hit) | ✅ | |
 | `teamleader_find_task` | Group found in 1 project → auto-pick | ✅ | Ontwikkeling → auto-picked Access Application |
-| `teamleader_find_task` | Group found in multiple projects → ask project_selection | ⚠️ | Not testable with BRN: Website project closed (create fails), no duplicate groups |
+| `teamleader_find_task` | Group found in multiple projects → ask project_selection | ✅ | Barucci: 5 projects with "Support" group → project_selection=N |
 | `teamleader_find_task` | Group not found → ask confirm_create_group | ✅ | Lists projects + asks project_selection |
 | `teamleader_find_task` | Task: 1 exact match → auto-pick | ✅ | Tijdregistratie: Ontwikkeling |
 | `teamleader_find_task` | Task: multiple matches → ask task_selection | ✅ | Collection → 4 matches shown |
@@ -152,4 +152,4 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 ## Priority Testing Queue
 
 1. `teamleader_find_task` — only_open=false includes done tasks
-2. `teamleader_find_task` — group in multiple projects (needs company with 2+ active projects + duplicate group names)
+2. `teamleader_load_tasks` — task_selection=N caches task
