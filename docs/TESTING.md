@@ -53,7 +53,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_task_action` | close (task_number from tree) | ❌ | |
 | `teamleader_task_action` | create (project_id + group_id) | ✅ | |
 | `teamleader_task_action` | create (project_id only, no group) | ❌ | |
-| `teamleader_task_action` | move_time | 🐛 | Blocked by bug in log_time after tree invalidation |
+| `teamleader_task_action` | move_time | ✅ | delete + recreate on new task, verified via get_timetracking |
 | `teamleader_task_action` | tree cache invalidated after close | ✅ | invalidateTaskTree called |
 | `teamleader_task_action` | tree cache invalidated after create | ✅ | invalidateTaskTree called |
 
@@ -151,8 +151,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `task_action move_time` — BUG-01 fixed, unblock this
-2. `log_time` Tree fallback (scoreTasksInTree) + confirm_task_match
+1. `log_time` Tree fallback (scoreTasksInTree) + confirm_task_match
 3. `task_action close` via task_number (needs fresh tree)
 4. `load_tasks` only_open=false + force_refresh
 5. `teamleader_find_task` — full flow (cache miss → group → task)
