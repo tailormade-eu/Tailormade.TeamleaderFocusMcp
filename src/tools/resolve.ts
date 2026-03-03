@@ -960,11 +960,12 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
     [
       "Maintenance actions on tasks:",
       "  close     : mark task as done",
-      "  create    : create new task in a group (from load_tasks tree)",
-      "  move_time : move time entry to a different task (delete + recreate)",
+      "  create       : create new task in a group (from load_tasks tree)",
+      "  move_time    : move time entry to a different task (delete + recreate)",
+      "  delete_group : delete a project group/phase by group_id",
     ].join("\n"),
     {
-      action: z.enum(["close", "create", "move_time"]).describe("Action to perform"),
+      action: z.enum(["close", "create", "move_time", "delete_group"]).describe("Action to perform"),
       // Shared
       company_name: z.string().describe("Company name (partial match)"),
       task_number: z.number().optional().describe("Task number from teamleader_load_tasks list"),
@@ -1095,6 +1096,14 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         return respond(
           `✅ Time moved:\nFrom entry : ${params.time_entry_id}\nTo task    : ${newTaskId}\nNew entry  : ${newEntry.data.id}`
         );
+      }
+
+      // ── delete_group ──────────────────────────────────────────────────────
+      if (params.action === "delete_group") {
+        if (!params.group_id) return respond(`group_id required for delete_group.`);
+        await client.request({ endpoint: "projects-v2/projectLines.delete", body: { id: params.group_id } });
+        invalidateTaskTree(companyId!);
+        return respond(`✅ Group ${params.group_id} deleted.\n\nReload tree: teamleader_load_tasks(company_name="${companyName}", force_refresh=true)`);
       }
 
       return respond(`Unknown action: ${params.action}`);
