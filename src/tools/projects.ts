@@ -331,16 +331,15 @@ export function registerProjectTools(
     async (params) => {
       const body: Record<string, unknown> = {
         project_id: params.project_id,
-        type: "nextgenProjectGroup",
         title: params.title,
       };
 
       if (params.description) body.description = params.description;
-      if (params.starts_on) body.starts_on = params.starts_on;
-      if (params.due_on) body.due_on = params.due_on;
+      if (params.starts_on) body.start_date = params.starts_on;
+      if (params.due_on) body.end_date = params.due_on;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
-        endpoint: "projects-v2/projectLines.create",
+        endpoint: "projects-v2/projectGroups.create",
         body,
       });
 
@@ -387,19 +386,18 @@ export function registerProjectTools(
     async (params) => {
       const body: Record<string, unknown> = {
         project_id: params.project_id,
-        type: "nextgenTask",
         title: params.title,
       };
 
-      if (params.project_group_id) body.project_group_id = params.project_group_id;
+      if (params.project_group_id) body.group_id = params.project_group_id;
       if (params.description) body.description = params.description;
-      if (params.assignee_id) body.assignee_id = params.assignee_id;
+      if (params.assignee_id) body.assignees = [{ type: "user", id: params.assignee_id }];
       if (params.work_type_id) body.work_type_id = params.work_type_id;
       if (params.estimated_duration) body.estimated_duration = params.estimated_duration;
       if (params.due_on) body.due_on = params.due_on;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
-        endpoint: "projects-v2/projectLines.create",
+        endpoint: "projects-v2/tasks.create",
         body,
       });
 

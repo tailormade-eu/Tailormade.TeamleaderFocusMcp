@@ -271,10 +271,9 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             const targetProject = projects[params.project_selection - 1];
             if (!targetProject) return respond(`Invalid project selection. Choose between 1 and ${projects.length}.`);
             const created = await client.request<{ data: { id: string } }>({
-              endpoint: "projects-v2/projectLines.create",
+              endpoint: "projects-v2/projectGroups.create",
               body: {
                 project_id: targetProject.id,
-                type: "nextgenProjectGroup",
                 title: params.group_name,
               },
             });
@@ -291,23 +290,25 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           }
         }
 
-        // Multiple matches in different projects → ask for project selection
-        const uniqueProjects = [...new Set(matches.map(m => m.projectId))];
-        if (uniqueProjects.length > 1) {
-          const projList = uniqueProjects.map((pid, i) => {
-            const match = matches.find(m => m.projectId === pid)!;
-            return `${i + 1}. ${match.projectTitle} (group: ${match.groupTitle})`;
-          }).join("\n");
-          return respond(
-            `Group "${params.group_name}" found in multiple projects:\n${projList}\n\nSelect project via project_selection=N\n\nRetry with:\n_company_id="${companyId}"`
-          );
-        }
+        if (matches.length) {
+          // Multiple matches in different projects → ask for project selection
+          const uniqueProjects = [...new Set(matches.map(m => m.projectId))];
+          if (uniqueProjects.length > 1) {
+            const projList = uniqueProjects.map((pid, i) => {
+              const match = matches.find(m => m.projectId === pid)!;
+              return `${i + 1}. ${match.projectTitle} (group: ${match.groupTitle})`;
+            }).join("\n");
+            return respond(
+              `Group "${params.group_name}" found in multiple projects:\n${projList}\n\nSelect project via project_selection=N\n\nRetry with:\n_company_id="${companyId}"`
+            );
+          }
 
-        // Single match (possibly multiple groups with same name in same project → take first)
-        groupId = matches[0].groupId;
-        groupTitle = matches[0].groupTitle;
-        projectId = matches[0].projectId;
-        projectTitle = matches[0].projectTitle;
+          // Single match (possibly multiple groups with same name in same project → take first)
+          groupId = matches[0].groupId;
+          groupTitle = matches[0].groupTitle;
+          projectId = matches[0].projectId;
+          projectTitle = matches[0].projectTitle;
+        }
       } else {
         // group already resolved, get project title from cache
         const cachedProjects = getProjectsForCompany(companyId);
@@ -1103,7 +1104,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       // ── delete_group ──────────────────────────────────────────────────────
       if (params.action === "delete_group") {
         if (!params.group_id) return respond(`group_id required for delete_group.`);
-        await client.request({ endpoint: "projects-v2/projectLines.delete", body: { id: params.group_id } });
+        await client.request({ endpoint: "projects-v2/projectGroups.delete", body: { id: params.group_id, delete_strategy: "ungroup_tasks_and_materials" } });
         invalidateTaskTree(companyId!);
         return respond(`✅ Group ${params.group_id} deleted.\n\nReload tree: teamleader_load_tasks(company_name="${companyName}", force_refresh=true)`);
       }
