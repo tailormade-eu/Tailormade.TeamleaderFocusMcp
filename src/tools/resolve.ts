@@ -949,20 +949,21 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         `- visual=true                          → show ASCII tree`,
         `- task_selection=N (+ visual=true)     → cache task for log_time`,
         `- task_action(action=close, ...)       → close task`,
+        `- task_action(action=delete_group, group_id="...") → delete group (ID from YAML)`,
         `- force_refresh=true                   → reload from API`,
       ].join("\n"));
     }
   );
 
-  // ── Task Action (close / create / move_time) ──────────────────────────────
+  // ── Task Action (close / create / move_time / delete_group) ─────────────
   server.tool(
     "teamleader_task_action",
     [
       "Maintenance actions on tasks:",
-      "  close     : mark task as done",
+      "  close        : mark task as done",
       "  create       : create new task in a group (from load_tasks tree)",
       "  move_time    : move time entry to a different task (delete + recreate)",
-      "  delete_group : delete a project group/phase by group_id",
+      "  delete_group : delete a project group/phase by group_id (get ID from load_tasks YAML or previous find_task/load_tasks call)",
     ].join("\n"),
     {
       action: z.enum(["close", "create", "move_time", "delete_group"]).describe("Action to perform"),
@@ -972,7 +973,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       task_id: z.string().optional().describe("Direct task ID (alternative to task_number)"),
       // create
       project_id: z.string().optional().describe("Project ID for new task"),
-      group_id: z.string().optional().describe("Group ID for new task"),
+      group_id: z.string().optional().describe("Group ID: for create = parent group of new task; for delete_group = ID of the group to delete (get from load_tasks YAML)"),
       task_title: z.string().optional().describe("Title for new task"),
       // move_time
       time_entry_id: z.string().optional().describe("Time entry ID to move"),
