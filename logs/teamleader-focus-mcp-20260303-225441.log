@@ -209,3 +209,19 @@
 [23:25:55] 
 ▶️  Task [12] Files — full file management tools
 [23:25:55]    🤖 Invoking Claude CLI...
+      Done. Task 12 complete.
+      
+      **Samenvatting:**
+      
+      | Tool | Endpoint | Functie |
+      |------|----------|---------|
+      | `teamleader_list_files` | `files.list` | Bestanden bij entiteit ophalen (filter op subject type/id) |
+      | `teamleader_get_file` | `files.info` | Bestandsdetails (naam, grootte, MIME, folder) |
+      | `teamleader_download_file` | `files.download` | Tijdelijke download-URL ophalen |
+      | `teamleader_delete_file` | `files.delete` | Bestand verwijderen |
+      | `teamleader_upload_file` | `files.upload` + binary POST | Upload met optionele base64 content |
+      
+      **Key decisions:**
+      - Upload is 2-staps per API docs: eerst upload-URL ophalen, dan binary POST naar die pre-signed URL
+      - Geen `client.ts` aanpassing nodig — stap 2 gebruikt plain `fetch` (geen auth vereist)
+      - `content_base64` is optioneel: zonder = alleen URL teruggeven, met = automatisch uploaden
