@@ -333,17 +333,19 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         .filter(Boolean) as string[];
 
       const openStatuses = new Set(["to_do", "in_progress", "on_hold"]);
-      let allProjectTasks: { id: string; title: string }[] = [];
+      let allProjectTasks: { id: string; title: string; work_type_id?: string }[] = [];
       if (taskLineIds.length > 0) {
         // Step 2: get task titles by IDs — batch 100 at a time, only open tasks
         for (let i = 0; i < taskLineIds.length; i += 100) {
           const batch = taskLineIds.slice(i, i + 100);
-          const tasksResult = await client.request<{ data: { id: string; title: string; status?: string }[] }>({
+          const tasksResult = await client.request<{ data: { id: string; title: string; status?: string; work_type?: { id: string } }[] }>({
             endpoint: "projects-v2/tasks.list",
             body: { filter: { ids: batch }, page: { size: 100, number: 1 } },
           });
           const onlyOpen = params.only_open !== false;
-          const open = (tasksResult.data ?? []).filter(t => !onlyOpen || !t.status || openStatuses.has(t.status));
+          const open = (tasksResult.data ?? [])
+            .filter(t => !onlyOpen || !t.status || openStatuses.has(t.status))
+            .map(t => ({ id: t.id, title: t.title, work_type_id: t.work_type?.id }));
           allProjectTasks = allProjectTasks.concat(open);
         }
       }
@@ -353,7 +355,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       const filtered = allProjectTasks.filter(t => t.title?.toLowerCase().includes(tl));
       const displayList = filtered.length > 0 ? filtered : allProjectTasks;
 
-      let selectedTask: { id: string; title: string; isNew?: boolean };
+      let selectedTask: { id: string; title: string; work_type_id?: string; isNew?: boolean };
 
       if (params.task_selection) {
         const s = displayList[params.task_selection - 1];
@@ -399,7 +401,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         group_title: groupTitle,
         company_id: companyId!,
         company_name: companyName,
-        work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+        work_type_id: selectedTask.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
         last_used: new Date().toISOString(),
       });
 
@@ -455,7 +457,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             if (found) break;
           }
         }
-        const workTypeId = params.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
+        const workTypeId = params.work_type_id ?? found?.task.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
         cached = {
           task_id: params.task_id,
           task_title: found?.task.title ?? params.task_id,
@@ -493,7 +495,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
                 group_title: sel.group?.title,
                 company_id: co.id,
                 company_name: co.name,
-                work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+                work_type_id: sel.task.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
                 last_used: new Date().toISOString(),
               });
               cached = findTask(params.company_name, sel.task.title)!;
@@ -737,15 +739,15 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             .map(l => ({ lineId: l.line?.id as string, groupId: l.group?.id as string | undefined }))
             .filter(l => l.lineId);
 
-          const tasksById = new Map<string, { id: string; title: string; status: string }>();
+          const tasksById = new Map<string, { id: string; title: string; status: string; work_type_id?: string }>();
           for (let i = 0; i < allLineIds.length; i += 100) {
             const batch = allLineIds.slice(i, i + 100).map(l => l.lineId);
-            const tasksResult = await client.request<{ data: { id: string; title: string; status?: string }[] }>({
+            const tasksResult = await client.request<{ data: { id: string; title: string; status?: string; work_type?: { id: string } }[] }>({
               endpoint: "projects-v2/tasks.list",
               body: { filter: { ids: batch }, page: { size: 100, number: 1 } },
             });
             for (const t of tasksResult.data ?? []) {
-              tasksById.set(t.id, { id: t.id, title: t.title, status: t.status ?? "to_do" });
+              tasksById.set(t.id, { id: t.id, title: t.title, status: t.status ?? "to_do", work_type_id: t.work_type?.id });
             }
           }
 
@@ -755,7 +757,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           for (const { lineId, groupId } of allLineIds) {
             const task = tasksById.get(lineId);
             if (!task) continue;
-            const treeTask: TaskTreeTask = { id: task.id, title: task.title, status: task.status };
+            const treeTask: TaskTreeTask = { id: task.id, title: task.title, status: task.status, ...(task.work_type_id ? { work_type_id: task.work_type_id } : {}) };
             if (groupId) {
               if (!groupTasksMap.has(groupId)) groupTasksMap.set(groupId, []);
               groupTasksMap.get(groupId)!.push(treeTask);
@@ -821,7 +823,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           group_title: sel.group?.title,
           company_id: companyId!,
           company_name: companyName,
-          work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+          work_type_id: sel.task.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
           last_used: new Date().toISOString(),
         });
         const path = [companyName, sel.project.title, sel.group?.title, sel.task.title].filter(Boolean).join(" > ");
