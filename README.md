@@ -14,7 +14,7 @@ Based on [globodai-group/mcp-teamleader](https://github.com/globodai-group/mcp-t
 - **Tasks** — List, create (legacy task API)
 - **Events** — List, get, create calendar events
 - **Invoices** — List, get, create draft invoices
-- **Time Tracking** — List, add, update, delete, start/stop timer
+- **Time Tracking** — List, add, update, delete, start/stop timers
 - **Projects v2** — List, get, create, update projects, groups (phases), and tasks
 - **Smart Resolution** — Cache-first Company > Project > Group > Task navigation
 - **OAuth2** — Automatic token refresh with rotation support
@@ -144,8 +144,8 @@ Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.claude.jso
 | `teamleader_add_timetracking` | Add a new time entry (user, work type, start/end, subject) |
 | `teamleader_update_timetracking` | Update an existing time entry |
 | `teamleader_delete_timetracking` | Delete a time entry |
-| `teamleader_start_timer` | Start a running timer (creates an open-ended time entry) |
-| `teamleader_stop_timer` | Stop a running timer (closes the open-ended entry) |
+| `teamleader_start_timer` | Start a new timer via `timers.start` (one active timer per user) |
+| `teamleader_stop_timer` | Stop the current running timer via `timers.stop` |
 
 ### Projects v2
 
@@ -331,22 +331,24 @@ These are critical for any future development or debugging.
 ```
 src/
   api/
-    auth.ts       — OAuth2 token management (auto-rotate, persist to ~/.teamleader-tokens.json)
-    client.ts     — HTTP client (all POST requests)
-    cache.ts      — Cache types, TTL constants, CRUD functions, task tree operations
+    auth.ts         — OAuth2 token management (auto-rotate, persist to ~/.teamleader-tokens.json)
+    client.ts       — HTTP client (all POST requests)
+    cache.ts        — Cache types, TTL constants, CRUD functions, task tree operations
   tools/
-    resolve.ts    — Smart tools: find_task, log_time, load_tasks, task_action, cache_stats, clear_cache
-    contacts.ts   — Contact tools
-    companies.ts  — Company tools
-    deals.ts      — Deal tools
-    tasks.ts      — Legacy task tools
-    events.ts     — Event tools
-    invoices.ts   — Invoice tools
-    timetracking.ts — Time tracking tools
-    projects.ts   — Projects v2 tools
-  index.ts        — MCP server entry point, tool registration
+    resolve.ts      — Smart tools: find_task, log_time, load_tasks, task_action, cache_stats, clear_cache
+    contacts.ts     — Contact tools
+    companies.ts    — Company tools
+    deals.ts        — Deal tools
+    tasks.ts        — Legacy task tools
+    events.ts       — Event tools
+    invoices.ts     — Invoice tools
+    timetracking.ts — Time tracking + timers tools
+    projects.ts     — Projects v2 tools
+  index.ts          — MCP server entry point, tool registration
 docs/
+  api/              — Full Teamleader Focus API docs (187 pages, scraped from developer.focus.teamleader.eu)
   find-task-business-logic.md — Detailed business logic for smart resolution tools
+tasks/              — CodingMachine task queue (planned tool additions)
 ```
 
 ---
@@ -375,9 +377,28 @@ npx @modelcontextprotocol/inspector node dist/index.js
 ## API Reference
 
 - Teamleader Focus API docs: [developer.focus.teamleader.eu](https://developer.focus.teamleader.eu/)
+- Local scraped docs: `docs/api/` (187 pages, updated 2026-03-03)
 - Base URL: `https://api.focus.teamleader.eu`
 - All endpoints use POST with JSON body
 - Authentication: OAuth2 with automatic token refresh
+
+---
+
+## Roadmap (CodingMachine tasks in `tasks/`)
+
+| # | Task | New tools |
+|---|------|-----------|
+| 01 | Users list + info | `users.list`, `users.info` |
+| 02 | Tickets full CRUD | list, info, create, update, messages, reply, internal |
+| 03 | Invoices workflow | book, send, peppol, delete, update, payment, credit, copy |
+| 04 | Meetings full CRUD | list, info, schedule, complete, delete, update, report |
+| 05 | Standalone tasks complete | info, update, delete, complete, reopen, schedule |
+| 06 | Deals workflow | delete, lose, win, move + lookup lists |
+| 07 | Departments | list, info |
+| 08 | Companies + contacts CRUD | companies.update, contacts.delete/link/unlink |
+| 09 | Lookup lists | activityTypes, taxRates, ticketStatuses, workTypes (standalone) |
+| 10 | Projects lifecycle | project close/reopen/delete/duplicate + task complete/reopen/delete |
+| 11 | Timers complete | timers.current, timers.update, timeTracking.resume |
 
 ---
 

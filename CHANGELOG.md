@@ -4,6 +4,32 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [1.3.5] - 2026-03-03
+
+### Bug Fixes
+
+- **`timers.start` / `timers.stop`**: `timeTracking.start` and `timeTracking.stop` do not exist in the Teamleader API. Corrected to `timers.start` and `timers.stop` (separate `Timers` resource). `timers.stop` takes no parameters — it stops the current user's active timer.
+
+### Documentation
+
+- **API docs scraped**: 187 Markdown files saved to `docs/api/` (was 18 overview pages). Two-pass scraper now follows content sub-links to capture all endpoint detail pages.
+- **`tools/tl_docs_scraper.py`** (CodingMachine repo): Updated with two-pass approach — collects nav links + content links per section page.
+- **`tasks/`**: CodingMachine task queue added with 11 planned tool additions (see README Roadmap).
+- **README**: Updated tool descriptions, file structure, roadmap table, API reference with local docs path.
+- **CLAUDE.md**: Updated file structure, planned tool files, added pitfalls #9 (timers) and #10 (read docs before implementing).
+
+---
+
+## [1.3.4] - 2026-03-03
+
+### Added
+
+- **`task_action update`**: Update a project task via `tasks.update` (title, description, status)
+- **`find_task` — `description` param**: Description is now passed to `tasks.create` when a new task is created
+- **`task_action create` — `description` param**: Description is now passed to `tasks.create`
+
+---
+
 ## [1.3.3] - 2026-03-03
 
 ### Added

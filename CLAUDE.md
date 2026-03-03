@@ -27,12 +27,19 @@ Each domain has its own file in `src/tools/`. Export a `register*Tools(server, c
 src/tools/contacts.ts       → registerContactTools
 src/tools/companies.ts      → registerCompanyTools
 src/tools/deals.ts          → registerDealTools
-src/tools/tasks.ts          → registerTaskTools (legacy)
+src/tools/tasks.ts          → registerTaskTools (legacy standalone tasks)
 src/tools/events.ts         → registerEventTools
 src/tools/invoices.ts       → registerInvoiceTools
-src/tools/timetracking.ts   → registerTimeTrackingTools
+src/tools/timetracking.ts   → registerTimeTrackingTools (includes timers.*)
 src/tools/projects.ts       → registerProjectTools
 src/tools/resolve.ts        → registerResolveTools (smart tools)
+```
+
+**Planned (tasks/ folder):**
+```
+src/tools/tickets.ts        → registerTicketTools        (task 02)
+src/tools/meetings.ts       → registerMeetingTools       (task 04)
+src/tools/lookups.ts        → registerLookupTools        (task 09)
 ```
 
 ### Cache
@@ -231,11 +238,13 @@ src/
     tasks.ts          — Legacy task tools
     events.ts         — Event tools
     invoices.ts       — Invoice tools
-    timetracking.ts   — Time tracking tools
+    timetracking.ts   — Time tracking + timers tools
     projects.ts       — Projects v2 tools
   index.ts            — Server entry point
 docs/
+  api/                — Scraped Teamleader Focus API docs (187 pages, 2026-03-03)
   find-task-business-logic.md  — Detailed business logic documentation
+tasks/                — CodingMachine task queue (planned additions, see README Roadmap)
 dist/                 — Compiled output (gitignored)
 ```
 
@@ -264,3 +273,5 @@ npx @modelcontextprotocol/inspector node dist/index.js
 6. **Always** set `only_open=true` by default for task filters
 7. **Always** write large datasets (task trees) to YAML file, not to MCP response
 8. **Never guess a task_id** — the visual tree does NOT show IDs. Always read the YAML file (`~/.teamleader-tasks-{slug}.yaml`) to get the correct ID before calling `log_time(task_id=...)`
+9. **Timers vs timeTracking**: `timers.start` and `timers.stop` are under the `timers.*` resource (NOT `timeTracking.start/stop` — those do not exist). `timers.stop` takes no parameters (stops the current user's active timer).
+10. **Before implementing any new endpoint**: always read the corresponding scraped doc in `docs/api/` for exact field names, required vs optional params, and response structure.
