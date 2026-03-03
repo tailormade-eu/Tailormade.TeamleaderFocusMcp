@@ -16,7 +16,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_find_task` | Task: 1 exact match → auto-pick | ✅ | Tijdregistratie: Ontwikkeling |
 | `teamleader_find_task` | Task: multiple matches → ask task_selection | ✅ | Collection → 4 matches shown |
 | `teamleader_find_task` | Task: no match, tasks exist → ask confirm_create_task | ✅ | Shows existing tasks + asks confirm_create_task=true |
-| `teamleader_find_task` | No projects for company → ask confirm_create_project | ❌ | |
+| `teamleader_find_task` | No projects for company → ask confirm_create_project | ⚠️ | Flow + project created ✅. But confirm_create_group after → 404 (API quirk: API-created projects don't accept projectLines.create) |
 | `teamleader_find_task` | Task: no tasks in group → auto-create | ❌ | |
 | `teamleader_find_task` | only_open=false includes done tasks | ✅ | BRN Support: 2 done tasks shown; default only_open=true → hidden |
 | `teamleader_load_tasks` | Full tree load (cache miss) | ✅ | Tested on BV Belgian Recycle Network |
@@ -43,7 +43,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_log_time` | Exact duplicate blocked | ✅ | |
 | `teamleader_log_time` | Overlap warning + confirm_overlap | ✅ | |
 | `teamleader_log_time` | force=true skips dedup | ❌ | |
-| `teamleader_log_time` | date param (past date with HH:MM times) | ❌ | |
+| `teamleader_log_time` | date param (past date with HH:MM times) | ✅ | Entry created on 2026-03-01 via date="2026-03-01" + HH:MM |
 | `teamleader_log_time` | work_type_id from task cache | ✅ | Verified: task tree + flat cache both propagate work_type_id |
 | `teamleader_log_time` | description stored | ✅ | Verified via list |
 
@@ -150,6 +150,8 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `tasks.create` | use `group_id` not `project_group_id` |
 | `timeTracking.list` | returns `subject.type: "todo"` — ID differs from `nextgenTask` ID |
 | `timeTracking.add` | strip milliseconds: `.replace(/\.\d+Z$/, "+00:00")` |
+| `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
+| `projects-v2/projectLines.create` | Returns 404 for projects created via API — only works for projects created in Teamleader UI |
 
 ---
 
