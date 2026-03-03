@@ -389,16 +389,18 @@ npx @modelcontextprotocol/inspector node dist/index.js
 | # | Task | New tools |
 |---|------|-----------|
 | 01 | Users list + info | `users.list`, `users.info` |
-| 02 | Tickets full CRUD | list, info, create, update, messages, reply, internal |
-| 03 | Invoices workflow | book, send, peppol, delete, update, payment, credit, copy |
+| 02 | Tickets full CRUD | list, info, create, update, messages, reply, internal, getMessage |
+| 03 | Invoices workflow | book, send, peppol, delete, update, payment, credit, creditPartially, copy + mail/payment lookups |
 | 04 | Meetings full CRUD | list, info, schedule, complete, delete, update, report |
 | 05 | Standalone tasks complete | info, update, delete, complete, reopen, schedule |
-| 06 | Deals workflow | delete, lose, win, move + lookup lists |
+| 06 | Deals workflow | delete, lose, win, move + lostReasons/dealPhases/dealSources lookups |
 | 07 | Departments | list, info |
-| 08 | Companies + contacts CRUD | companies.update, contacts.delete/link/unlink |
-| 09 | Lookup lists | activityTypes, taxRates, ticketStatuses, workTypes (standalone) |
-| 10 | Projects lifecycle | project close/reopen/delete/duplicate + task complete/reopen/delete |
+| 08 | Companies + contacts CRUD | companies.update, contacts.delete/link/unlink/updateLink/tag/untag |
+| 09 | Lookup lists | activityTypes, taxRates, ticketStatuses, teams |
+| 10 | Projects lifecycle | close/reopen/delete/duplicate + relationships (addCustomer/Deal/Owner) + task complete/reopen/delete + group update + removeFromGroup |
 | 11 | Timers complete | timers.current, timers.update, timeTracking.resume |
+| 12 | Files | list, info, download, delete, upload |
+| 13 | Misc lookups | teams.list, tags.list, expenses.list |
 
 ---
 
