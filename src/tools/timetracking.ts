@@ -305,4 +305,105 @@ export function registerTimeTrackingTools(
       };
     }
   );
+
+  // ── Get Current Timer ──────────────────────────────────────────────────
+  server.tool(
+    "teamleader_get_current_timer",
+    "Get the currently running timer for the authenticated user. Returns timer details (subject, work type, started_at) or indicates no timer is running. Only one timer can run per user at a time.",
+    {},
+    async () => {
+      const result = await client.request({
+        endpoint: "timers.current",
+        body: {},
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Update Timer ───────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_update_timer",
+    "Update the currently running timer. Only possible if a timer is running. Use this to change the subject, work type, description, or start time of the active timer.",
+    {
+      work_type_id: z.string().optional().describe("New work type ID"),
+      started_at: z
+        .string()
+        .optional()
+        .describe("New start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+01:00)"),
+      description: z.string().optional().describe("New description for the timer"),
+      subject_type: z
+        .enum(["company", "contact", "event", "todo", "milestone", "ticket"])
+        .optional()
+        .describe("Subject type to track time against"),
+      subject_id: z.string().optional().describe("Subject ID to track time against"),
+      invoiceable: z.boolean().optional().describe("Whether the tracked time is invoiceable"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {};
+
+      if (params.work_type_id) body.work_type_id = params.work_type_id;
+      if (params.started_at) body.started_at = params.started_at;
+      if (params.description !== undefined) body.description = params.description;
+      if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;
+      if (params.subject_type && params.subject_id) {
+        body.subject = {
+          type: params.subject_type,
+          id: params.subject_id,
+        };
+      }
+
+      await client.request({
+        endpoint: "timers.update",
+        body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: "Timer updated" }, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Resume Time Tracking ───────────────────────────────────────────────
+  server.tool(
+    "teamleader_resume_timetracking",
+    "Start a new timer based on a previously tracked time entry. Copies the subject and work type from the existing entry. Only one timer can run per user — any running timer will be stopped first.",
+    {
+      id: z.string().describe("ID of the existing time tracking entry to resume from"),
+      started_at: z
+        .string()
+        .optional()
+        .describe("Start datetime in ISO 8601 format. If not provided, current time is used."),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { id: params.id };
+      if (params.started_at) body.started_at = params.started_at;
+
+      const result = await client.request<{ data: { id: string; type: string } }>({
+        endpoint: "timeTracking.resume",
+        body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+  );
 }

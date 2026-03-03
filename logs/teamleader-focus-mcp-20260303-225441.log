@@ -174,3 +174,19 @@
       | `teamleader_list_work_types` | `workTypes.list` | IDs voor timetracking (cache-first) |
       
       Users tools overgeslagen — bestonden al uit task 01. Alle tools geven genummerde lijsten met IDs. Build slaagt.
+[23:17:22]    ✅ Done: Lookup lists — activity types, tax rates, statuses, products
+[23:17:23] 
+▶️  Task [10] Projects v2 — lifecycle + relationships + task lifecycle
+[23:17:23]    🤖 Invoking Claude CLI...
+      Done. 18 nieuwe tools toegevoegd aan `src/tools/projects.ts`:
+      
+      | Categorie | Tools |
+      |-----------|-------|
+      | **Project lifecycle** | close, reopen, delete, duplicate (4) |
+      | **Relationships** | add/remove customer, deal, owner, assign/unassign (8) |
+      | **Group update** | update_project_group (1) |
+      | **Task lifecycle** | complete, reopen, delete project task (3) |
+      | **Project lines** | remove_task_from_group (1) |
+      | **Totaal** | **18 nieuwe tools** (26 totaal in projects.ts) |
+      
+      Geen wijzigingen in `index.ts` nodig — alles draait via bestaande `registerProjectTools`. Build slaagt.
