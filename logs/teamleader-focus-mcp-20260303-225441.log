@@ -190,3 +190,22 @@
       | **Totaal** | **18 nieuwe tools** (26 totaal in projects.ts) |
       
       Geen wijzigingen in `index.ts` nodig — alles draait via bestaande `registerProjectTools`. Build slaagt.
+[23:23:48]    ✅ Done: Projects v2 — lifecycle + relationships + task lifecycle
+[23:23:49] 
+▶️  Task [11] Timers + timeTracking — complete timer support
+[23:23:49]    🤖 Invoking Claude CLI...
+      Klaar. Samenvatting:
+      
+      **3 tools toegevoegd aan `timetracking.ts`:**
+      
+      | Tool | Endpoint | Functie |
+      |------|----------|---------|
+      | `teamleader_get_current_timer` | `timers.current` | Huidige lopende timer opvragen |
+      | `teamleader_update_timer` | `timers.update` | Lopende timer aanpassen (subject, work type, beschrijving, starttijd, invoiceable) |
+      | `teamleader_resume_timetracking` | `timeTracking.resume` | Nieuwe timer starten op basis van bestaande tijdregistratie |
+      
+      Geen wijzigingen in `index.ts` nodig — alles zit in de bestaande `registerTimeTrackingTools`. Build + typecheck slagen.
+[23:25:54]    ✅ Done: Timers + timeTracking — complete timer support
+[23:25:55] 
+▶️  Task [12] Files — full file management tools
+[23:25:55]    🤖 Invoking Claude CLI...
