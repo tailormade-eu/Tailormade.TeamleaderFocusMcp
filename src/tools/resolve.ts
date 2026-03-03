@@ -144,6 +144,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       confirm_create_task: z.boolean().optional().describe("Confirm creation of new task when no exact match found"),
       only_open: z.boolean().optional().default(true).describe("Only show open tasks (to_do, in_progress, on_hold). Default: true"),
       project_name: z.string().optional().describe("Name for new project (only used with confirm_create_project=true)"),
+      description: z.string().optional().describe("Task description (set on new task when creating)"),
       // Internal state
       _company_id: z.string().optional().describe("Internal: resolved company ID"),
       _project_id: z.string().optional().describe("Internal: resolved project ID"),
@@ -383,6 +384,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         if (groupId) createBody.group_id = groupId;
         if (workTypeId) createBody.work_type_id = workTypeId;
         if (user?.id) createBody.assignees = [{ type: "user", id: user.id }];
+        if (params.description) createBody.description = params.description;
 
         const created = await client.request<{ data: { id: string } }>({
           endpoint: "projects-v2/tasks.create",
@@ -964,12 +966,13 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       "Maintenance actions on tasks:",
       "  close         : mark task as done",
       "  create        : create new task in a group (from load_tasks tree)",
+      "  update        : update task title, description or status (uses tasks.update)",
       "  move_time     : move time entry to a different task (delete + recreate)",
       "  delete_group  : delete a project group/phase by group_id (get ID from load_tasks YAML or previous find_task/load_tasks call)",
       "  move_to_group : move an existing task to a different group (uses projectLines.addToGroup)",
     ].join("\n"),
     {
-      action: z.enum(["close", "create", "move_time", "delete_group", "move_to_group"]).describe("Action to perform"),
+      action: z.enum(["close", "create", "update", "move_time", "delete_group", "move_to_group"]).describe("Action to perform"),
       // Shared
       company_name: z.string().describe("Company name (partial match)"),
       task_number: z.number().optional().describe("Task number from teamleader_load_tasks list"),
@@ -978,6 +981,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       project_id: z.string().optional().describe("Project ID for new task"),
       group_id: z.string().optional().describe("Group ID: for create = parent group of new task; for delete_group = ID of the group to delete (get from load_tasks YAML)"),
       task_title: z.string().optional().describe("Title for new task"),
+      description: z.string().optional().describe("Task description (for create or update)"),
       // move_time
       time_entry_id: z.string().optional().describe("Time entry ID to move"),
       new_task_number: z.number().optional().describe("Target task number from load_tasks list"),
@@ -1042,6 +1046,17 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         return respond(`✅ Task ${taskId} closed (status: done).`);
       }
 
+      // ── update ────────────────────────────────────────────────────────────
+      if (params.action === "update") {
+        const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
+        if (!taskId) return respond(`Provide task_id or task_number for update.`);
+        const body: Record<string, unknown> = { id: taskId };
+        if (params.task_title) body.title = params.task_title;
+        if (params.description !== undefined) body.description = params.description;
+        await client.request({ endpoint: "projects-v2/tasks.update", body });
+        return respond(`✅ Task ${taskId} updated.`);
+      }
+
       // ── create ────────────────────────────────────────────────────────────
       if (params.action === "create") {
         if (!params.task_title) return respond(`task_title required for create.`);
@@ -1055,6 +1070,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         if (params.group_id) body.group_id = params.group_id;
         if (workTypeId) body.work_type_id = workTypeId;
         if (user?.id) body.assignees = [{ type: "user", id: user.id }];
+        if (params.description) body.description = params.description;
 
         const created = await client.request<{ data: { id: string } }>({
           endpoint: "projects-v2/tasks.create",
