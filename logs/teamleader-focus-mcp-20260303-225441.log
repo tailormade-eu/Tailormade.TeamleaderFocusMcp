@@ -137,3 +137,25 @@
         - `teamleader_get_department` — volledige details (adres, emails, telefoons, banking, fiscal regime)
       - Geregistreerd in `src/index.ts`
       - Typecheck + build slagen
+[23:10:18]    ✅ Done: Departments — list + info tools
+[23:10:19] 
+▶️  Task [08] Companies + Contacts — missing CRUD operations
+[23:10:19]    🤖 Invoking Claude CLI...
+      Klaar. 7 tools toegevoegd:
+      
+      **companies.ts** (+1):
+      - `teamleader_update_company` — name, email, phone, VAT, website, language, tags
+      
+      **contacts.ts** (+6):
+      - `teamleader_delete_contact`
+      - `teamleader_link_contact_to_company` (+ position, decision_maker)
+      - `teamleader_unlink_contact_from_company`
+      - `teamleader_update_contact_company_link` (position, decision_maker)
+      - `teamleader_tag_contact`
+      - `teamleader_untag_contact`
+      
+      Build succeeds, geen wijzigingen nodig in `index.ts`.
+[23:12:41]    ✅ Done: Companies + Contacts — missing CRUD operations
+[23:12:42] 
+▶️  Task [09] Lookup lists — activity types, tax rates, statuses, products
+[23:12:42]    🤖 Invoking Claude CLI...
