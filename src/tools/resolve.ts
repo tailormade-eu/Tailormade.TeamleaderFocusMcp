@@ -1,0 +1,1104 @@
+/**
+ * Smart task resolution + time logging tools.
+ *
+ * Flow (cache-first, numbered selection when multiple options):
+ *   1. teamleader_find_task → guides: company → project → group → task
+ *   2. teamleader_log_time  → resolves from cache → logs time
+ *
+ * At each step:
+ *   - 1 result  → auto-proceed
+ *   - N results → numbered list, user picks by number
+ *   - 0 results → clear error
+ */
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { writeFileSync, readFileSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
+import type { TeamleaderClient } from "../api/client.js";
+import {
+  getActiveUser, setActiveUser,
+  getDefaultWorkTypeId, setDefaultWorkTypeId,
+  getWorkTypes, setWorkTypes,
+  getCompany, upsertCompany,
+  getProjectsForCompany, upsertProjects,
+  getGroupsForProject, upsertGroups,
+  findTask, searchTasks, upsertTask, listTasks,
+  getTaskTree, setTaskTree, invalidateTaskTree,
+  scoreTasksInTree,
+  clearCache, getCacheStats,
+  type CachedTask, type TaskTreeProject, type TaskTreeGroup, type TaskTreeTask, type ScoredTaskMatch,
+} from "../api/cache.js";
+
+function respond(text: string) {
+  return { content: [{ type: "text" as const, text }] };
+}
+
+function toDatetime(s: string): string {
+  // "YYYY-MM-DD HH:MM" → ISO
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(s)) return `${s.replace(" ", "T")}:00+01:00`;
+  // "YYYY-MM-DD" → ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00+01:00`;
+  return s;
+}
+
+function numbered<T>(items: T[], label: (item: T) => string): string {
+  return items.map((item, i) => `${i + 1}. ${label(item)}`).join("\n");
+}
+
+// ── Startup Init ──────────────────────────────────────────────────────────────
+
+export async function initializeCache(client: TeamleaderClient): Promise<void> {
+  // Active user
+  if (!getActiveUser()) {
+    try {
+      const result = await client.request<{ data: { id: string; first_name: string; last_name: string } }>({
+        endpoint: "users.me",
+        body: {},
+      });
+      const u = result.data;
+      setActiveUser({ id: u.id, name: `${u.first_name} ${u.last_name}` });
+    } catch (e) {
+      console.error("Warning: could not load active user", e);
+    }
+  }
+
+  // Work types
+  if (!getWorkTypes()) {
+    try {
+      const result = await client.request<{ data: { id: string; name: string }[] }>({
+        endpoint: "workTypes.list",
+        body: {},
+      });
+      setWorkTypes(result.data.map((wt) => ({ id: wt.id, name: wt.name })));
+    } catch (e) {
+      console.error("Warning: could not load work types", e);
+    }
+  }
+
+  // Default work type — detect from user's recent time entries
+  if (!getDefaultWorkTypeId()) {
+    try {
+      const user = getActiveUser();
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const result = await client.request<{ data: { work_type?: { id: string } }[] }>({
+        endpoint: "timeTracking.list",
+        body: {
+          filter: {
+            user_id: user?.id,
+            started_after: `${sevenDaysAgo}T00:00:00+00:00`,
+          },
+          page: { size: 50, number: 1 },
+        },
+      });
+      const entries = result.data ?? [];
+      // Count work type occurrences
+      const counts: Record<string, number> = {};
+      for (const e of entries) {
+        if (e.work_type?.id) counts[e.work_type.id] = (counts[e.work_type.id] ?? 0) + 1;
+      }
+      const topId = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (topId) setDefaultWorkTypeId(topId);
+      else if (getWorkTypes()?.[0]) setDefaultWorkTypeId(getWorkTypes()![0].id);
+    } catch (e) {
+      console.error("Warning: could not detect default work type", e);
+      if (getWorkTypes()?.[0]) setDefaultWorkTypeId(getWorkTypes()![0].id);
+    }
+  }
+}
+
+// ── Register Tools ─────────────────────────────────────────────────────────────
+
+export function registerResolveTools(server: McpServer, client: TeamleaderClient): void {
+
+  // ── Find Task ──────────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_find_task",
+    [
+      "Find a task via company → group → task hierarchy and cache it for log_time.",
+      "PREFER teamleader_load_tasks + task_id shortcut in log_time when possible — faster, fewer steps.",
+      "Use find_task only when: task needs to be created, or load_tasks tree is not available.",
+      "Cache-first. Numbered selection when multiple options.",
+      "RULES:",
+      "  - Company: never created. Error if not found.",
+      "  - Project/Group: not auto-created. Ask confirmation (confirm_create_project / confirm_create_group).",
+      "  - Task: created automatically if not found (with work_type + assignee).",
+      "Steps:",
+      "  1. Call with company_name + group_name + task_name",
+      "  2. Group searched across ALL projects of the company",
+      "  3. If group found in multiple projects → project_selection=N",
+      "  4. If group not found → lists projects, ask confirm_create_group=true + project_selection=N",
+      "  5. If no projects exist → ask confirm_create_project=true + project_name",
+      "  6. If multiple tasks match → task_selection=N",
+      "  7. If task not found → created automatically",
+    ].join("\n"),
+    {
+      company_name: z.string().describe("Company name (partial match)"),
+      group_name: z.string().describe("Group/phase name (partial match, searched across all projects)"),
+      task_name: z.string().describe("Task name (partial match, created if not found)"),
+      project_selection: z.number().optional().describe("Select project by number from list"),
+      task_selection: z.number().optional().describe("Select task by number from previous list"),
+      confirm_create_group: z.boolean().optional().describe("Confirm creation of new group (requires project_selection)"),
+      confirm_create_project: z.boolean().optional().describe("Confirm creation of new project (requires project_name)"),
+      confirm_create_task: z.boolean().optional().describe("Confirm creation of new task when no exact match found"),
+      only_open: z.boolean().optional().default(true).describe("Only show open tasks (to_do, in_progress, on_hold). Default: true"),
+      project_name: z.string().optional().describe("Name for new project (only used with confirm_create_project=true)"),
+      // Internal state
+      _company_id: z.string().optional().describe("Internal: resolved company ID"),
+      _project_id: z.string().optional().describe("Internal: resolved project ID"),
+      _group_id: z.string().optional().describe("Internal: resolved group ID"),
+      _group_title: z.string().optional().describe("Internal: resolved group title"),
+    },
+    async (params) => {
+      // ── Cache check ────────────────────────────────────────────────────────
+      if (!params.project_selection && !params.task_selection && !params._group_id) {
+        const cached = findTask(params.company_name, params.task_name);
+        if (cached && cached.path.toLowerCase().includes(params.group_name.toLowerCase())) {
+          return respond(`✅ Cache hit:\n${cached.path}\nID: ${cached.task_id}`);
+        }
+      }
+
+      // ── Resolve company ────────────────────────────────────────────────────
+      let companyId = params._company_id;
+      let companyName = params.company_name;
+
+      if (!companyId) {
+        const cachedCo = getCompany(params.company_name);
+        if (cachedCo) {
+          companyId = cachedCo.id;
+          companyName = cachedCo.name;
+        } else {
+          const result = await client.request<{ data: { id: string; name: string }[] }>({
+            endpoint: "companies.list",
+            body: { filter: { term: params.company_name }, page: { size: 10, number: 1 } },
+          });
+          const companies = result.data ?? [];
+          if (!companies.length) return respond(`No companies found for "${params.company_name}".`);
+          if (companies.length === 1) {
+            companyId = companies[0].id;
+            companyName = companies[0].name;
+            upsertCompany({ id: companyId, name: companyName });
+          } else {
+            return respond(
+              `Multiple companies found:\n${numbered(companies, c => c.name)}\n\nUse exact name.`
+            );
+          }
+        }
+      }
+
+      // ── Resolve group (search across all projects) ─────────────────────────
+      let groupId = params._group_id;
+      let groupTitle = params._group_title;
+      let projectId = params._project_id;
+      let projectTitle = "";
+
+      if (!groupId) {
+        // Get all projects for company (cache-first)
+        let projects: { id: string; title: string }[];
+        const cachedProjects = getProjectsForCompany(companyId);
+        if (cachedProjects) {
+          projects = cachedProjects;
+        } else {
+          const result = await client.request<{ data: { id: string; title: string; status: string }[] }>({
+            endpoint: "projects-v2/projects.list",
+            body: {
+              filter: { customers: [{ type: "company", id: companyId }] },
+              page: { size: 50, number: 1 },
+            },
+          });
+          const fetched = (result.data ?? []).map(p => ({ id: p.id, title: p.title, company_id: companyId!, status: p.status }));
+          upsertProjects(fetched);
+          projects = fetched;
+        }
+        if (!projects.length) {
+          if (params.confirm_create_project && params.project_name) {
+            const created = await client.request<{ data: { id: string } }>({
+              endpoint: "projects-v2/projects.create",
+              body: {
+                title: params.project_name,
+                customers: [{ type: "company", id: companyId }],
+                status: "active",
+              },
+            });
+            const newProject = { id: created.data.id, title: params.project_name, company_id: companyId!, status: "active" };
+            upsertProjects([newProject]);
+            projects = [newProject];
+          } else {
+            return respond(
+              `No projects found for ${companyName}.\n\nCreate project? Retry with:\nproject_name="[name]" confirm_create_project=true _company_id="${companyId}"`
+            );
+          }
+        }
+
+        // If project_selection given, filter to that project
+        if (params.project_selection) {
+          const sel = projects[params.project_selection - 1];
+          if (!sel) return respond(`Invalid selection. Choose between 1 and ${projects.length}.`);
+          projectId = sel.id;
+          projectTitle = sel.title;
+          projects = [sel];
+        }
+
+        // Search groups across (filtered) projects
+        type GroupMatch = { groupId: string; groupTitle: string; projectId: string; projectTitle: string };
+        const matches: GroupMatch[] = [];
+        const gl = params.group_name.toLowerCase();
+
+        for (const proj of projects) {
+          let groups: { id: string; title: string }[];
+          const cachedGroups = getGroupsForProject(proj.id);
+          if (cachedGroups) {
+            groups = cachedGroups;
+          } else {
+            const r = await client.request<{ data: { id: string; title: string }[] }>({
+              endpoint: "projects-v2/projectGroups.list",
+              body: { filter: { project_id: proj.id }, page: { size: 100, number: 1 } },
+            });
+            const fetched = (r.data ?? []).map(g => ({ id: g.id, title: g.title, project_id: proj.id }));
+            if (fetched.length) upsertGroups(fetched);
+            groups = fetched;
+          }
+          for (const g of groups) {
+            if (g.title.toLowerCase().includes(gl)) {
+              matches.push({ groupId: g.id, groupTitle: g.title, projectId: proj.id, projectTitle: proj.title });
+            }
+          }
+        }
+
+        if (!matches.length) {
+          if (params.confirm_create_group && params.project_selection) {
+            const targetProject = projects[params.project_selection - 1];
+            if (!targetProject) return respond(`Invalid project selection. Choose between 1 and ${projects.length}.`);
+            const created = await client.request<{ data: { id: string } }>({
+              endpoint: "projects-v2/projectLines.create",
+              body: {
+                project_id: targetProject.id,
+                type: "nextgenProjectGroup",
+                title: params.group_name,
+              },
+            });
+            upsertGroups([{ id: created.data.id, title: params.group_name, project_id: targetProject.id }]);
+            groupId = created.data.id;
+            groupTitle = params.group_name;
+            projectId = targetProject.id;
+            projectTitle = targetProject.title;
+          } else {
+            const projList = numbered(projects, p => p.title);
+            return respond(
+              `Group "${params.group_name}" not found for ${companyName}.\n\nCreate? Select project:\n${projList}\n\nRetry with:\nproject_selection=N confirm_create_group=true _company_id="${companyId}"`
+            );
+          }
+        }
+
+        // Multiple matches in different projects → ask for project selection
+        const uniqueProjects = [...new Set(matches.map(m => m.projectId))];
+        if (uniqueProjects.length > 1) {
+          const projList = uniqueProjects.map((pid, i) => {
+            const match = matches.find(m => m.projectId === pid)!;
+            return `${i + 1}. ${match.projectTitle} (group: ${match.groupTitle})`;
+          }).join("\n");
+          return respond(
+            `Group "${params.group_name}" found in multiple projects:\n${projList}\n\nSelect project via project_selection=N\n\nRetry with:\n_company_id="${companyId}"`
+          );
+        }
+
+        // Single match (possibly multiple groups with same name in same project → take first)
+        groupId = matches[0].groupId;
+        groupTitle = matches[0].groupTitle;
+        projectId = matches[0].projectId;
+        projectTitle = matches[0].projectTitle;
+      } else {
+        // group already resolved, get project title from cache
+        const cachedProjects = getProjectsForCompany(companyId);
+        const proj = cachedProjects?.find(p => p.id === projectId);
+        projectTitle = proj?.title ?? projectId ?? "";
+      }
+
+      // ── Resolve task: projectLines.list → IDs → tasks.list → titles ──────
+      if (!projectId) {
+        return respond(`Internal: projectId not resolved for group "${groupTitle}". Retry or provide _project_id.`);
+      }
+
+      // Step 1: get line IDs for this group
+      // NOTE: project_id is top-level, project_group_id must be filtered client-side
+      const linesResult = await client.request<{ data: any[] }>({
+        endpoint: "projects-v2/projectLines.list",
+        body: { project_id: projectId, filter: { types: ["nextgenTask"] }, page: { size: 500, number: 1 } },
+      });
+      const taskLineIds = (linesResult.data ?? [])
+        .filter(l => l.line?.type === "nextgenTask")
+        .filter(l => !groupId || l.group?.id === groupId)
+        .map(l => l.line?.id)
+        .filter(Boolean) as string[];
+
+      const openStatuses = new Set(["to_do", "in_progress", "on_hold"]);
+      let allProjectTasks: { id: string; title: string }[] = [];
+      if (taskLineIds.length > 0) {
+        // Step 2: get task titles by IDs — batch 100 at a time, only open tasks
+        for (let i = 0; i < taskLineIds.length; i += 100) {
+          const batch = taskLineIds.slice(i, i + 100);
+          const tasksResult = await client.request<{ data: { id: string; title: string; status?: string }[] }>({
+            endpoint: "projects-v2/tasks.list",
+            body: { filter: { ids: batch }, page: { size: 100, number: 1 } },
+          });
+          const onlyOpen = params.only_open !== false;
+          const open = (tasksResult.data ?? []).filter(t => !onlyOpen || !t.status || openStatuses.has(t.status));
+          allProjectTasks = allProjectTasks.concat(open);
+        }
+      }
+
+      const tl = params.task_name.toLowerCase();
+      // Partial match; if no match → show all tasks in group so user can pick
+      const filtered = allProjectTasks.filter(t => t.title?.toLowerCase().includes(tl));
+      const displayList = filtered.length > 0 ? filtered : allProjectTasks;
+
+      let selectedTask: { id: string; title: string; isNew?: boolean };
+
+      if (params.task_selection) {
+        const s = displayList[params.task_selection - 1];
+        if (!s) return respond(`Invalid selection. Choose between 1 and ${displayList.length}.`);
+        selectedTask = s;
+      } else if (filtered.length === 1) {
+        selectedTask = filtered[0];
+      } else if (filtered.length === 0 && displayList.length > 0 && !params.confirm_create_task) {
+        return respond(
+          `Task "${params.task_name}" not found in ${groupTitle}.\n\nCreate? Retry with confirm_create_task=true\n\nOr select existing task:\n${numbered(displayList, t => t.title)}\n\nSelect via task_selection=N\n\nRetry with:\n_company_id="${companyId}" _project_id="${projectId}" _group_id="${groupId}" _group_title="${groupTitle}"`
+        );
+      } else if (filtered.length > 1) {
+        return respond(
+          `Multiple tasks found:\n${numbered(filtered, t => t.title)}\n\nSelect via task_selection=N\n\nRetry with:\n_company_id="${companyId}" _project_id="${projectId}" _group_id="${groupId}" _group_title="${groupTitle}"`
+        );
+      } else {
+        // ── Create task (not found) ──────────────────────────────────────────
+        const user = getActiveUser();
+        const workTypeId = getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
+        const createBody: Record<string, unknown> = {
+          title: params.task_name,
+        };
+        if (projectId) createBody.project_id = projectId;
+        if (groupId) createBody.group_id = groupId;
+        if (workTypeId) createBody.work_type_id = workTypeId;
+        if (user?.id) createBody.assignees = [{ type: "user", id: user.id }];
+
+        const created = await client.request<{ data: { id: string } }>({
+          endpoint: "projects-v2/tasks.create",
+          body: createBody,
+        });
+        selectedTask = { id: created.data.id, title: params.task_name, isNew: true };
+      }
+
+      // ── Save to cache ──────────────────────────────────────────────────────
+      upsertTask({
+        task_id: selectedTask.id,
+        task_title: selectedTask.title,
+        subject_type: "nextgenTask",
+        project_id: projectId!,
+        project_title: projectTitle,
+        group_id: groupId,
+        group_title: groupTitle,
+        company_id: companyId!,
+        company_name: companyName,
+        work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+        last_used: new Date().toISOString(),
+      });
+
+      const path = [companyName, projectTitle, groupTitle, selectedTask.title].filter(Boolean).join(" > ");
+      const newTag = selectedTask.isNew ? " (newly created)" : "";
+      return respond(
+        `✅ Task${newTag} saved to cache:\n${path}\nID: ${selectedTask.id}\n\nUse:\nteamleader_log_time(company_name="${companyName}", task_name="${selectedTask.title}", started_on="...", ended_on="...")`
+      );
+    }
+  );
+
+  // ── Log Time ───────────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_log_time",
+    [
+      "Register time for a task. Resolves task from cache.",
+      "If not in cache: run teamleader_find_task first.",
+      "Formats: ISO 8601, 'YYYY-MM-DD HH:MM', or 'HH:MM' (uses today's date).",
+      "Deduplication: checks existing entries before adding. Use force=true to override.",
+    ].join("\n"),
+    {
+      company_name: z.string().describe("Company name (partial match)"),
+      task_name: z.string().optional().describe("Task name (partial match, must be in cache)"),
+      task_id: z.string().optional().describe("Direct task ID — skips cache lookup (use when ID is known from load_tasks)"),
+      started_on: z.string().describe("Start: ISO 8601, 'YYYY-MM-DD HH:MM', or 'HH:MM'"),
+      ended_on: z.string().describe("End: ISO 8601, 'YYYY-MM-DD HH:MM', or 'HH:MM'"),
+      description: z.string().optional().describe("Description of work done"),
+      work_type_id: z.string().optional().describe("Override work type ID"),
+      date: z.string().optional().describe("Date for HH:MM times (YYYY-MM-DD, default today)"),
+      force: z.boolean().optional().describe("Skip deduplication check and register anyway"),
+      confirm_overlap: z.boolean().optional().describe("Confirm registration despite overlap with other task"),
+      confirm_task_match: z.number().optional().describe("Confirm tree match by number (from proposed list)"),
+    },
+    async (params) => {
+      // ── task_id shortcut: skip cache, build minimal cached object from tree ─
+      let cached = params.task_id ? null : findTask(params.company_name, params.task_name ?? "");
+
+      if (params.task_id && !cached) {
+        const co = getCompany(params.company_name);
+        const tree = co ? getTaskTree(co.id) : undefined;
+        // Try to find full metadata in tree
+        let found: { project: TaskTreeProject; group?: TaskTreeGroup; task: TaskTreeTask } | undefined;
+        if (tree) {
+          for (const proj of tree.projects) {
+            for (const group of proj.groups) {
+              const task = group.tasks.find(t => t.id === params.task_id);
+              if (task) { found = { project: proj, group, task }; break; }
+            }
+            if (!found) {
+              const task = proj.ungrouped.find(t => t.id === params.task_id);
+              if (task) { found = { project: proj, task }; break; }
+            }
+            if (found) break;
+          }
+        }
+        const workTypeId = params.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
+        cached = {
+          task_id: params.task_id,
+          task_title: found?.task.title ?? params.task_id,
+          subject_type: "nextgenTask",
+          project_id: found?.project.id ?? "",
+          project_title: found?.project.title ?? "",
+          group_id: found?.group?.id,
+          group_title: found?.group?.title,
+          company_id: co?.id ?? "",
+          company_name: co?.name ?? params.company_name,
+          work_type_id: workTypeId,
+          path: [co?.name ?? params.company_name, found?.project.title, found?.group?.title, found?.task.title ?? params.task_id].filter(Boolean).join(" > "),
+          last_used: new Date().toISOString(),
+          cached_at: new Date().toISOString(),
+        };
+        upsertTask(cached);
+      }
+
+      // ── Tree match fallback ────────────────────────────────────────────────
+      if (!cached) {
+        const co = getCompany(params.company_name);
+        if (co) {
+          const matches = scoreTasksInTree(co.id, params.task_name ?? "");
+          if (matches.length > 0) {
+            if (params.confirm_task_match) {
+              const sel = matches[params.confirm_task_match - 1];
+              if (!sel) return respond(`Invalid selection. Choose between 1 and ${matches.length}.`);
+              upsertTask({
+                task_id: sel.task.id,
+                task_title: sel.task.title,
+                subject_type: "nextgenTask",
+                project_id: sel.project.id,
+                project_title: sel.project.title,
+                group_id: sel.group?.id,
+                group_title: sel.group?.title,
+                company_id: co.id,
+                company_name: co.name,
+                work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+                last_used: new Date().toISOString(),
+              });
+              cached = findTask(params.company_name, sel.task.title)!;
+            } else {
+              const list = matches.slice(0, 5).map((m, i) => {
+                const path = [m.project.title, m.group?.title, m.task.title].filter(Boolean).join(" > ");
+                return `${i + 1}. (${m.score}pt) ${path}`;
+              }).join("\n");
+              return respond(
+                `Task not in cache. Best matches:\n${list}\n\nConfirm via confirm_task_match=N\nOr load first: teamleader_load_tasks(company_name="${params.company_name}")`
+              );
+            }
+          }
+        }
+      }
+
+      if (!cached) {
+        const suggestions = searchTasks(params.task_name ?? "");
+        const hint = suggestions.length
+          ? `\nAvailable tasks:\n${numbered(suggestions, t => t.path)}`
+          : "";
+        return respond(
+          `Task "${params.task_name}" for "${params.company_name}" not in cache.${hint}\n\nRun first: teamleader_find_task(company_name="${params.company_name}", task_name="${params.task_name}")`
+        );
+      }
+
+      // Parse time (support HH:MM with date)
+      const baseDate = params.date ?? new Date().toISOString().slice(0, 10);
+      const parseTime = (s: string) => {
+        if (/^\d{2}:\d{2}$/.test(s)) return toDatetime(`${baseDate} ${s}`);
+        return toDatetime(s);
+      };
+
+      const startedAt = parseTime(params.started_on);
+      const endedAt = parseTime(params.ended_on);
+      const newStart = new Date(startedAt).getTime();
+      const newEnd = new Date(endedAt).getTime();
+
+      const user = getActiveUser();
+      const userId = user?.id ?? "29448f30-b7e7-033c-b24d-d78c973c3e8f";
+      const workTypeId = params.work_type_id ?? cached.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id ?? "6b2c6563-aded-0eb0-a041-87e3cc2b3dca";
+
+      // ── Deduplication check ────────────────────────────────────────────────
+      const toFilterDate = (ms: number) => new Date(ms).toISOString().replace(/\.\d+Z$/, "+00:00");
+
+      if (!params.force) {
+        try {
+          const existing = await client.request<{
+            data: { id: string; started_at: string; ended_at: string; subject?: { id: string } }[]
+          }>({
+            endpoint: "timeTracking.list",
+            body: {
+              filter: {
+                user_id: userId,
+                started_after: toFilterDate(newStart - 24 * 60 * 60 * 1000),
+                started_before: toFilterDate(newEnd + 24 * 60 * 60 * 1000),
+              },
+              page: { size: 50, number: 1 },
+            },
+          });
+
+          const allEntries = existing.data ?? [];
+          const fmt = (iso: string) => new Date(iso).toLocaleString("nl-BE");
+
+          function overlaps(exStart: number, exEnd: number): boolean {
+            return newStart < exEnd && newEnd > exStart;
+          }
+
+          // ── Exact duplicate: same start time (to second precision) ──────
+          // NOTE: subject.id in timeTracking uses 'todo' ID ≠ nextgenTask ID
+          // So we match on start time, not task ID (same as C# importer approach)
+          for (const e of allEntries) {
+            const exStartSec = Math.floor(new Date(e.started_at).getTime() / 1000);
+            const newStartSec = Math.floor(newStart / 1000);
+            if (exStartSec === newStartSec) {
+              return respond(
+                `⛔ Duplicate — same start time already registered:\nExisting: ${fmt(e.started_at)} → ${fmt(e.ended_at)} (ID: ${e.id})\n\nUse force=true to register anyway.`
+              );
+            }
+          }
+
+          // ── Overlap met andere entry ──────────────────────────────────────
+          if (!params.confirm_overlap) {
+            const conflicts = allEntries.filter(e =>
+              overlaps(new Date(e.started_at).getTime(), new Date(e.ended_at).getTime())
+            );
+            if (conflicts.length) {
+              const list = conflicts.map(e =>
+                `- ${fmt(e.started_at)} → ${fmt(e.ended_at)} (ID: ${e.id})`
+              ).join("\n");
+              return respond(
+                `⚠️ Overlap with other task(s) for the same client:\n${list}\n\nOptions:\nA. Confirm with confirm_overlap=true (2 tasks simultaneously)\nB. Adjust existing block via teamleader_update_timetracking\nC. Use force=true to ignore`
+              );
+            }
+          }
+        } catch (e) {
+          console.error("Dedup check failed:", e);
+          // Proceed anyway
+        }
+      }
+
+      const body: Record<string, unknown> = {
+        user_id: userId,
+        work_type_id: workTypeId,
+        started_at: startedAt,
+        ended_at: endedAt,
+        subject: { type: cached.subject_type ?? "nextgenTask", id: cached.task_id },
+      };
+      if (params.description) body.description = params.description;
+
+      const result = await client.request<{ data: { id: string } }>({
+        endpoint: "timeTracking.add",
+        body,
+      });
+
+      // Update last_used
+      upsertTask({ ...cached, last_used: new Date().toISOString() });
+
+      return respond(
+        [
+          `✅ Time registered:`,
+          `- Path   : ${cached.path}`,
+          `- Start  : ${startedAt}`,
+          `- End    : ${endedAt}`,
+          `- User   : ${user?.name ?? userId}`,
+          `- Entry  : ${result.data?.id ?? "?"}`,
+        ].join("\n")
+      );
+    }
+  );
+
+  // ── Load Tasks (full tree) ─────────────────────────────────────────────────
+  server.tool(
+    "teamleader_load_tasks",
+    [
+      "Load and display the full Project > Group > Task tree for a company.",
+      "Cache-first (30 min TTL). Writes YAML with all IDs to ~/.teamleader-tasks-{slug}.yaml.",
+      "Returns a summary by default (small context footprint). Use visual=true for ASCII tree.",
+      "WHEN TO USE:",
+      "  - First time working with a company in a session",
+      "  - When you need project_id/group_id/task_id for log_time or task_action",
+      "  - When the user asks to see tasks or wants to pick a task",
+      "AFTER LOADING:",
+      "  - Use task_id from YAML directly in log_time(task_id=...) — no extra find_task needed",
+      "  - Use task_selection=N to cache a specific task",
+      "  - Use task_action(action=close, task_number=N) to close a task",
+      "PARAMETERS:",
+      "  only_open=false  → include done/cancelled tasks too",
+      "  visual=true      → show ASCII tree instead of summary",
+      "  force_refresh    → bypass 30min cache, reload from API",
+    ].join("\n"),
+    {
+      company_name: z.string().describe("Company name (partial match)"),
+      project_filter: z.string().optional().describe("Filter projects by name (partial match)"),
+      group_filter: z.string().optional().describe("Filter groups by name (partial match)"),
+      only_open: z.boolean().optional().default(true).describe("Only include open tasks (to_do, in_progress, on_hold). Default: true. Pass false to include done/cancelled."),
+      visual: z.boolean().optional().describe("Show ASCII tree instead of summary. Use for human-readable overview."),
+      task_selection: z.number().optional().describe("Cache task by number for use in log_time. Only valid after visual=true showed the numbered list."),
+      force_refresh: z.boolean().optional().describe("Force reload from API, ignore 30min cache. Use when tasks may have changed."),
+      _company_id: z.string().optional().describe("Internal: resolved company ID, pass between calls to avoid re-resolving"),
+    },
+    async (params) => {
+      // ── Helpers ───────────────────────────────────────────────────────────
+      function yamlStr(v: string): string {
+        if (/[:"{}\[\],&#*?|<>=!%@`]/.test(v) || v.startsWith("-") || v.startsWith(" ")) {
+          return `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+        }
+        return v;
+      }
+
+      // ── Resolve company ───────────────────────────────────────────────────
+      let companyId = params._company_id;
+      let companyName = params.company_name;
+
+      if (!companyId) {
+        const cachedCo = getCompany(params.company_name);
+        if (cachedCo) {
+          companyId = cachedCo.id;
+          companyName = cachedCo.name;
+        } else {
+          const result = await client.request<{ data: { id: string; name: string }[] }>({
+            endpoint: "companies.list",
+            body: { filter: { term: params.company_name }, page: { size: 10, number: 1 } },
+          });
+          const companies = result.data ?? [];
+          if (!companies.length) return respond(`No companies found for "${params.company_name}".`);
+          if (companies.length === 1) {
+            companyId = companies[0].id;
+            companyName = companies[0].name;
+            upsertCompany({ id: companyId, name: companyName });
+          } else {
+            return respond(`Multiple companies found:\n${numbered(companies, c => c.name)}\n\nUse exact name.`);
+          }
+        }
+      }
+
+      const onlyOpen = params.only_open !== false;
+      const openStatuses = new Set(["to_do", "in_progress", "on_hold"]);
+
+      // ── Cache check ───────────────────────────────────────────────────────
+      let tree = !params.force_refresh ? getTaskTree(companyId) : undefined;
+
+      if (!tree) {
+        // Load projects
+        let projects: { id: string; title: string; status: string; company_id: string }[];
+        const cachedProjects = getProjectsForCompany(companyId);
+        if (cachedProjects && !params.force_refresh) {
+          projects = cachedProjects;
+        } else {
+          const result = await client.request<{ data: { id: string; title: string; status: string }[] }>({
+            endpoint: "projects-v2/projects.list",
+            body: { filter: { customers: [{ type: "company", id: companyId }] }, page: { size: 50, number: 1 } },
+          });
+          projects = (result.data ?? []).map(p => ({ ...p, company_id: companyId! }));
+          upsertProjects(projects);
+        }
+        const relevantProjects = projects.filter(p => p.status !== "cancelled");
+
+        const treeProjects: TaskTreeProject[] = [];
+
+        for (const proj of relevantProjects) {
+          let groups: { id: string; title: string }[];
+          const cachedGroups = getGroupsForProject(proj.id);
+          if (cachedGroups && !params.force_refresh) {
+            groups = cachedGroups;
+          } else {
+            const r = await client.request<{ data: { id: string; title: string }[] }>({
+              endpoint: "projects-v2/projectGroups.list",
+              body: { filter: { project_id: proj.id }, page: { size: 100, number: 1 } },
+            });
+            groups = r.data ?? [];
+            if (groups.length) upsertGroups(groups.map(g => ({ ...g, project_id: proj.id })));
+          }
+
+          const linesResult = await client.request<{ data: any[] }>({
+            endpoint: "projects-v2/projectLines.list",
+            body: { project_id: proj.id, filter: { types: ["nextgenTask"] }, page: { size: 500, number: 1 } },
+          });
+          const allLineIds = (linesResult.data ?? [])
+            .filter(l => l.line?.type === "nextgenTask")
+            .map(l => ({ lineId: l.line?.id as string, groupId: l.group?.id as string | undefined }))
+            .filter(l => l.lineId);
+
+          const tasksById = new Map<string, { id: string; title: string; status: string }>();
+          for (let i = 0; i < allLineIds.length; i += 100) {
+            const batch = allLineIds.slice(i, i + 100).map(l => l.lineId);
+            const tasksResult = await client.request<{ data: { id: string; title: string; status?: string }[] }>({
+              endpoint: "projects-v2/tasks.list",
+              body: { filter: { ids: batch }, page: { size: 100, number: 1 } },
+            });
+            for (const t of tasksResult.data ?? []) {
+              tasksById.set(t.id, { id: t.id, title: t.title, status: t.status ?? "to_do" });
+            }
+          }
+
+          const groupTasksMap = new Map<string, TaskTreeTask[]>();
+          const ungrouped: TaskTreeTask[] = [];
+
+          for (const { lineId, groupId } of allLineIds) {
+            const task = tasksById.get(lineId);
+            if (!task) continue;
+            const treeTask: TaskTreeTask = { id: task.id, title: task.title, status: task.status };
+            if (groupId) {
+              if (!groupTasksMap.has(groupId)) groupTasksMap.set(groupId, []);
+              groupTasksMap.get(groupId)!.push(treeTask);
+            } else {
+              ungrouped.push(treeTask);
+            }
+          }
+
+          const treeGroups: TaskTreeGroup[] = groups
+            .filter(g => groupTasksMap.has(g.id))
+            .map(g => ({ id: g.id, title: g.title, tasks: groupTasksMap.get(g.id)! }));
+
+          if (treeGroups.length || ungrouped.length) {
+            treeProjects.push({ id: proj.id, title: proj.title, groups: treeGroups, ungrouped });
+          }
+        }
+
+        tree = { company_id: companyId, company_name: companyName, loaded_at: new Date().toISOString(), projects: treeProjects };
+        setTaskTree(tree);
+      }
+
+      // ── Apply filters ─────────────────────────────────────────────────────
+      const filterTask = (t: TaskTreeTask) => onlyOpen ? openStatuses.has(t.status) : true;
+
+      let filteredProjects = tree.projects.map(p => ({
+        ...p,
+        groups: p.groups.map(g => ({ ...g, tasks: g.tasks.filter(filterTask) })).filter(g => g.tasks.length),
+        ungrouped: p.ungrouped.filter(filterTask),
+      })).filter(p => p.groups.length || p.ungrouped.length);
+
+      if (params.project_filter) {
+        const pf = params.project_filter.toLowerCase();
+        filteredProjects = filteredProjects.filter(p => p.title.toLowerCase().includes(pf));
+      }
+      if (params.group_filter) {
+        const gf = params.group_filter.toLowerCase();
+        filteredProjects = filteredProjects
+          .map(p => ({ ...p, groups: p.groups.filter(g => g.title.toLowerCase().includes(gf)) }))
+          .filter(p => p.groups.length || p.ungrouped.length);
+      }
+
+      if (!filteredProjects.length) return respond(`No tasks found for ${companyName}.`);
+
+      // ── Build flat list (for task_selection) ──────────────────────────────
+      const allTasksFlat: Array<{ project: TaskTreeProject; group?: TaskTreeGroup; task: TaskTreeTask }> = [];
+      for (const proj of filteredProjects) {
+        for (const group of proj.groups)
+          for (const task of group.tasks) allTasksFlat.push({ project: proj, group, task });
+        for (const task of proj.ungrouped) allTasksFlat.push({ project: proj, task });
+      }
+
+      // ── task_selection: cache chosen task ─────────────────────────────────
+      if (params.task_selection) {
+        const sel = allTasksFlat[params.task_selection - 1];
+        if (!sel) return respond(`Invalid selection. Choose between 1 and ${allTasksFlat.length}.`);
+        upsertTask({
+          task_id: sel.task.id,
+          task_title: sel.task.title,
+          subject_type: "nextgenTask",
+          project_id: sel.project.id,
+          project_title: sel.project.title,
+          group_id: sel.group?.id,
+          group_title: sel.group?.title,
+          company_id: companyId!,
+          company_name: companyName,
+          work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+          last_used: new Date().toISOString(),
+        });
+        const path = [companyName, sel.project.title, sel.group?.title, sel.task.title].filter(Boolean).join(" > ");
+        return respond(`Task cached:\n${path}\nID: ${sel.task.id}`);
+      }
+
+      // ── Write YAML to file ────────────────────────────────────────────────
+      const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const filePath = join(homedir(), `.teamleader-tasks-${slug}.yaml`);
+
+      const yamlLines: string[] = [
+        `company: ${yamlStr(companyName)}`,
+        `company_id: ${companyId}`,
+        `loaded_at: ${tree.loaded_at}`,
+        `only_open: ${onlyOpen}`,
+        `projects:`,
+      ];
+      let totalTasks = 0;
+      let n = 0;
+      for (const proj of filteredProjects) {
+        yamlLines.push(`  - id: ${proj.id}`);
+        yamlLines.push(`    title: ${yamlStr(proj.title)}`);
+        if (proj.groups.length) {
+          yamlLines.push(`    groups:`);
+          for (const group of proj.groups) {
+            yamlLines.push(`      - id: ${group.id}`);
+            yamlLines.push(`        title: ${yamlStr(group.title)}`);
+            if (group.tasks.length) {
+              yamlLines.push(`        tasks:`);
+              for (const task of group.tasks) {
+                n++;
+                totalTasks++;
+                yamlLines.push(`          - n: ${n}`);
+                yamlLines.push(`            id: ${task.id}`);
+                yamlLines.push(`            title: ${yamlStr(task.title)}`);
+                yamlLines.push(`            status: ${task.status}`);
+              }
+            }
+          }
+        }
+        if (proj.ungrouped.length) {
+          yamlLines.push(`    ungrouped:`);
+          for (const task of proj.ungrouped) {
+            n++;
+            totalTasks++;
+            yamlLines.push(`      - n: ${n}`);
+            yamlLines.push(`        id: ${task.id}`);
+            yamlLines.push(`        title: ${yamlStr(task.title)}`);
+            yamlLines.push(`        status: ${task.status}`);
+          }
+        }
+      }
+
+      try {
+        writeFileSync(filePath, yamlLines.join("\n") + "\n");
+      } catch (e) {
+        console.error("Warning: could not write task file", e);
+      }
+
+      // ── visual=true: ASCII tree ───────────────────────────────────────────
+      if (params.visual) {
+        const treeLines: string[] = [`${companyName}\n`];
+        let idx = 0;
+        for (const proj of filteredProjects) {
+          treeLines.push(`└── ${proj.title}`);
+          const allGroups = proj.groups;
+          for (let gi = 0; gi < allGroups.length; gi++) {
+            const group = allGroups[gi];
+            const isLastGroup = gi === allGroups.length - 1 && !proj.ungrouped.length;
+            treeLines.push(`    ${isLastGroup ? "└" : "├"}── ${group.title}`);
+            for (let ti = 0; ti < group.tasks.length; ti++) {
+              const task = group.tasks[ti];
+              idx++;
+              const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : "o";
+              treeLines.push(`    │    ${idx}. [${icon}] ${task.title}`);
+            }
+          }
+          if (proj.ungrouped.length) {
+            treeLines.push(`    └── [no group]`);
+            for (const task of proj.ungrouped) {
+              idx++;
+              const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : "o";
+              treeLines.push(`         ${idx}. [${icon}] ${task.title}`);
+            }
+          }
+        }
+        treeLines.push(`\nLegend: > in_progress  || on_hold  o to_do`);
+        treeLines.push(`Select: task_selection=N  (_company_id="${companyId}")`);
+        return respond(treeLines.join("\n"));
+      }
+
+      // ── Default: summary ──────────────────────────────────────────────────
+      const groupCount = filteredProjects.reduce((s, p) => s + p.groups.length, 0);
+      return respond([
+        `Task tree loaded: ${companyName}`,
+        `- ${filteredProjects.length} project(s) | ${groupCount} group(s) | ${totalTasks} task(s)`,
+        `- only_open: ${onlyOpen}`,
+        `- File: ${filePath}`,
+        ``,
+        `Use:`,
+        `- log_time(task_id="...", ...)        → ID from YAML, register directly`,
+        `- visual=true                          → show ASCII tree`,
+        `- task_selection=N (+ visual=true)     → cache task for log_time`,
+        `- task_action(action=close, ...)       → close task`,
+        `- force_refresh=true                   → reload from API`,
+      ].join("\n"));
+    }
+  );
+
+  // ── Task Action (close / create / move_time) ──────────────────────────────
+  server.tool(
+    "teamleader_task_action",
+    [
+      "Maintenance actions on tasks:",
+      "  close     : mark task as done",
+      "  create    : create new task in a group (from load_tasks tree)",
+      "  move_time : move time entry to a different task (delete + recreate)",
+    ].join("\n"),
+    {
+      action: z.enum(["close", "create", "move_time"]).describe("Action to perform"),
+      // Shared
+      company_name: z.string().describe("Company name (partial match)"),
+      task_number: z.number().optional().describe("Task number from teamleader_load_tasks list"),
+      task_id: z.string().optional().describe("Direct task ID (alternative to task_number)"),
+      // create
+      project_id: z.string().optional().describe("Project ID for new task"),
+      group_id: z.string().optional().describe("Group ID for new task"),
+      task_title: z.string().optional().describe("Title for new task"),
+      // move_time
+      time_entry_id: z.string().optional().describe("Time entry ID to move"),
+      new_task_number: z.number().optional().describe("Target task number from load_tasks list"),
+      new_task_id: z.string().optional().describe("Target task ID (alternative to new_task_number)"),
+      // internal
+      _company_id: z.string().optional().describe("Internal: resolved company ID"),
+    },
+    async (params) => {
+      // Resolve company
+      let companyId = params._company_id;
+      let companyName = params.company_name;
+      if (!companyId) {
+        const co = getCompany(params.company_name);
+        if (co) { companyId = co.id; companyName = co.name; }
+        else {
+          const result = await client.request<{ data: { id: string; name: string }[] }>({
+            endpoint: "companies.list",
+            body: { filter: { term: params.company_name }, page: { size: 10, number: 1 } },
+          });
+          const companies = result.data ?? [];
+          if (!companies.length) return respond(`Company "${params.company_name}" not found.`);
+          if (companies.length > 1) return respond(`Multiple companies found:\n${numbered(companies, c => c.name)}`);
+          companyId = companies[0].id;
+          companyName = companies[0].name;
+          upsertCompany({ id: companyId, name: companyName });
+        }
+      }
+
+      // Helper: resolve task from tree by number
+      const resolveTaskFromTree = (n: number) => {
+        const tree = getTaskTree(companyId!);
+        if (!tree) return null;
+        const flat: Array<{ project: TaskTreeProject; group?: TaskTreeGroup; task: TaskTreeTask }> = [];
+        for (const proj of tree.projects) {
+          for (const group of proj.groups)
+            for (const task of group.tasks) flat.push({ project: proj, group, task });
+          for (const task of proj.ungrouped) flat.push({ project: proj, task });
+        }
+        return flat[n - 1] ?? null;
+      };
+
+      // ── close ─────────────────────────────────────────────────────────────
+      if (params.action === "close") {
+        const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
+        if (!taskId) return respond(`Provide task_id or task_number.`);
+        await client.request({
+          endpoint: "projects-v2/tasks.update",
+          body: { id: taskId, status: "done" },
+        });
+        // Remove from tree cache
+        const tree = getTaskTree(companyId);
+        if (tree) {
+          for (const proj of tree.projects) {
+            for (const group of proj.groups) group.tasks = group.tasks.filter(t => t.id !== taskId);
+            proj.ungrouped = proj.ungrouped.filter(t => t.id !== taskId);
+          }
+          setTaskTree(tree);
+        }
+        return respond(`✅ Task ${taskId} closed (status: done).`);
+      }
+
+      // ── create ────────────────────────────────────────────────────────────
+      if (params.action === "create") {
+        if (!params.task_title) return respond(`task_title required for create.`);
+        if (!params.project_id) return respond(`project_id required for create. Use teamleader_load_tasks to see IDs.`);
+        const user = getActiveUser();
+        const workTypeId = getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
+        const body: Record<string, unknown> = {
+          title: params.task_title,
+          project_id: params.project_id,
+        };
+        if (params.group_id) body.group_id = params.group_id;
+        if (workTypeId) body.work_type_id = workTypeId;
+        if (user?.id) body.assignees = [{ type: "user", id: user.id }];
+
+        const created = await client.request<{ data: { id: string } }>({
+          endpoint: "projects-v2/tasks.create",
+          body,
+        });
+        // Invalidate tree cache so next load_tasks refreshes
+        invalidateTaskTree(companyId!);
+
+        return respond(`✅ Task created:\nTitle : ${params.task_title}\nID    : ${created.data.id}\n\nReload tree: teamleader_load_tasks(company_name="${companyName}", force_refresh=true)`);
+      }
+
+      // ── move_time ─────────────────────────────────────────────────────────
+      if (params.action === "move_time") {
+        if (!params.time_entry_id) return respond(`time_entry_id required for move_time.`);
+        const newTaskId = params.new_task_id ?? (params.new_task_number ? resolveTaskFromTree(params.new_task_number)?.task.id : undefined);
+        if (!newTaskId) return respond(`Provide new_task_id or new_task_number.`);
+
+        // Fetch existing entry
+        const existing = await client.request<{ data: { started_at: string; ended_at: string; work_type?: { id: string }; description?: string; user?: { id: string } } }>({
+          endpoint: "timeTracking.info",
+          body: { id: params.time_entry_id },
+        });
+        const entry = existing.data;
+        const userId = entry.user?.id ?? getActiveUser()?.id;
+        const workTypeId = entry.work_type?.id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
+
+        // Delete old entry
+        await client.request({ endpoint: "timeTracking.delete", body: { id: params.time_entry_id } });
+
+        // Create new entry on new task
+        const newEntry = await client.request<{ data: { id: string } }>({
+          endpoint: "timeTracking.add",
+          body: {
+            user_id: userId,
+            work_type_id: workTypeId,
+            started_at: entry.started_at,
+            ended_at: entry.ended_at,
+            subject: { type: "nextgenTask", id: newTaskId },
+            ...(entry.description ? { description: entry.description } : {}),
+          },
+        });
+
+        return respond(
+          `✅ Time moved:\nFrom entry : ${params.time_entry_id}\nTo task    : ${newTaskId}\nNew entry  : ${newEntry.data.id}`
+        );
+      }
+
+      return respond(`Unknown action: ${params.action}`);
+    }
+  );
+
+  // ── Cache Management ───────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_cache_stats",
+    "Show cache statistics and all cached tasks",
+    {
+      company_filter: z.string().optional().describe("Filter tasks by company name"),
+    },
+    async (params) => {
+      const stats = getCacheStats();
+      const tasks = listTasks(params.company_filter);
+      const taskList = tasks.length
+        ? `\nCached tasks:\n${tasks.map(t => `- ${t.path}`).join("\n")}`
+        : "\nNo tasks in cache.";
+      return respond(`Cache status:\n${stats}${taskList}`);
+    }
+  );
+
+  server.tool(
+    "teamleader_clear_cache",
+    "Clear the entire local cache (forces fresh API lookups)",
+    {},
+    async () => {
+      clearCache();
+      return respond("✅ Cache cleared.");
+    }
+  );
+}
