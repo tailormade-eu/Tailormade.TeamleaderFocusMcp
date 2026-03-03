@@ -70,13 +70,20 @@ export function registerTaskTools(
   // ── Create Task ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_task",
-    "Create a new task in Teamleader Focus",
+    "Create a new task in Teamleader Focus. Requires title, due_on and work_type_id.",
     {
-      description: z.string().describe("Task description"),
-      due_on: z
+      title: z.string().describe("Task title"),
+      due_on: z.string().describe("Due date (YYYY-MM-DD)"),
+      work_type_id: z.string().describe("Work type ID"),
+      description: z.string().optional().describe("Task description"),
+      assignee_type: z
+        .enum(["user", "team"])
+        .optional()
+        .describe("Assignee type"),
+      assignee_id: z
         .string()
         .optional()
-        .describe("Due date (YYYY-MM-DD)"),
+        .describe("Assignee ID"),
       customer_type: z
         .enum(["contact", "company"])
         .optional()
@@ -85,25 +92,21 @@ export function registerTaskTools(
         .string()
         .optional()
         .describe("Link task to a customer ID"),
-      assignee_type: z
-        .string()
+      estimated_duration: z
+        .number()
         .optional()
-        .describe("Assignee type (e.g. 'user')"),
-      assignee_id: z
-        .string()
-        .optional()
-        .describe("Assignee ID"),
-      work_type_id: z
-        .string()
-        .optional()
-        .describe("Work type ID"),
+        .describe("Estimated duration in minutes"),
+      deal_id: z.string().optional().describe("Deal ID to link to"),
+      ticket_id: z.string().optional().describe("Ticket ID to link to"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
-        description: params.description,
+        title: params.title,
+        due_on: params.due_on,
+        work_type_id: params.work_type_id,
       };
 
-      if (params.due_on) body.due_on = params.due_on;
+      if (params.description) body.description = params.description;
       if (params.customer_type && params.customer_id) {
         body.customer = {
           type: params.customer_type,
@@ -116,11 +119,198 @@ export function registerTaskTools(
           id: params.assignee_id,
         };
       }
-      if (params.work_type_id) body.work_type_id = params.work_type_id;
+      if (params.estimated_duration) {
+        body.estimated_duration = { unit: "min", value: params.estimated_duration };
+      }
+      if (params.deal_id) body.deal_id = params.deal_id;
+      if (params.ticket_id) body.ticket_id = params.ticket_id;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "tasks.create",
         body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Get Task ───────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_get_task",
+    "Get detailed information about a specific standalone task by ID.",
+    {
+      id: z.string().describe("Task ID"),
+    },
+    async (params) => {
+      const result = await client.request<{ data: Task }>({
+        endpoint: "tasks.info",
+        body: { id: params.id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Update Task ────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_update_task",
+    "Update a standalone task in Teamleader Focus. Only provided fields are updated.",
+    {
+      id: z.string().describe("Task ID"),
+      title: z.string().optional().describe("New task title"),
+      description: z.string().optional().describe("New task description"),
+      due_on: z.string().optional().describe("New due date (YYYY-MM-DD)"),
+      work_type_id: z.string().optional().describe("New work type ID"),
+      assignee_type: z
+        .enum(["user", "team"])
+        .optional()
+        .describe("Assignee type"),
+      assignee_id: z
+        .string()
+        .optional()
+        .describe("Assignee ID (both assignee_type and assignee_id required together)"),
+      estimated_duration: z
+        .number()
+        .optional()
+        .describe("Estimated duration in minutes"),
+      deal_id: z.string().nullable().optional().describe("Deal ID to link (null to unlink)"),
+      ticket_id: z.string().nullable().optional().describe("Ticket ID to link (null to unlink)"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { id: params.id };
+
+      if (params.title !== undefined) body.title = params.title;
+      if (params.description !== undefined) body.description = params.description;
+      if (params.due_on !== undefined) body.due_on = params.due_on;
+      if (params.work_type_id !== undefined) body.work_type_id = params.work_type_id;
+      if (params.assignee_type && params.assignee_id) {
+        body.assignee = { type: params.assignee_type, id: params.assignee_id };
+      }
+      if (params.estimated_duration !== undefined) {
+        body.estimated_duration = { unit: "min", value: params.estimated_duration };
+      }
+      if (params.deal_id !== undefined) body.deal_id = params.deal_id;
+      if (params.ticket_id !== undefined) body.ticket_id = params.ticket_id;
+
+      await client.request<void>({
+        endpoint: "tasks.update",
+        body,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Task ${params.id} updated successfully.`,
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Delete Task ────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_delete_task",
+    "Delete a standalone task from Teamleader Focus. This action is irreversible.",
+    {
+      id: z.string().describe("Task ID to delete"),
+    },
+    async (params) => {
+      await client.request<void>({
+        endpoint: "tasks.delete",
+        body: { id: params.id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Task ${params.id} deleted successfully.`,
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Complete Task ──────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_complete_task",
+    "Mark a standalone task as completed in Teamleader Focus.",
+    {
+      id: z.string().describe("Task ID to complete"),
+    },
+    async (params) => {
+      await client.request<void>({
+        endpoint: "tasks.complete",
+        body: { id: params.id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Task ${params.id} marked as completed.`,
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Reopen Task ────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_reopen_task",
+    "Reopen a previously completed standalone task in Teamleader Focus.",
+    {
+      id: z.string().describe("Task ID to reopen"),
+    },
+    async (params) => {
+      await client.request<void>({
+        endpoint: "tasks.reopen",
+        body: { id: params.id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Task ${params.id} reopened successfully.`,
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Schedule Task ──────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_schedule_task",
+    "Schedule a standalone task by creating a calendar event for it. Returns the created event ID.",
+    {
+      id: z.string().describe("Task ID to schedule"),
+      starts_at: z.string().describe("Start datetime (ISO 8601, e.g. 2026-03-04T09:00:00+01:00)"),
+      ends_at: z.string().describe("End datetime (ISO 8601, e.g. 2026-03-04T10:00:00+01:00)"),
+    },
+    async (params) => {
+      const result = await client.request<{ data: { id: string; type: string } }>({
+        endpoint: "tasks.schedule",
+        body: {
+          id: params.id,
+          starts_at: params.starts_at,
+          ends_at: params.ends_at,
+        },
       });
 
       return {
