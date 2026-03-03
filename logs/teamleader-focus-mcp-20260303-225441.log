@@ -22,3 +22,14 @@
 [22:56:01] 
 ▶️  Task [02] Tickets — full CRUD tools
 [22:56:01]    🤖 Invoking Claude CLI...
+      Done. Samenvatting:
+      
+      **Aangemaakt/gewijzigd:**
+      - `src/tools/tickets.ts` — 8 tools (list, get, create, update, list messages, get message, reply, internal message)
+      - `src/types/index.ts` — `Ticket` + `TicketMessage` interfaces toegevoegd
+      - `src/index.ts` — `registerTicketTools` geregistreerd
+      - `PROGRESS.md` — task 02 summary toegevoegd
+      
+      **Build + typecheck:** clean.
+      
+      **Overgeslagen:** `tickets.importMessage` — niche endpoint voor importeren van externe berichten, niet relevant voor standaard gebruik.
