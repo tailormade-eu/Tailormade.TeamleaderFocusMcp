@@ -471,6 +471,39 @@ export interface InvoiceCreateParams {
   note?: string;
 }
 
+// ─── Tickets ─────────────────────────────────────────────────────────────
+
+export interface Ticket {
+  id: string;
+  reference?: number;
+  subject: string;
+  description?: string;
+  status?: IdObject;
+  assignee?: IdObject | null;
+  customer: IdObject;
+  participant?: { customer: IdObject } | null;
+  project?: IdObject | null;
+  milestone?: IdObject | null;
+  last_message_at?: string | null;
+  created_at?: string;
+  closed_at?: string | null;
+  custom_fields?: Array<{
+    definition: IdObject;
+    value: unknown;
+  }>;
+}
+
+export interface TicketMessage {
+  message_id: string;
+  body: string;
+  raw_body?: string;
+  type: "customer" | "internal" | "thirdParty";
+  created_at: string;
+  sent_by: IdObject;
+  ticket?: IdObject;
+  attachments?: IdObject[];
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface TeamleaderListResponse<T> {

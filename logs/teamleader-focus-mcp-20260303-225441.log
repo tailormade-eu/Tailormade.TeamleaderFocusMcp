@@ -9,3 +9,16 @@
 [22:54:41] 
 ▶️  Task [01] Users — list + info tools
 [22:54:41]    🤖 Invoking Claude CLI...
+      Done. Samenvatting:
+      
+      | Wat | Details |
+      |-----|---------|
+      | Nieuw bestand | `src/tools/users.ts` |
+      | Tools | `teamleader_list_users` (paginatie) + `teamleader_get_user` (by ID) |
+      | Registratie | Toegevoegd aan `src/index.ts` |
+      | `users.me` | Niet gedupliceerd (zit al in resolve.ts) |
+      | Typecheck | OK |
+[22:56:00]    ✅ Done: Users — list + info tools
+[22:56:01] 
+▶️  Task [02] Tickets — full CRUD tools
+[22:56:01]    🤖 Invoking Claude CLI...
