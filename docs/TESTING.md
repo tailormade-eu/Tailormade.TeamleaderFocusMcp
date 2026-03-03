@@ -12,12 +12,12 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_find_task` | Company resolve (cache hit) | ✅ | |
 | `teamleader_find_task` | Group found in 1 project → auto-pick | ✅ | Ontwikkeling → auto-picked Access Application |
 | `teamleader_find_task` | Group found in multiple projects → ask project_selection | ✅ | Barucci: 5 projects with "Support" group → project_selection=N |
-| `teamleader_find_task` | Group not found → ask confirm_create_group | ✅ | Lists projects + asks project_selection |
+| `teamleader_find_task` | Group not found → ask confirm_create_group | ✅ | Fixed v1.3.2: projectGroups.create (was projectLines.create → 404) |
 | `teamleader_find_task` | Task: 1 exact match → auto-pick | ✅ | Tijdregistratie: Ontwikkeling |
 | `teamleader_find_task` | Task: multiple matches → ask task_selection | ✅ | Collection → 4 matches shown |
 | `teamleader_find_task` | Task: no match, tasks exist → ask confirm_create_task | ✅ | Shows existing tasks + asks confirm_create_task=true |
-| `teamleader_find_task` | No projects for company → ask confirm_create_project | ⚠️ | Flow + project created ✅. But confirm_create_group after → 404 (API quirk: API-created projects don't accept projectLines.create) |
-| `teamleader_find_task` | Task: no tasks in group → auto-create | ❌ | |
+| `teamleader_find_task` | No projects for company → ask confirm_create_project | ✅ | Fixed v1.3.2: BV Antwerp Nightlife Center → project + group + task created end-to-end |
+| `teamleader_find_task` | Task: no tasks in group → auto-create | ✅ | Confirmed: empty group → task auto-created without confirm_create_task |
 | `teamleader_find_task` | only_open=false includes done tasks | ✅ | BRN Support: 2 done tasks shown; default only_open=true → hidden |
 | `teamleader_load_tasks` | Full tree load (cache miss) | ✅ | Tested on BV Belgian Recycle Network |
 | `teamleader_load_tasks` | Cache hit (30 min TTL) | ✅ | |
@@ -56,10 +56,10 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_task_action` | create (project_id + group_id) | ✅ | |
 | `teamleader_task_action` | create (project_id only, no group) | ❌ | |
 | `teamleader_task_action` | move_time | ✅ | delete + recreate on new task, verified via get_timetracking |
-| `teamleader_task_action` | delete_group | ❌ | New in v1.3.1: projectLines.delete |
+| `teamleader_task_action` | delete_group | ✅ | Fixed v1.3.2: projectGroups.delete + delete_strategy param |
 | `teamleader_task_action` | tree cache invalidated after close | ✅ | invalidateTaskTree called |
 | `teamleader_task_action` | tree cache invalidated after create | ✅ | invalidateTaskTree called |
-| `teamleader_task_action` | tree cache invalidated after delete_group | ❌ | |
+| `teamleader_task_action` | tree cache invalidated after delete_group | ✅ | invalidateTaskTree called |
 
 ## Tasks (Legacy API)
 
@@ -151,7 +151,8 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `timeTracking.list` | returns `subject.type: "todo"` — ID differs from `nextgenTask` ID |
 | `timeTracking.add` | strip milliseconds: `.replace(/\.\d+Z$/, "+00:00")` |
 | `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
-| `projects-v2/projectLines.create` | Returns 404 for projects created via API — confirmed: not a timing issue, reproducible. Only works for projects created in Teamleader UI |
+| `projects-v2/projectLines.create` | Does NOT exist — was wrong endpoint. Use `projectGroups.create` for groups and `tasks.create` for tasks |
+| `projects-v2/projectGroups.delete` | Requires `delete_strategy` param: `"ungroup_tasks_and_materials"` or `"delete_tasks_and_materials"` |
 
 ---
 
@@ -168,6 +169,6 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `teamleader_task_action` — delete_group (new feature)
-2. `teamleader_task_action` — create (project_id only, no group)
-3. `teamleader_log_time` — force=true skips dedup
+1. `teamleader_task_action` — create (project_id only, no group)
+2. `teamleader_log_time` — force=true skips dedup
+3. `teamleader_load_tasks` — project_filter / group_filter

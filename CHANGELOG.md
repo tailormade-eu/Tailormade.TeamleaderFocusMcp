@@ -4,6 +4,25 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [1.3.2] - 2026-03-03
+
+### Bug Fixes
+
+- **Wrong API endpoints throughout**: `projectLines.create` and `projectLines.delete` do not exist in the Teamleader Focus API. All callers updated:
+  - `find_task` group creation: `projectLines.create` → `projectGroups.create`
+  - `task_action delete_group`: `projectLines.delete` → `projectGroups.delete` (+ required `delete_strategy` param)
+  - `create_project_group` tool: `projectLines.create` → `projectGroups.create`, field names corrected (`start_date`/`end_date`)
+  - `create_project_task_v2` tool: `projectLines.create` → `tasks.create`, field names corrected (`group_id`, `assignees` array)
+- **`find_task` crash after confirm_create_group**: After group creation, code fell through to `matches[0].groupId` on an empty array → crash. Fixed: wrapped in `if (matches.length)` guard.
+
+### Result
+
+- `find_task` confirm_create_project → full flow working end-to-end ✅
+- `find_task` confirm_create_group → group + task created correctly ✅
+- `task_action delete_group` → working with `projectGroups.delete` ✅
+
+---
+
 ## [1.3.1] - 2026-03-03
 
 ### Bug Fixes
@@ -148,6 +167,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.3.2 | 2026-03-03 | Fix wrong API endpoints (projectGroups.create/delete, tasks.create) + crash fix |
 | 1.3.1 | 2026-03-03 | Bug fixes (BUG-01, task numbering, icons) + delete_group action |
 | 1.3.0 | 2026-03-03 | Smart task tree, load_tasks, task_action, log_time improvements |
 | 1.2.0 | 2026-02-28 | Projects v2 module (8 tools) |
