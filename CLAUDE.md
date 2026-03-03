@@ -263,3 +263,4 @@ npx @modelcontextprotocol/inspector node dist/index.js
 5. **Do not** match dedup on subject ID from `timeTracking.list` — match on start time
 6. **Always** set `only_open=true` by default for task filters
 7. **Always** write large datasets (task trees) to YAML file, not to MCP response
+8. **Never guess a task_id** — the visual tree does NOT show IDs. Always read the YAML file (`~/.teamleader-tasks-{slug}.yaml`) to get the correct ID before calling `log_time(task_id=...)`
