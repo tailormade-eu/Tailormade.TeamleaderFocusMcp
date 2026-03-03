@@ -151,7 +151,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `timeTracking.list` | returns `subject.type: "todo"` — ID differs from `nextgenTask` ID |
 | `timeTracking.add` | strip milliseconds: `.replace(/\.\d+Z$/, "+00:00")` |
 | `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
-| `projects-v2/projectLines.create` | Returns 404 for projects created via API — only works for projects created in Teamleader UI |
+| `projects-v2/projectLines.create` | Returns 404 for projects created via API — confirmed: not a timing issue, reproducible. Only works for projects created in Teamleader UI |
 
 ---
 
