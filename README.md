@@ -2,7 +2,7 @@
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that wraps the **Teamleader Focus CRM API**. Gives AI assistants (Claude Code, Claude Desktop, Cursor, etc.) the ability to manage contacts, companies, deals, tasks, events, invoices, time tracking, and projects — including a smart task resolution workflow for automated time logging.
 
-Based on [globodai-group/mcp-teamleader](https://github.com/globodai-group/mcp-teamleader), extended with time tracking, projects v2, and smart cache-first task resolution.
+Inspired by [globodai-group/mcp-teamleader](https://github.com/globodai-group/mcp-teamleader). Rewritten and extended with full API coverage, time tracking, projects v2, and smart cache-first task resolution.
 
 ---
 
