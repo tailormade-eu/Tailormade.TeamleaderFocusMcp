@@ -25,7 +25,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_load_tasks` | only_open=false includes done | ✅ | Fixed: done=[x] cancelled=[-] icons added |
 | `teamleader_load_tasks` | force_refresh=true | ✅ | Tested: bypasses 30min cache, reloads from API |
 | `teamleader_load_tasks` | task_selection=N caches task | ✅ | visual=true → task_selection=1 → flat cache hit confirmed |
-| `teamleader_load_tasks` | project_filter / group_filter | ❌ | |
+| `teamleader_load_tasks` | project_filter / group_filter | ✅ | Both filter correctly on partial match |
 | `teamleader_load_tasks` | YAML file written correctly | ✅ | ~/.teamleader-tasks-bv-belgian-recycle-network.yaml |
 | `teamleader_load_tasks` | on_hold projects included | ✅ | Fixed: was filtering only active |
 
@@ -42,7 +42,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_log_time` | YYYY-MM-DD HH:MM format | ✅ | |
 | `teamleader_log_time` | Exact duplicate blocked | ✅ | |
 | `teamleader_log_time` | Overlap warning + confirm_overlap | ✅ | |
-| `teamleader_log_time` | force=true skips dedup | ❌ | |
+| `teamleader_log_time` | force=true skips dedup | ✅ | Duplicate blocked without force; second entry created with force=true |
 | `teamleader_log_time` | date param (past date with HH:MM times) | ✅ | Entry created on 2026-03-01 via date="2026-03-01" + HH:MM |
 | `teamleader_log_time` | work_type_id from task cache | ✅ | Verified: task tree + flat cache both propagate work_type_id |
 | `teamleader_log_time` | description stored | ✅ | Verified via list |
@@ -54,7 +54,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_task_action` | close (task_id) | ✅ | `tasks.update` confirmed working |
 | `teamleader_task_action` | close (task_number from tree) | ✅ | Fixed v1.3.1: filter open tasks in resolveTaskFromTree |
 | `teamleader_task_action` | create (project_id + group_id) | ✅ | |
-| `teamleader_task_action` | create (project_id only, no group) | ❌ | |
+| `teamleader_task_action` | create (project_id only, no group) | ✅ | Task created at project level, no group_id needed |
 | `teamleader_task_action` | move_time | ✅ | delete + recreate on new task, verified via get_timetracking |
 | `teamleader_task_action` | delete_group | ✅ | Fixed v1.3.2: projectGroups.delete + delete_strategy param |
 | `teamleader_task_action` | tree cache invalidated after close | ✅ | invalidateTaskTree called |
@@ -169,6 +169,4 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `teamleader_task_action` — create (project_id only, no group)
-2. `teamleader_log_time` — force=true skips dedup
-3. `teamleader_load_tasks` — project_filter / group_filter
+All high-priority items tested. Remaining ❌ are raw API wrappers (CRM, Invoices, Events, Legacy Tasks) with no custom logic.
