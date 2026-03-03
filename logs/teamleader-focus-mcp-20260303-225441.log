@@ -33,3 +33,35 @@
       **Build + typecheck:** clean.
       
       **Overgeslagen:** `tickets.importMessage` — niche endpoint voor importeren van externe berichten, niet relevant voor standaard gebruik.
+[22:58:37]    ✅ Done: Tickets — full CRUD tools
+[22:58:38] 
+▶️  Task [03] Invoices — complete workflow tools
+[22:58:38]    🤖 Invoking Claude CLI...
+      Klaar. Samenvatting:
+      
+      **14 nieuwe tools toegevoegd** aan `src/tools/invoices.ts` (totaal 17):
+      
+      | Tool | Endpoint |
+      |------|----------|
+      | `teamleader_book_invoice` | `invoices.book` |
+      | `teamleader_send_invoice` | `invoices.send` |
+      | `teamleader_send_invoice_peppol` | `invoices.sendViaPeppol` |
+      | `teamleader_delete_invoice` | `invoices.delete` |
+      | `teamleader_update_invoice` | `invoices.update` |
+      | `teamleader_update_booked_invoice` | `invoices.updateBooked` |
+      | `teamleader_register_payment` | `invoices.registerPayment` |
+      | `teamleader_remove_payments` | `invoices.removePayments` |
+      | `teamleader_copy_invoice` | `invoices.copy` |
+      | `teamleader_credit_invoice` | `invoices.credit` |
+      | `teamleader_credit_invoice_partially` | `invoices.creditPartially` |
+      | `teamleader_download_invoice` | `invoices.download` |
+      | `teamleader_list_mail_templates` | `mailTemplates.list` |
+      | `teamleader_list_payment_methods` | `paymentMethods.list` |
+      
+      - Geen wijzigingen in `index.ts` nodig — alles zit in bestaande `registerInvoiceTools`
+      - Typecheck + build geslaagd
+      - PROGRESS.md bijgewerkt
+[23:02:08]    ✅ Done: Invoices — complete workflow tools
+[23:02:09] 
+▶️  Task [04] Meetings — full CRUD tools
+[23:02:09]    🤖 Invoking Claude CLI...

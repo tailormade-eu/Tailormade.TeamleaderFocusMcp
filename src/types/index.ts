@@ -504,6 +504,29 @@ export interface TicketMessage {
   attachments?: IdObject[];
 }
 
+// ─── Meetings ────────────────────────────────────────────────────────────────
+
+export interface Meeting {
+  id: string;
+  title: string;
+  description?: string;
+  created_at?: string;
+  scheduled_at?: string;
+  duration?: { unit: string; value: number };
+  tracked_time?: { unit: string; value: number };
+  estimated_time?: { unit: string; value: number };
+  customer?: IdObject | null;
+  project?: IdObject | null;
+  milestone?: IdObject | null;
+  group?: IdObject | null;
+  attendees?: IdObject[];
+  status?: "open" | "done";
+  location?: unknown;
+  online_meeting_room?: unknown;
+  recurrence?: IdObject | null;
+  custom_fields?: Array<{ definition: IdObject; value: unknown }>;
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface TeamleaderListResponse<T> {
