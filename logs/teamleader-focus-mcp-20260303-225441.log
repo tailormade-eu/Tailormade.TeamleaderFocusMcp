@@ -225,3 +225,20 @@
       - Upload is 2-staps per API docs: eerst upload-URL ophalen, dan binary POST naar die pre-signed URL
       - Geen `client.ts` aanpassing nodig — stap 2 gebruikt plain `fetch` (geen auth vereist)
       - `content_base64` is optioneel: zonder = alleen URL teruggeven, met = automatisch uploaden
+[23:28:42]    ✅ Done: Files — full file management tools
+[23:28:43] 
+▶️  Task [13] Misc — teams, tags, expenses
+[23:28:43]    🤖 Invoking Claude CLI...
+      Klaar. 3 tools toegevoegd aan `src/tools/lookups.ts`:
+      
+      | Tool | Endpoint | Beschrijving |
+      |------|----------|-------------|
+      | `teamleader_list_teams` | `teams.list` | Teams lijst met member count, voor ticket team_id |
+      | `teamleader_list_tags` | `tags.list` | Tags met usage count, voor contacts/companies/deals |
+      | `teamleader_list_expenses` | `expenses.list` | Expenses met filters (term, type, review/payment status) |
+      
+      Geen wijzigingen nodig in `index.ts` — alles via bestaande `registerLookupTools`. Build slaagt.
+[23:30:46]    ✅ Done: Misc — teams, tags, expenses
+[23:30:47] 
+▶️  Task [14] Notes — add/list notes on contacts, companies, deals
+[23:30:47]    🤖 Invoking Claude CLI...
