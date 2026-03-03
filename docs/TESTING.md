@@ -34,7 +34,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 |------|------|--------|-------|
 | `teamleader_log_time` | task_name from flat cache | ✅ | Basic flow tested |
 | `teamleader_log_time` | task_id shortcut (1st call, tree fresh) | ✅ | Path + entry correct |
-| `teamleader_log_time` | task_id shortcut (after tree invalidated) | 🐛 | Returns success ID but entry not found via info/list |
+| `teamleader_log_time` | task_id shortcut (after tree invalidated) | ✅ | Fixed v1.3.1: verification via timeTracking.info after add |
 | `teamleader_log_time` | Tree fallback (scoreTasksInTree) | ❌ | |
 | `teamleader_log_time` | confirm_task_match=N | ❌ | |
 | `teamleader_log_time` | HH:MM time format | ✅ | |
@@ -42,7 +42,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_log_time` | Exact duplicate blocked | ✅ | |
 | `teamleader_log_time` | Overlap warning + confirm_overlap | ✅ | |
 | `teamleader_log_time` | force=true skips dedup | ❌ | |
-| `teamleader_log_time` | work_type_id from task cache | ❌ | Added in v1.3.1, not yet verified |
+| `teamleader_log_time` | work_type_id from task cache | ✅ | Verified: task tree + flat cache both propagate work_type_id |
 | `teamleader_log_time` | description stored | ✅ | Verified via list |
 
 ## Task Maintenance
@@ -140,19 +140,19 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Known Bugs
 
-### 🐛 BUG-01: log_time task_id after tree invalidation
-**Status:** Reproduced (03/03/2026)
-**Symptom:** After `task_action` (close/create) invalidates tree → next `log_time` with `task_id` returns success with entry ID, but `timeTracking.info` returns 404 and `timeTracking.list` shows no entry.
-**Trigger:** `invalidateTaskTree` removes tree → `getTaskTree` returns undefined → `found` is undefined → entry created but not persisted?
-**Workaround:** Run `load_tasks(force_refresh=true)` before `log_time` after any `task_action`.
-**To investigate:** Add debug logging to `timeTracking.add` body + raw API response.
+### ✅ BUG-01: log_time task_id after tree invalidation — FIXED (v1.3.1)
+**Status:** Fixed (03/03/2026)
+**Symptom (old):** After `task_action` invalidates tree → `log_time` with `task_id` returned success but entry was 404.
+**Root cause:** Silent API acceptance without verification.
+**Fix:** Added `timeTracking.info` verification after `timeTracking.add`. If entry not found → clear error with body sent + force_refresh suggestion.
+**Verified:** task_action create → log_time task_id → timeTracking.info ✅ entry exists.
 
 ---
 
 ## Priority Testing Queue
 
-1. 🐛 **BUG-01** — `log_time task_id` after tree invalidation — reproduce + fix
-2. `task_action move_time` — depends on BUG-01 fix
-3. `log_time` Tree fallback (scoreTasksInTree) + confirm_task_match
-4. `task_action close` via task_number (needs fresh tree)
-5. `load_tasks` only_open=false + force_refresh
+1. `task_action move_time` — BUG-01 fixed, unblock this
+2. `log_time` Tree fallback (scoreTasksInTree) + confirm_task_match
+3. `task_action close` via task_number (needs fresh tree)
+4. `load_tasks` only_open=false + force_refresh
+5. `teamleader_find_task` — full flow (cache miss → group → task)
