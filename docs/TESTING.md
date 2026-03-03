@@ -21,8 +21,8 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 | `teamleader_load_tasks` | Full tree load (cache miss) | ✅ | Tested on BV Belgian Recycle Network |
 | `teamleader_load_tasks` | Cache hit (30 min TTL) | ✅ | |
 | `teamleader_load_tasks` | visual=true ASCII tree | ✅ | |
-| `teamleader_load_tasks` | only_open=false includes done | ❌ | |
-| `teamleader_load_tasks` | force_refresh=true | ❌ | |
+| `teamleader_load_tasks` | only_open=false includes done | ✅ | Fixed: done=[x] cancelled=[-] icons added |
+| `teamleader_load_tasks` | force_refresh=true | ✅ | Tested: bypasses 30min cache, reloads from API |
 | `teamleader_load_tasks` | task_selection=N caches task | ❌ | |
 | `teamleader_load_tasks` | project_filter / group_filter | ❌ | |
 | `teamleader_load_tasks` | YAML file written correctly | ✅ | ~/.teamleader-tasks-bv-belgian-recycle-network.yaml |
@@ -151,5 +151,4 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found
 
 ## Priority Testing Queue
 
-1. `load_tasks` only_open=false + force_refresh
-2. `teamleader_find_task` — full flow (cache miss → group → task)
+1. `teamleader_find_task` — full flow (cache miss → group → task)
