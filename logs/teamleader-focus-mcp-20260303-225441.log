@@ -1,0 +1,11 @@
+[LOG] D:\source\repos\Tailormade\Tailormade.TeamleaderFocusMcp\logs\teamleader-focus-mcp-20260303-225441.log
+[22:54:41] 
+🚀 CodingMachine starting
+[22:54:41]    Project  : teamleader-focus-mcp
+[22:54:41]    Mode     : serial
+[22:54:41]    Branch   : per_session
+[22:54:41]    Watch    : disabled
+[22:54:41]    Logging  : enabled (debug: False)
+[22:54:41] 
+▶️  Task [01] Users — list + info tools
+[22:54:41]    🤖 Invoking Claude CLI...
