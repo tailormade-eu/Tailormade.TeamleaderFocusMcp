@@ -131,6 +131,7 @@ Used by humans and AI to get IDs for direct calls.
 
 - Returns `subject.type: "todo"` — ID differs from `nextgenTask` ID
 - Dedup must match on **start time** (to second precision), not on subject ID
+- `filter.started_after` / `filter.started_before` accept **date only** (`YYYY-MM-DD`) — datetime strings cause 400 Bad Request. Filter by time client-side after fetching.
 
 ### `timeTracking.add`
 

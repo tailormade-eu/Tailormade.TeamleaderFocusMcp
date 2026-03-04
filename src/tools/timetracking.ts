@@ -49,13 +49,13 @@ export function registerTimeTrackingTools(
         };
       }
 
-      const toDatetime = (s: string) =>
-        /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s}T00:00:00+00:00` : s;
+      // API only accepts YYYY-MM-DD for started_after/started_before — strip time if present
+      const toDate = (s: string) => s.substring(0, 10);
 
       const filter: Record<string, unknown> = {};
       if (params.user_id) filter.user_id = params.user_id;
-      if (params.started_after) filter.started_after = toDatetime(params.started_after);
-      if (params.started_before) filter.started_before = toDatetime(params.started_before);
+      if (params.started_after) filter.started_after = toDate(params.started_after);
+      if (params.started_before) filter.started_before = toDate(params.started_before);
       if (params.subject_type && params.subject_id) {
         filter.subject = {
           type: params.subject_type,
