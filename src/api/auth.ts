@@ -19,8 +19,8 @@ export function loadRefreshToken(fallback: string): string {
   try {
     const data = JSON.parse(readFileSync(TOKEN_FILE, "utf-8"));
     if (data.refresh_token) return data.refresh_token;
-  } catch {
-    // File doesn't exist yet — use env var
+  } catch (e) {
+    console.debug("Token file not found, using env var fallback:", e);
   }
   return fallback;
 }

@@ -626,7 +626,8 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       // Verify entry exists (guard against silent failures)
       try {
         await client.request({ endpoint: "timeTracking.info", body: { id: entryId } });
-      } catch {
+      } catch (e) {
+        console.error("Time entry verification failed:", e);
         return respond(
           `❌ Time registration returned ID ${entryId} but entry not found.\n` +
           `Possible cause: invalid subject type/ID or work_type_id for this account.\n` +

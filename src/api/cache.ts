@@ -127,7 +127,8 @@ interface Cache {
 function load(): Cache {
   try {
     return JSON.parse(readFileSync(CACHE_FILE, "utf-8"));
-  } catch {
+  } catch (e) {
+    console.debug("Cache file not found or invalid, starting fresh:", e);
     return {};
   }
 }
