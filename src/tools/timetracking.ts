@@ -25,11 +25,11 @@ export function registerTimeTrackingTools(
       started_after: z
         .string()
         .optional()
-        .describe("Filter entries started after this date (YYYY-MM-DD or ISO 8601 datetime)"),
+        .describe("Filter entries started after this date (YYYY-MM-DD). Time is stripped automatically."),
       started_before: z
         .string()
         .optional()
-        .describe("Filter entries started before this date (YYYY-MM-DD or ISO 8601 datetime)"),
+        .describe("Filter entries started before this date (YYYY-MM-DD). Time is stripped automatically."),
       subject_type: z
         .enum(["nextgenTask", "todo", "project", "milestone", "ticket"])
         .optional()
