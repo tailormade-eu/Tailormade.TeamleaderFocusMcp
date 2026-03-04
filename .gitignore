@@ -7,3 +7,5 @@ dist/
 logs/
 .state.json
 coding-machine.json
+PROGRESS.md
+.current-prompt.md
