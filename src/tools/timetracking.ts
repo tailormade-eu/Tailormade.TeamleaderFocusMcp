@@ -190,9 +190,25 @@ export function registerTimeTrackingTools(
       };
 
       if (params.work_type_id) body.work_type_id = params.work_type_id;
-      if (params.started_on) body.started_at = params.started_on;
-      if (params.ended_on) body.ended_at = params.ended_on;
       if (params.description) body.description = params.description;
+
+      // API requires started_at + ended_at together — fetch existing if one is missing
+      if (params.started_on || params.ended_on) {
+        let startedAt = params.started_on;
+        let endedAt = params.ended_on;
+
+        if (!startedAt || !endedAt) {
+          const existing = await client.request<{ data: TimeTracking }>({
+            endpoint: "timeTracking.info",
+            body: { id: params.id },
+          });
+          if (!startedAt) startedAt = existing.data.started_on;
+          if (!endedAt) endedAt = existing.data.ended_on;
+        }
+
+        body.started_at = startedAt;
+        body.ended_at = endedAt;
+      }
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "timeTracking.update",

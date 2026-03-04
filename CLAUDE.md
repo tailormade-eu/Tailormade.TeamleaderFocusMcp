@@ -138,6 +138,11 @@ Used by humans and AI to get IDs for direct calls.
 - Use `toFilterDate()` helper (strips milliseconds) — NOT `.toISOString()`
 - Milliseconds cause dedup mismatches
 
+### `timeTracking.update`
+
+- No partial updates for time fields — always send `started_at` + `ended_at` together
+- Sending only `ended_at` causes 400 Bad Request (`started_at must be present`)
+
 ### `invoices.registerPayment`
 
 - Use `paid_at` (NOT `payment_date`)
