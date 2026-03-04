@@ -19,18 +19,18 @@ export function registerTicketTools(
   // ── List Tickets ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tickets",
-    "List tickets from Teamleader Focus with optional filtering and pagination. Supports filtering by status IDs (exclude), customer, and project.",
+    "List tickets from Teamleader Focus. Returns array with id, subject, status, customer, assignee. WARNING: customer filter uses 'relates_to: {type, id}' internally (NOT 'customer_id') — this tool handles that automatically. Status filtering is exclusion-based only (exclude_status_ids) — there is no direct status filter. Use teamleader_list_ticket_statuses to find status IDs. Next steps: teamleader_get_ticket for details, teamleader_reply_ticket to respond.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
       customer_type: z
         .enum(["contact", "company"])
         .optional()
-        .describe("Customer type to filter by (use with customer_id)"),
+        .describe("Customer type to filter by (use with customer_id). Mapped to 'relates_to' filter internally."),
       customer_id: z
         .string()
         .optional()
-        .describe("Customer ID to filter by (use with customer_type)"),
+        .describe("Customer ID to filter by (use with customer_type). Mapped to 'relates_to' filter internally."),
       project_ids: z
         .array(z.string())
         .optional()
@@ -38,7 +38,7 @@ export function registerTicketTools(
       exclude_status_ids: z
         .array(z.string())
         .optional()
-        .describe("Ticket status IDs to exclude from results"),
+        .describe("Ticket status IDs to exclude (use teamleader_list_ticket_statuses to find IDs). NOTE: this is the only way to filter by status — there is no direct status include filter."),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -82,7 +82,7 @@ export function registerTicketTools(
   // ── Get Ticket ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_ticket",
-    "Get detailed information about a specific ticket including subject, status, assignee, customer, and custom fields",
+    "Get full ticket details including subject, status, assignee, customer, description, custom fields, and timestamps. Next steps: teamleader_list_ticket_messages for conversation, teamleader_reply_ticket to respond, teamleader_update_ticket to change status/assignee.",
     {
       id: z.string().describe("The ticket ID"),
     },
@@ -106,14 +106,14 @@ export function registerTicketTools(
   // ── Create Ticket ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_ticket",
-    "Create a new ticket in Teamleader Focus. Requires subject, customer, and ticket_status_id.",
+    "Create a new ticket. Requires subject, customer, and ticket_status_id. Returns {id, type}. Lookup IDs: teamleader_list_ticket_statuses (ticket_status_id), teamleader_list_users (assignee_id). Next step: teamleader_reply_ticket to add the first reply.",
     {
       subject: z.string().describe("Ticket subject/title"),
       customer_type: z
         .enum(["contact", "company"])
         .describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
-      ticket_status_id: z.string().describe("Ticket status ID (required)"),
+      ticket_status_id: z.string().describe("Ticket status ID (use teamleader_list_ticket_statuses to find)"),
       description: z
         .string()
         .optional()
@@ -173,7 +173,7 @@ export function registerTicketTools(
   // ── Update Ticket ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_ticket",
-    "Update an existing ticket in Teamleader Focus. Can change subject, description, status, assignee, and customer.",
+    "Update an existing ticket. Only provided fields are changed. Can change subject, description, status, assignee, and customer.",
     {
       id: z.string().describe("The ticket ID to update"),
       subject: z.string().optional().describe("New ticket subject"),
@@ -184,7 +184,7 @@ export function registerTicketTools(
       ticket_status_id: z
         .string()
         .optional()
-        .describe("New ticket status ID"),
+        .describe("New ticket status ID (use teamleader_list_ticket_statuses to find)"),
       assignee_id: z
         .string()
         .optional()
@@ -296,7 +296,7 @@ export function registerTicketTools(
   // ── Get Ticket Message ───────────────────────────────────────────────────
   server.tool(
     "teamleader_get_ticket_message",
-    "Get detailed information about a specific ticket message including body, sender, and attachments",
+    "Get full details of a specific ticket message including body (HTML), sender, attachments, and timestamps.",
     {
       message_id: z.string().describe("The ticket message ID"),
     },
@@ -322,14 +322,14 @@ export function registerTicketTools(
   // ── Reply to Ticket ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_reply_ticket",
-    "Add a customer-visible reply to a ticket. The message body should be HTML formatted. Optionally change ticket status.",
+    "Add a customer-visible reply to a ticket. The message body should be HTML formatted. Optionally change ticket status in the same call. For internal notes not visible to customer, use teamleader_internal_message_ticket instead.",
     {
       id: z.string().describe("The ticket ID"),
       body: z.string().describe("Reply message body (HTML formatted)"),
       ticket_status_id: z
         .string()
         .optional()
-        .describe("Optionally set ticket status after replying"),
+        .describe("Optionally set ticket status after replying (use teamleader_list_ticket_statuses to find IDs)"),
     },
     async (params) => {
       const reqBody: Record<string, unknown> = {
@@ -361,14 +361,14 @@ export function registerTicketTools(
   // ── Internal Message on Ticket ───────────────────────────────────────────
   server.tool(
     "teamleader_internal_message_ticket",
-    "Add an internal (private) message to a ticket. Not visible to the customer. The message body should be HTML formatted. Optionally change ticket status.",
+    "Add an internal (private) message to a ticket. NOT visible to the customer. Use for internal notes between team members. For customer-visible replies, use teamleader_reply_ticket instead.",
     {
       id: z.string().describe("The ticket ID"),
       body: z.string().describe("Internal message body (HTML formatted)"),
       ticket_status_id: z
         .string()
         .optional()
-        .describe("Optionally set ticket status after adding internal message"),
+        .describe("Optionally set ticket status (use teamleader_list_ticket_statuses to find IDs)"),
     },
     async (params) => {
       const reqBody: Record<string, unknown> = {

@@ -18,7 +18,7 @@ export function registerEventTools(
   // ── List Events ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_events",
-    "List calendar events from Teamleader Focus with optional filtering and pagination",
+    "List calendar events from Teamleader Focus. Returns array with id, title, activity_type, starts_at, ends_at, attendees. Use date range filters to find events in a period. Next step: teamleader_get_event for full details.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -75,7 +75,7 @@ export function registerEventTools(
   // ── Get Event ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_event",
-    "Get detailed information about a specific event",
+    "Get full event details including title, description, activity_type, times, location, attendees, and linked entities.",
     {
       id: z.string().describe("The event ID"),
     },
@@ -99,11 +99,11 @@ export function registerEventTools(
   // ── Create Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_event",
-    "Create a new calendar event in Teamleader Focus",
+    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead.",
     {
       title: z.string().describe("Event title"),
       description: z.string().optional().describe("Event description"),
-      activity_type_id: z.string().describe("Activity type ID"),
+      activity_type_id: z.string().describe("Activity type ID (use teamleader_list_activity_types to find)"),
       starts_at: z.string().describe("Start datetime (ISO 8601)"),
       ends_at: z.string().describe("End datetime (ISO 8601)"),
       location: z.string().optional().describe("Event location"),

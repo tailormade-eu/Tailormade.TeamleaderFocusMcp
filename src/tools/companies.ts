@@ -18,7 +18,7 @@ export function registerCompanyTools(
   // ── List Companies ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_companies",
-    "List companies from Teamleader Focus with optional filtering and pagination",
+    "List companies from Teamleader Focus. Returns array with id, name, emails, vat_number, tags. Use to find company IDs. Next steps: teamleader_get_company for full details, teamleader_list_projects_v2(company_id=...) to see projects, teamleader_list_deals to see deals.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -66,7 +66,7 @@ export function registerCompanyTools(
   // ── Get Company ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_company",
-    "Get detailed information about a specific company",
+    "Get full company details including name, emails, phones, addresses, VAT number, tags, and custom fields. Next steps: teamleader_list_projects_v2(company_id=...) for projects, teamleader_list_contacts to find linked people.",
     {
       id: z.string().describe("The company ID"),
     },
@@ -90,7 +90,7 @@ export function registerCompanyTools(
   // ── Create Company ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_company",
-    "Create a new company in Teamleader Focus",
+    "Create a new company. Returns {id, type}. Next steps: teamleader_link_contact_to_company to associate people, teamleader_create_project_v2 to create a project for this company.",
     {
       name: z.string().describe("Company name"),
       email: z.string().optional().describe("Primary email address"),
@@ -137,7 +137,7 @@ export function registerCompanyTools(
   // ── Update Company ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_company",
-    "Update an existing company in Teamleader Focus",
+    "Update an existing company. Only provided fields are changed.",
     {
       id: z.string().describe("The company ID to update"),
       name: z.string().optional().describe("Company name"),

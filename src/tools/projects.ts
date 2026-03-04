@@ -22,7 +22,7 @@ export function registerProjectTools(
   // ── List Projects (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_list_projects_v2",
-    "List projects using projects-v2 API with optional filtering and pagination",
+    "List projects using projects-v2 API. Returns array of projects with id, title, status, customers, starts_on, due_on. Use to find project IDs for further operations. Next steps: teamleader_get_project_v2 for details, teamleader_list_project_groups for phases, teamleader_list_project_tasks_v2 for tasks.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -75,7 +75,7 @@ export function registerProjectTools(
   // ── Get Project (v2) ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_project_v2",
-    "Get details of a specific project using projects-v2 API",
+    "Get full details of a project including title, status, customers, owners, starts_on, due_on, description. Next steps: teamleader_list_project_groups for phases, teamleader_list_project_tasks_v2 for tasks, teamleader_add_project_customer to add customers.",
     {
       id: z.string().describe("Project ID"),
     },
@@ -99,7 +99,7 @@ export function registerProjectTools(
   // ── Create Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_v2",
-    "Create a new project using projects-v2 API",
+    "Create a new project. Returns {id, type}. Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams.",
     {
       title: z.string().describe("Project title"),
       description: z.string().optional().describe("Project description"),
@@ -162,7 +162,7 @@ export function registerProjectTools(
   // ── Update Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_project_v2",
-    "Update an existing project using projects-v2 API",
+    "Update an existing project. Only provided fields are changed. Returns {id, type}.",
     {
       id: z.string().describe("Project ID"),
       title: z.string().optional().describe("New project title"),
@@ -209,7 +209,7 @@ export function registerProjectTools(
   // ── List Project Groups (Phases) ─────────────────────────────────────────
   server.tool(
     "teamleader_list_project_groups",
-    "List project groups (phases/milestones) for a specific project",
+    "List project groups (phases) for a specific project. Returns array with id, title, start_date, end_date for each group. NOTE: internally uses projectLines.list with project_id at top level (NOT inside filter — API quirk). Next steps: teamleader_list_project_tasks_v2 with project_group_id to see tasks in a phase.",
     {
       project_id: z.string().describe("Project ID to list groups for"),
       page: z.number().optional().describe("Page number (default: 1)"),
@@ -249,17 +249,17 @@ export function registerProjectTools(
   // ── List Project Tasks (v2) ──────────────────────────────────────────────
   server.tool(
     "teamleader_list_project_tasks_v2",
-    "List tasks for a specific project or project group (phase) using projects-v2 API",
+    "List tasks for a project or project group (phase). Returns array with id, title, status, assignees, group, estimated_duration. NOTE: project_group_id and only_open are filtered client-side (API does not support these as server-side filters). For a full project tree with IDs, prefer teamleader_load_tasks.",
     {
       project_id: z.string().describe("Project ID to list tasks for"),
       project_group_id: z
         .string()
         .optional()
-        .describe("Optional: filter tasks by specific project group (phase)"),
+        .describe("Optional: filter tasks by group (phase) ID. NOTE: filtered client-side after API fetch, not server-side."),
       only_open: z
         .boolean()
         .default(false)
-        .describe("Only return open tasks (to_do, in_progress, on_hold)"),
+        .describe("Only return open tasks (to_do, in_progress, on_hold). NOTE: filtered client-side."),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
     },
@@ -314,7 +314,7 @@ export function registerProjectTools(
   // ── Create Project Group (Phase) ─────────────────────────────────────────
   server.tool(
     "teamleader_create_project_group",
-    "Create a new project group (phase/milestone) within a project",
+    "Create a new project group (phase) within a project. Returns {id, type}. WARNING: the API uses 'start_date'/'end_date' internally (NOT 'starts_on'/'due_on') — this tool maps the params automatically. Next step: teamleader_create_project_task_v2 to add tasks to this group.",
     {
       project_id: z.string().describe("Parent project ID"),
       title: z.string().describe("Group/phase title"),
@@ -322,11 +322,11 @@ export function registerProjectTools(
       starts_on: z
         .string()
         .optional()
-        .describe("Start date (YYYY-MM-DD)"),
+        .describe("Start date (YYYY-MM-DD). Mapped to API field 'start_date' automatically."),
       due_on: z
         .string()
         .optional()
-        .describe("Due date (YYYY-MM-DD)"),
+        .describe("Due/end date (YYYY-MM-DD). Mapped to API field 'end_date' automatically."),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -357,7 +357,7 @@ export function registerProjectTools(
   // ── Close Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_close_project_v2",
-    "Close a project. Choose a closing strategy for open tasks and materials.",
+    "Close a project. CRITICAL: requires closing_strategy parameter — without it the API returns an error. Options: 'mark_tasks_and_materials_as_done' (marks all open tasks done) or 'none' (leaves tasks as-is). To reopen later: use teamleader_reopen_project_v2.",
     {
       id: z.string().describe("Project ID"),
       closing_strategy: z
@@ -379,7 +379,7 @@ export function registerProjectTools(
   // ── Reopen Project (v2) ────────────────────────────────────────────────
   server.tool(
     "teamleader_reopen_project_v2",
-    "Reopen a closed project.",
+    "Reopen a previously closed project. Sets status back to active.",
     {
       id: z.string().describe("Project ID"),
     },
@@ -397,7 +397,7 @@ export function registerProjectTools(
   // ── Delete Project (v2) ────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_v2",
-    "Delete a project. Choose a strategy for linked tasks and time trackings.",
+    "Delete a project. This action is irreversible. CRITICAL: requires delete_strategy — without it the API returns an error. Options: 'unlink_tasks_and_time_trackings' (keeps tasks/time), 'delete_tasks_and_time_trackings' (deletes all), 'delete_tasks_unlink_time_trackings'.",
     {
       id: z.string().describe("Project ID"),
       delete_strategy: z
@@ -419,7 +419,7 @@ export function registerProjectTools(
   // ── Duplicate Project (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_project_v2",
-    "Duplicate a project with a new title.",
+    "Duplicate a project with a new title. Copies all groups, tasks, and structure. Returns {id, type} of the new project.",
     {
       id: z.string().describe("Source project ID to duplicate"),
       title: z.string().describe("Title for the duplicated project"),
@@ -438,7 +438,7 @@ export function registerProjectTools(
   // ── Add Customer to Project ────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_customer",
-    "Add a customer (company or contact) to a project.",
+    "Add a customer (company or contact) to a project. NOTE: the API uses a nested {type, id} object for the customer — this tool handles that automatically.",
     {
       id: z.string().describe("Project ID"),
       customer_type: z.enum(["company", "contact"]).describe("Customer type"),
@@ -554,7 +554,7 @@ export function registerProjectTools(
   // ── Assign User/Team to Project ────────────────────────────────────────
   server.tool(
     "teamleader_assign_project",
-    "Assign a user or team to a project.",
+    "Assign a user or team to a project. NOTE: the API uses a nested {type, id} object for the assignee — this tool handles that automatically. Use teamleader_list_users or teamleader_list_teams to find IDs.",
     {
       id: z.string().describe("Project ID"),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type: user or team"),
@@ -594,13 +594,13 @@ export function registerProjectTools(
   // ── Update Project Group (Phase) ───────────────────────────────────────
   server.tool(
     "teamleader_update_project_group",
-    "Update a project group (phase). All fields except id are optional.",
+    "Update a project group (phase). All fields except id are optional. WARNING: API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — params are named correctly here.",
     {
       id: z.string().describe("Project group ID"),
       title: z.string().optional().describe("New group title"),
       description: z.string().optional().describe("New description"),
-      start_date: z.string().optional().describe("Start date (YYYY-MM-DD)"),
-      end_date: z.string().optional().describe("End date (YYYY-MM-DD)"),
+      start_date: z.string().optional().describe("Start date (YYYY-MM-DD). API field name is 'start_date' (NOT 'starts_on')."),
+      end_date: z.string().optional().describe("End date (YYYY-MM-DD). API field name is 'end_date' (NOT 'due_on')."),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
@@ -622,7 +622,7 @@ export function registerProjectTools(
   // ── Complete Project Task (v2) ─────────────────────────────────────────
   server.tool(
     "teamleader_complete_project_task",
-    "Mark a project task as complete.",
+    "Mark a project task as complete (sets status to 'done'). Use teamleader_reopen_project_task to undo.",
     {
       id: z.string().describe("Project task ID"),
     },
@@ -658,7 +658,7 @@ export function registerProjectTools(
   // ── Delete Project Task (v2) ───────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_task",
-    "Delete a project task.",
+    "Delete a project task. This action is irreversible. Time tracking entries linked to this task are NOT deleted.",
     {
       id: z.string().describe("Project task ID"),
     },
@@ -694,23 +694,23 @@ export function registerProjectTools(
   // ── Create Project Task (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_task_v2",
-    "Create a new task within a project or project group (phase) using projects-v2 API",
+    "Create a new task within a project or project group (phase). Returns {id, type}. NOTE: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id).",
     {
       project_id: z.string().describe("Parent project ID"),
       project_group_id: z
         .string()
         .optional()
-        .describe("Optional: parent project group (phase) ID"),
+        .describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
       title: z.string().describe("Task title"),
       description: z.string().optional().describe("Task description"),
       assignee_id: z
         .string()
         .optional()
-        .describe("Assignee user ID"),
+        .describe("Assignee user ID (use teamleader_list_users to find). Mapped to API field 'assignees: [{type:user, id}]' automatically."),
       work_type_id: z
         .string()
         .optional()
-        .describe("Work type ID"),
+        .describe("Work type ID (use teamleader_list_work_types to find)"),
       estimated_duration: z
         .number()
         .optional()

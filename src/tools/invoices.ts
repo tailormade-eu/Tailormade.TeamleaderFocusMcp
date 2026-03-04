@@ -22,11 +22,11 @@ export function registerInvoiceTools(
   // ── List Invoices ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_invoices",
-    "List invoices from Teamleader Focus with optional filtering and pagination",
+    "List invoices from Teamleader Focus. Returns array of invoices with id, number, status, invoicee, total, invoice_date. Supports filtering by department, status, date range. Next steps: teamleader_get_invoice for details, teamleader_book_invoice to book drafts, teamleader_send_invoice to email.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
-      department_id: z.string().optional().describe("Filter by department ID"),
+      department_id: z.string().optional().describe("Filter by department ID (use teamleader_list_departments to find)"),
       status: z
         .array(z.string())
         .optional()
@@ -76,7 +76,7 @@ export function registerInvoiceTools(
   // ── Get Invoice ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_invoice",
-    "Get detailed information about a specific invoice",
+    "Get full details of an invoice including line items, payment status, customer, totals, and payment term. Next steps: teamleader_book_invoice (if draft), teamleader_register_payment (if outstanding), teamleader_credit_invoice (to credit).",
     {
       id: z.string().describe("The invoice ID"),
     },
@@ -93,14 +93,14 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice in Teamleader Focus",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
-      department_id: z.string().describe("Department ID"),
+      department_id: z.string().describe("Department ID (use teamleader_list_departments to find)"),
       payment_term_type: z
         .string()
-        .describe("Payment term type (e.g. 'cash', 'end_of_month', 'after_invoice_date')"),
+        .describe("Payment term type (use teamleader_list_payment_terms to find valid types: cash, end_of_month, after_invoice_date, etc.)"),
       payment_term_days: z
         .number()
         .optional()
@@ -119,11 +119,11 @@ export function registerInvoiceTools(
             unit_price_currency: z
               .string()
               .describe("Currency code (e.g. 'EUR')"),
-            tax_rate_id: z.string().describe("Tax rate ID"),
+            tax_rate_id: z.string().describe("Tax rate ID (use teamleader_list_tax_rates to find)"),
             product_id: z
               .string()
               .optional()
-              .describe("Product ID (optional)"),
+              .describe("Product ID (use teamleader_list_products to find)"),
           })
         )
         .describe("Line items for the invoice"),
@@ -174,7 +174,7 @@ export function registerInvoiceTools(
   // ── Book Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_book_invoice",
-    "Book a draft invoice. Changes status from draft to outstanding. Assigns invoice number.",
+    "Book a draft invoice. Changes status from draft to outstanding and assigns an invoice number. Prerequisites: invoice must be in draft status. Next steps: teamleader_send_invoice to email it, or teamleader_register_payment when paid.",
     {
       id: z.string().describe("The invoice ID to book"),
       on: z.string().describe("Booking date (YYYY-MM-DD)"),
@@ -270,7 +270,7 @@ export function registerInvoiceTools(
   // ── Send Invoice via Peppol ──────────────────────────────────────────────
   server.tool(
     "teamleader_send_invoice_peppol",
-    "Send an invoice via the Peppol e-invoicing network. Invoice must be booked first.",
+    "Send an invoice via the Peppol e-invoicing network. Prerequisites: invoice must be booked first (use teamleader_book_invoice). The customer must have a valid Peppol identifier configured.",
     {
       id: z.string().describe("The invoice ID to send via Peppol"),
     },
@@ -302,7 +302,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id).",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -436,7 +436,7 @@ export function registerInvoiceTools(
   // ── Register Payment ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_register_payment",
-    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs.",
+    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. NOTE: the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params.",
     {
       id: z.string().describe("The invoice ID"),
       amount: z.number().describe("Payment amount"),
@@ -465,7 +465,7 @@ export function registerInvoiceTools(
   // ── Remove Payments ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_remove_payments",
-    "Remove all registered payments from an invoice.",
+    "Remove all registered payments from an invoice. This reverts the invoice payment status. Use when a payment was registered incorrectly.",
     {
       id: z.string().describe("The invoice ID to remove payments from"),
     },
@@ -481,7 +481,7 @@ export function registerInvoiceTools(
   // ── Copy Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_copy_invoice",
-    "Copy an existing invoice to create a new draft invoice with the same details.",
+    "Copy an existing invoice to create a new draft invoice with the same details. Returns the new draft invoice ID. Next step: teamleader_update_invoice to modify, then teamleader_book_invoice to finalize.",
     {
       id: z.string().describe("The invoice ID to copy"),
     },
@@ -499,7 +499,7 @@ export function registerInvoiceTools(
   // ── Credit Invoice (Full) ───────────────────────────────────────────────
   server.tool(
     "teamleader_credit_invoice",
-    "Create a full credit note for a booked invoice.",
+    "Create a full credit note for a booked invoice. Credits all line items. Returns {id, type} of the credit note. For partial credits, use teamleader_credit_invoice_partially instead.",
     {
       id: z.string().describe("The invoice ID to credit"),
       credit_note_date: z
@@ -524,7 +524,7 @@ export function registerInvoiceTools(
   // ── Credit Invoice Partially ────────────────────────────────────────────
   server.tool(
     "teamleader_credit_invoice_partially",
-    "Create a partial credit note for a booked invoice. Specify which line items to credit.",
+    "Create a partial credit note for a booked invoice. Specify which line items to credit. NOTE: the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically. Returns {id, type} of the created credit note.",
     {
       id: z.string().describe("The invoice ID to partially credit"),
       credit_note_date: z
@@ -537,7 +537,7 @@ export function registerInvoiceTools(
             quantity: z.number().describe("Quantity to credit"),
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price amount (tax exclusive)"),
-            tax_rate_id: z.string().describe("Tax rate ID"),
+            tax_rate_id: z.string().describe("Tax rate ID (use teamleader_list_tax_rates to find)"),
             extended_description: z.string().optional().describe("Extended description"),
             product_id: z.string().optional().describe("Product ID"),
             discount_value: z.number().optional().describe("Discount percentage (0-100)"),

@@ -35,7 +35,7 @@ export function registerDepartmentTools(
   // ── List Departments ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_departments",
-    "List departments from Teamleader Focus. Departments are used to split quotations and invoices for different legal entities or within one organisation.",
+    "List departments (legal entities / billing divisions). Returns id, name, status, VAT number, currency. Use the IDs when creating invoices (teamleader_create_invoice department_id) or filtering data.",
     {
       status: z
         .array(z.enum(["active", "archived"]))

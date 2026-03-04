@@ -22,12 +22,12 @@ export function registerDealTools(
   // ── List Deals ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_deals",
-    "List deals/opportunities from Teamleader Focus with optional filtering and pagination",
+    "List deals/opportunities from Teamleader Focus. Returns array with id, title, phase, estimated_value, customer. Use to find deal IDs. Next steps: teamleader_get_deal for details, teamleader_move_deal to change phase, teamleader_win_deal / teamleader_lose_deal to close.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
       term: z.string().optional().describe("Search term to filter deals"),
-      phase_id: z.string().optional().describe("Filter by deal phase ID"),
+      phase_id: z.string().optional().describe("Filter by deal phase ID (use teamleader_list_deal_phases to find)"),
       responsible_user_id: z.string().optional().describe("Filter by responsible user ID"),
       updated_since: z
         .string()
@@ -71,7 +71,7 @@ export function registerDealTools(
   // ── Get Deal ─────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_deal",
-    "Get detailed information about a specific deal",
+    "Get full deal details including title, phase, customer, estimated value, probability, responsible user, and custom fields. Next steps: teamleader_move_deal to change phase, teamleader_update_deal to edit.",
     {
       id: z.string().describe("The deal ID"),
     },
@@ -95,12 +95,12 @@ export function registerDealTools(
   // ── Create Deal ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal",
-    "Create a new deal/opportunity in Teamleader Focus",
+    "Create a new deal/opportunity. Returns {id, type}. Lookup IDs first: teamleader_list_deal_phases (phase_id), teamleader_list_deal_sources (source_id), teamleader_list_departments (department_id). Next steps: teamleader_move_deal to advance through pipeline.",
     {
       title: z.string().describe("Deal title"),
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID (contact or company)"),
-      phase_id: z.string().describe("Deal phase ID"),
+      phase_id: z.string().describe("Deal phase ID (use teamleader_list_deal_phases to find)"),
       estimated_value_amount: z.number().optional().describe("Estimated value amount"),
       estimated_value_currency: z
         .string()
@@ -118,8 +118,8 @@ export function registerDealTools(
         .string()
         .optional()
         .describe("Responsible user ID"),
-      department_id: z.string().optional().describe("Department ID"),
-      source_id: z.string().optional().describe("Source ID"),
+      department_id: z.string().optional().describe("Department ID (use teamleader_list_departments to find)"),
+      source_id: z.string().optional().describe("Source ID (use teamleader_list_deal_sources to find)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -173,7 +173,7 @@ export function registerDealTools(
   // ── Update Deal ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal",
-    "Update an existing deal in Teamleader Focus",
+    "Update an existing deal. Only provided fields are changed. To change the deal phase, use teamleader_move_deal instead.",
     {
       id: z.string().describe("The deal ID to update"),
       title: z.string().optional().describe("Deal title"),
@@ -265,7 +265,7 @@ export function registerDealTools(
   // ── Win Deal ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_win_deal",
-    "Mark a deal as won.",
+    "Mark a deal as won. This is irreversible — the deal moves to the 'won' state.",
     {
       id: z.string().describe("The deal ID to mark as won"),
     },

@@ -22,7 +22,7 @@ export function registerLookupTools(
   // ── Activity Types ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_activity_types",
-    "List all activity types. Returns IDs needed for creating events (activity_type_id).",
+    "List all activity types. Returns numbered list with name and ID. Use the IDs when creating events (teamleader_create_event activity_type_id param).",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
@@ -46,7 +46,7 @@ export function registerLookupTools(
   // ── Tax Rates ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tax_rates",
-    "List all tax rates. Returns IDs needed for invoice line items (tax_rate_id).",
+    "List all tax rates with description and percentage. Returns numbered list with rate and ID. Use the IDs for invoice line items (teamleader_create_invoice, teamleader_credit_invoice_partially).",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
@@ -77,7 +77,7 @@ export function registerLookupTools(
   // ── Payment Terms ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_payment_terms",
-    "List all payment term types. Returns types needed for creating invoices (payment_term.type).",
+    "List all payment term types (cash, end_of_month, after_invoice_date, etc.). Returns the type strings needed for teamleader_create_invoice and teamleader_update_invoice (payment_term_type param).",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{
@@ -98,7 +98,7 @@ export function registerLookupTools(
   // ── Ticket Statuses ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_ticket_statuses",
-    "List all ticket statuses. Returns IDs needed for updating tickets (status_id).",
+    "List all ticket statuses with label and status type. Returns IDs needed for teamleader_create_ticket, teamleader_update_ticket, and teamleader_list_tickets (exclude_status_ids).",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{
@@ -303,7 +303,7 @@ export function registerLookupTools(
   // ── Work Types ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_work_types",
-    "List all work types. Returns IDs needed for time tracking and task creation (work_type_id). Uses cache when available.",
+    "List all work types. Returns numbered list with name and ID. Use the IDs for time tracking (teamleader_add_timetracking, teamleader_start_timer), task creation (teamleader_create_task, teamleader_create_project_task_v2), and teamleader_log_time. Uses cache (7-day TTL).",
     {},
     async () => {
       // Try cache first

@@ -17,7 +17,7 @@ export function registerTaskTools(
   // ── List Tasks ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tasks",
-    "List tasks from Teamleader Focus with optional filtering and pagination",
+    "List standalone tasks (NOT project tasks — use teamleader_list_project_tasks_v2 for those). Returns array with id, title, due_on, status, assignee, customer. Next steps: teamleader_get_task for details, teamleader_complete_task to mark done.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -70,11 +70,11 @@ export function registerTaskTools(
   // ── Create Task ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_task",
-    "Create a new task in Teamleader Focus. Requires title, due_on and work_type_id.",
+    "Create a new standalone task (NOT a project task — use teamleader_create_project_task_v2 for those). Requires title, due_on, and work_type_id. Returns {id, type}. Lookup: teamleader_list_work_types (work_type_id).",
     {
       title: z.string().describe("Task title"),
       due_on: z.string().describe("Due date (YYYY-MM-DD)"),
-      work_type_id: z.string().describe("Work type ID"),
+      work_type_id: z.string().describe("Work type ID (use teamleader_list_work_types to find)"),
       description: z.string().optional().describe("Task description"),
       assignee_type: z
         .enum(["user", "team"])
@@ -144,7 +144,7 @@ export function registerTaskTools(
   // ── Get Task ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_task",
-    "Get detailed information about a specific standalone task by ID.",
+    "Get full details of a standalone task including title, description, due_on, status, assignee, customer, work_type, and estimated_duration.",
     {
       id: z.string().describe("Task ID"),
     },
@@ -174,7 +174,7 @@ export function registerTaskTools(
       title: z.string().optional().describe("New task title"),
       description: z.string().optional().describe("New task description"),
       due_on: z.string().optional().describe("New due date (YYYY-MM-DD)"),
-      work_type_id: z.string().optional().describe("New work type ID"),
+      work_type_id: z.string().optional().describe("New work type ID (use teamleader_list_work_types to find)"),
       assignee_type: z
         .enum(["user", "team"])
         .optional()
@@ -297,7 +297,7 @@ export function registerTaskTools(
   // ── Schedule Task ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_schedule_task",
-    "Schedule a standalone task by creating a calendar event for it. Returns the created event ID.",
+    "Schedule a standalone task by creating a calendar event for it. Returns the created event {id, type}. The task remains in its current status — this only creates a time block.",
     {
       id: z.string().describe("Task ID to schedule"),
       starts_at: z.string().describe("Start datetime (ISO 8601, e.g. 2026-03-04T09:00:00+01:00)"),

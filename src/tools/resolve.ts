@@ -963,31 +963,33 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
   server.tool(
     "teamleader_task_action",
     [
-      "Maintenance actions on tasks:",
-      "  close         : mark task as done",
-      "  create        : create new task in a group (from load_tasks tree)",
-      "  update        : update task title, description or status (uses tasks.update)",
-      "  move_time     : move time entry to a different task (delete + recreate)",
-      "  delete_group  : delete a project group/phase by group_id (get ID from load_tasks YAML or previous find_task/load_tasks call)",
-      "  move_to_group : move an existing task to a different group (uses projectLines.addToGroup)",
+      "Maintenance actions on tasks. Requires teamleader_load_tasks to have been called first (for task_number resolution).",
+      "Actions and required params:",
+      "  close         : mark task as done. Requires: task_id or task_number.",
+      "  create        : create new task. Requires: project_id, group_id, task_title. Optional: description.",
+      "  update        : update task title/description/status. Requires: task_id or task_number. Optional: task_title, description.",
+      "  move_time     : move time entry to different task. Requires: time_entry_id + (new_task_id or new_task_number).",
+      "  delete_group  : delete a project group/phase. Requires: group_id (get from load_tasks YAML). CRITICAL: API requires delete_strategy.",
+      "  move_to_group : move task to different group. Requires: task_id or task_number + group_id.",
+      "Returns confirmation message. All IDs should come from the YAML file written by teamleader_load_tasks.",
     ].join("\n"),
     {
-      action: z.enum(["close", "create", "update", "move_time", "delete_group", "move_to_group"]).describe("Action to perform"),
+      action: z.enum(["close", "create", "update", "move_time", "delete_group", "move_to_group"]).describe("Action to perform (see tool description for required params per action)"),
       // Shared
-      company_name: z.string().describe("Company name (partial match)"),
-      task_number: z.number().optional().describe("Task number from teamleader_load_tasks list"),
-      task_id: z.string().optional().describe("Direct task ID (alternative to task_number)"),
+      company_name: z.string().describe("Company name (partial match, used to resolve cached task tree)"),
+      task_number: z.number().optional().describe("Task number from the numbered list in teamleader_load_tasks output (1-based)"),
+      task_id: z.string().optional().describe("Direct task ID (alternative to task_number — get from load_tasks YAML file)"),
       // create
-      project_id: z.string().optional().describe("Project ID for new task"),
-      group_id: z.string().optional().describe("Group ID: for create = parent group of new task; for delete_group = ID of the group to delete (get from load_tasks YAML)"),
-      task_title: z.string().optional().describe("Title for new task"),
-      description: z.string().optional().describe("Task description (for create or update)"),
+      project_id: z.string().optional().describe("Project ID for new task (required for 'create' action — get from load_tasks YAML)"),
+      group_id: z.string().optional().describe("Group ID: for 'create' = parent group; for 'delete_group' = group to delete; for 'move_to_group' = target group. Get from load_tasks YAML."),
+      task_title: z.string().optional().describe("Title for new or updated task (required for 'create', optional for 'update')"),
+      description: z.string().optional().describe("Task description (for 'create' or 'update' actions)"),
       // move_time
-      time_entry_id: z.string().optional().describe("Time entry ID to move"),
-      new_task_number: z.number().optional().describe("Target task number from load_tasks list"),
-      new_task_id: z.string().optional().describe("Target task ID (alternative to new_task_number)"),
+      time_entry_id: z.string().optional().describe("Time entry ID to move (required for 'move_time' action)"),
+      new_task_number: z.number().optional().describe("Target task number for move_time (from load_tasks numbered list)"),
+      new_task_id: z.string().optional().describe("Target task ID for move_time (alternative to new_task_number)"),
       // internal
-      _company_id: z.string().optional().describe("Internal: resolved company ID"),
+      _company_id: z.string().optional().describe("Internal: pre-resolved company ID (skip company lookup)"),
     },
     async (params) => {
       // Resolve company
@@ -1143,9 +1145,9 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
   // ── Cache Management ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_cache_stats",
-    "Show cache statistics and all cached tasks",
+    "Show cache statistics including entry counts, TTL status, and cached tasks. Use to debug cache issues or verify what data is cached. Returns text summary with counts and optional task list.",
     {
-      company_filter: z.string().optional().describe("Filter tasks by company name"),
+      company_filter: z.string().optional().describe("Filter cached tasks by company name (partial match)"),
     },
     async (params) => {
       const stats = getCacheStats();
@@ -1159,7 +1161,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
   server.tool(
     "teamleader_clear_cache",
-    "Clear the entire local cache (forces fresh API lookups)",
+    "Clear the entire local cache (~/.teamleader-cache.json). Forces fresh API lookups on next call. Use when data seems stale or after bulk changes. Does NOT delete YAML task files.",
     {},
     async () => {
       clearCache();

@@ -18,7 +18,7 @@ export function registerContactTools(
   // ── List Contacts ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_contacts",
-    "List contacts from Teamleader Focus with optional filtering and pagination",
+    "List contacts (people) from Teamleader Focus. Returns array with id, first_name, last_name, emails, tags. Use to find contact IDs. Next steps: teamleader_get_contact for full details, teamleader_link_contact_to_company to associate with a company.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -64,7 +64,7 @@ export function registerContactTools(
   // ── Get Contact ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_contact",
-    "Get detailed information about a specific contact",
+    "Get full contact details including name, emails, phones, addresses, tags, linked companies, and custom fields. Next steps: teamleader_update_contact to edit, teamleader_link_contact_to_company to associate.",
     {
       id: z.string().describe("The contact ID"),
     },
@@ -88,7 +88,7 @@ export function registerContactTools(
   // ── Create Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_contact",
-    "Create a new contact in Teamleader Focus",
+    "Create a new contact (person). Returns {id, type}. Next step: teamleader_link_contact_to_company to associate with a company.",
     {
       first_name: z.string().describe("First name"),
       last_name: z.string().describe("Last name"),
@@ -137,7 +137,7 @@ export function registerContactTools(
   // ── Update Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_contact",
-    "Update an existing contact in Teamleader Focus",
+    "Update an existing contact. Only provided fields are changed.",
     {
       id: z.string().describe("The contact ID to update"),
       first_name: z.string().optional().describe("First name"),
@@ -186,7 +186,7 @@ export function registerContactTools(
   // ── Delete Contact ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_contact",
-    "Delete a contact from Teamleader Focus",
+    "Delete a contact. This action is irreversible and removes all linked data.",
     {
       id: z.string().describe("The contact ID to delete"),
     },
@@ -210,7 +210,7 @@ export function registerContactTools(
   // ── Link Contact to Company ─────────────────────────────────────────────
   server.tool(
     "teamleader_link_contact_to_company",
-    "Link a contact to a company in Teamleader Focus",
+    "Link a contact to a company. Optionally set their position and decision maker flag. A contact can be linked to multiple companies.",
     {
       id: z.string().describe("The contact ID"),
       company_id: z.string().describe("The company ID to link to"),
@@ -244,7 +244,7 @@ export function registerContactTools(
   // ── Unlink Contact from Company ─────────────────────────────────────────
   server.tool(
     "teamleader_unlink_contact_from_company",
-    "Unlink a contact from a company in Teamleader Focus",
+    "Remove the link between a contact and a company. Does not delete either entity.",
     {
       id: z.string().describe("The contact ID"),
       company_id: z.string().describe("The company ID to unlink from"),
@@ -303,7 +303,7 @@ export function registerContactTools(
   // ── Tag Contact ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_tag_contact",
-    "Add one or more tags to a contact in Teamleader Focus",
+    "Add one or more tags to a contact. Use teamleader_list_tags to see existing tags.",
     {
       id: z.string().describe("The contact ID"),
       tags: z.array(z.string()).describe("Tags to add (e.g. ['prospect', 'expo'])"),
@@ -328,7 +328,7 @@ export function registerContactTools(
   // ── Untag Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_untag_contact",
-    "Remove one or more tags from a contact in Teamleader Focus",
+    "Remove one or more tags from a contact.",
     {
       id: z.string().describe("The contact ID"),
       tags: z.array(z.string()).describe("Tags to remove (e.g. ['prospect', 'expo'])"),

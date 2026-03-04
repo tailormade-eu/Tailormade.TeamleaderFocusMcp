@@ -17,7 +17,7 @@ export function registerTimeTrackingTools(
   // ── List Time Tracking ───────────────────────────────────────────────────
   server.tool(
     "teamleader_list_timetracking",
-    "List time tracking entries from Teamleader Focus with optional filtering and pagination",
+    "List time tracking entries from Teamleader Focus. Use to review logged hours, verify entries, or audit time spent. Returns array of entries with id, subject, user, started_on, ended_on, duration, description, work_type. Next steps: use teamleader_get_timetracking for full details, teamleader_update_timetracking to edit, or teamleader_delete_timetracking to remove. CRITICAL: started_after/started_before accept date-only format (YYYY-MM-DD) — datetime strings cause 400 Bad Request.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -83,7 +83,7 @@ export function registerTimeTrackingTools(
   // ── Get Time Tracking ────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_timetracking",
-    "Get details of a specific time tracking entry by ID",
+    "Get full details of a specific time tracking entry. Returns id, subject (type + id), user, started_on, ended_on, duration, description, work_type, invoiceable. Use when you need exact start/end times or to verify an entry before updating.",
     {
       id: z.string().describe("Time tracking entry ID"),
     },
@@ -107,15 +107,15 @@ export function registerTimeTrackingTools(
   // ── Add Time Tracking ────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_timetracking",
-    "Add a new time tracking entry for work performed on a project, milestone, or ticket",
+    "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}. NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.",
     {
       user_id: z.string().describe("ID of user who performed the work"),
       work_type_id: z
         .string()
-        .describe("Type of work performed (get IDs from workTypes.list)"),
+        .describe("Work type ID (use teamleader_list_work_types to find valid IDs)"),
       started_on: z
         .string()
-        .describe("Start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+01:00)"),
+        .describe("Start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+01:00). WARNING: do not include milliseconds — causes dedup mismatches."),
       ended_on: z
         .string()
         .optional()
@@ -164,13 +164,13 @@ export function registerTimeTrackingTools(
   // ── Update Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timetracking",
-    "Update an existing time tracking entry",
+    "Update an existing time tracking entry. You can send only the fields you want to change. CRITICAL: API requires started_at + ended_at together — if you send only one, this tool auto-fetches the other. Returns {id, type}.",
     {
       id: z.string().describe("Time tracking entry ID"),
       work_type_id: z
         .string()
         .optional()
-        .describe("Type of work performed"),
+        .describe("Work type ID (use teamleader_list_work_types to find valid IDs)"),
       started_on: z
         .string()
         .optional()
@@ -229,7 +229,7 @@ export function registerTimeTrackingTools(
   // ── Delete Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_timetracking",
-    "Delete a time tracking entry",
+    "Delete a time tracking entry. This action is irreversible. Returns {success: true}.",
     {
       id: z.string().describe("Time tracking entry ID to delete"),
     },
@@ -253,12 +253,12 @@ export function registerTimeTrackingTools(
   // ── Start Timer ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_start_timer",
-    "Start a running timer for time tracking (creates ongoing entry)",
+    "Start a running timer for time tracking. Only one timer can run per user — starting a new timer does NOT stop the previous one (use teamleader_stop_timer first). Returns {id, type}. Next step: use teamleader_stop_timer to stop it, or teamleader_get_current_timer to check status.",
     {
-      user_id: z.string().describe("ID of user who will perform the work"),
+      user_id: z.string().describe("ID of user (use teamleader_list_users to find)"),
       work_type_id: z
         .string()
-        .describe("Type of work to be performed"),
+        .describe("Work type ID (use teamleader_list_work_types to find valid IDs)"),
       subject_type: z
         .enum(["nextgenTask", "todo", "project", "milestone", "ticket"])
         .describe("What the time will be tracked against (use nextgenTask for project tasks)"),
@@ -301,9 +301,9 @@ export function registerTimeTrackingTools(
   // ── Stop Timer ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_stop_timer",
-    "Stop a running timer (completes the time tracking entry)",
+    "Stop the currently running timer for the authenticated user. CRITICAL: this API takes NO parameters — it always stops the current user's active timer. The id parameter below is ignored. Converts the running timer into a completed time tracking entry. Returns {id, type} of the created entry.",
     {
-      id: z.string().describe("Time tracking entry ID to stop"),
+      id: z.string().describe("IGNORED — timers.stop takes no parameters. Stops the current user's active timer regardless of this value."),
     },
     async (params) => {
       const result = await client.request<{ data: { id: string; type: string } }>({
@@ -325,7 +325,7 @@ export function registerTimeTrackingTools(
   // ── Get Current Timer ──────────────────────────────────────────────────
   server.tool(
     "teamleader_get_current_timer",
-    "Get the currently running timer for the authenticated user. Returns timer details (subject, work type, started_at) or indicates no timer is running. Only one timer can run per user at a time.",
+    "Get the currently running timer for the authenticated user. Returns timer details (subject, work_type, started_at, description) if running, or empty/null if no timer is active. Only one timer can run per user. Next steps: teamleader_stop_timer to stop, teamleader_update_timer to modify.",
     {},
     async () => {
       const result = await client.request({
@@ -349,7 +349,7 @@ export function registerTimeTrackingTools(
     "teamleader_update_timer",
     "Update the currently running timer. Only possible if a timer is running. Use this to change the subject, work type, description, or start time of the active timer.",
     {
-      work_type_id: z.string().optional().describe("New work type ID"),
+      work_type_id: z.string().optional().describe("New work type ID (use teamleader_list_work_types to find valid IDs)"),
       started_at: z
         .string()
         .optional()

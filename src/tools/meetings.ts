@@ -21,7 +21,7 @@ export function registerMeetingTools(
   // ── List Meetings ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_meetings",
-    "List meetings from Teamleader Focus with optional filtering by employee, date range, term, or recurrence. Supports pagination and sorting by scheduled_at.",
+    "List meetings from Teamleader Focus. Returns array with id, title, scheduled_at, attendees, status. Separate from events (events.*) — meetings support completion, reports, and richer attendee management. Next steps: teamleader_get_meeting for details, teamleader_complete_meeting when done.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
@@ -113,7 +113,7 @@ export function registerMeetingTools(
   // ── Schedule Meeting ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_schedule_meeting",
-    "Schedule a new meeting in Teamleader Focus. Requires title, start/end times, and at least one attendee (user). Optionally link to a customer, deal, milestone, or set a location.",
+    "Schedule a new meeting. Returns {id, type}. Requires title, start/end times, and at least one attendee (user). Optionally link to a customer, deal, or milestone. For simple calendar events without meeting features, use teamleader_create_event instead.",
     {
       title: z.string().describe("Meeting title"),
       starts_at: z.string().describe("Start datetime (ISO 8601)"),
@@ -266,7 +266,7 @@ export function registerMeetingTools(
   // ── Complete Meeting ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_complete_meeting",
-    "Mark a meeting as completed/done.",
+    "Mark a meeting as completed. Next step: teamleader_create_meeting_report to attach a summary to a contact, company, or deal.",
     {
       id: z.string().describe("The meeting ID to complete"),
     },
