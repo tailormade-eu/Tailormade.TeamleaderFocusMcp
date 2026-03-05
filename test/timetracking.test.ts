@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildListTimetrackingBody,
   buildAddTimetrackingBody,
+  formatDesc,
 } from "../src/tools/timetracking.js";
 
 describe("buildListTimetrackingBody", () => {
@@ -62,6 +63,30 @@ describe("buildListTimetrackingBody", () => {
   it("maps user_id filter", () => {
     const body = buildListTimetrackingBody({ user_id: "user-1" });
     expect((body.filter as Record<string, unknown>).user_id).toBe("user-1");
+  });
+});
+
+describe("formatDesc", () => {
+  it("returns full string when maxLen=0", () => {
+    expect(formatDesc("hello\nworld", 0)).toBe("hello world");
+  });
+  it("truncates to maxLen with ellipsis", () => {
+    expect(formatDesc("abcdef", 4)).toBe("abcd…");
+  });
+  it("does not truncate if string shorter than maxLen", () => {
+    expect(formatDesc("abc", 10)).toBe("abc");
+  });
+  it("replaces CRLF with space", () => {
+    expect(formatDesc("a\r\nb", 50)).toBe("a b");
+  });
+  it("replaces CR with space", () => {
+    expect(formatDesc("a\rb", 50)).toBe("a b");
+  });
+  it("trims leading/trailing whitespace", () => {
+    expect(formatDesc("  hello  ", 50)).toBe("hello");
+  });
+  it("handles empty string", () => {
+    expect(formatDesc("", 50)).toBe("");
   });
 });
 

@@ -20,6 +20,13 @@ function respond(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
+// ── Helpers (exported for testing) ────────────────────────────────────────────
+
+export function formatDesc(raw: string, maxLen: number): string {
+  const flat = raw.replace(/\r\n|\r|\n/g, " ").trim();
+  return maxLen > 0 && flat.length > maxLen ? flat.slice(0, maxLen) + "…" : flat;
+}
+
 // ── Body Builders (exported for testing) ─────────────────────────────────────
 
 export interface ListTimetrackingParams {
@@ -774,11 +781,6 @@ export function registerTimeTrackingTools(
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         return `${h}:${m.toString().padStart(2, "0")}`;
-      }
-
-      function formatDesc(raw: string, maxLen: number): string {
-        const flat = raw.replace(/\r\n|\r|\n/g, " ").trim();
-        return maxLen > 0 && flat.length > maxLen ? flat.slice(0, maxLen) + "…" : flat;
       }
 
       const isBeauty = params.format !== "md";

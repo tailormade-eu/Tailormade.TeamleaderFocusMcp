@@ -94,6 +94,16 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_update_timetracking` | Update times | ❌ | |
 | `teamleader_delete_timetracking` | Delete entry | ✅ | |
 
+## Timesheet
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_timesheet` | Basic call (from_date/to_date, user_id) | ❌ | Table with Start/End/Dur/Description/Task/Group/Project/Client |
+| `teamleader_timesheet` | `desc_length=0` | ❌ | Full descriptions, no truncation |
+| `teamleader_timesheet` | `desc_length=20` | ❌ | Descriptions truncated to 20 chars with `…` |
+| `teamleader_timesheet` | `format=md` | ❌ | Full table incl. User column |
+| `teamleader_timesheet` | `format=beauty` (default) | ❌ | No User column, task titles truncated to 40 chars, day header |
+
 ## Timers
 
 | Tool | Test | Status | Notes |

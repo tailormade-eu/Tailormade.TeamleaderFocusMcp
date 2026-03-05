@@ -255,6 +255,9 @@ Used by humans and AI to get IDs for direct calls.
    - `.describe()` on every Zod parameter
    - Cache where appropriate
    - Numbered list output when user must choose
+6. Add a test row to `docs/TESTING.md` for each new tool
+7. If the tool contains pure helper functions (no API calls): export them and add unit tests in `test/`
+8. If adding params to an existing tool: update the TESTING.md row for that tool
 
 ### Tool Template
 
