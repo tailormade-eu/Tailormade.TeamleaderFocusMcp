@@ -22,16 +22,22 @@ export function registerSubscriptionTools(
   // ── List Subscriptions ───────────────────────────────────────────────────
   server.tool(
     "teamleader_list_subscriptions",
-    "List subscriptions (recurring invoices) from Teamleader Focus. Returns array with id, title, status, invoicee, billing_cycle, next_renewal_date, total. billing_cycle = {periodicity: {unit: 'week'|'month'|'year', period: N}, days_in_advance: N}. Valid statuses: 'active', 'deactivated'. No company_id filter — filter by invoicee.customer.id client-side. Next steps: teamleader_get_subscription for full details.",
+    "List subscriptions (recurring invoices) from Teamleader Focus. Returns array with id, title, status, invoicee, billing_cycle, next_renewal_date, total. billing_cycle = {periodicity: {unit: 'week'|'month'|'year', period: N}, days_in_advance: N}. Valid statuses: 'active', 'deactivated'. Sort by: title, created_at, status. Next steps: teamleader_get_subscription for full details.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
-      page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
+      page_size: z.number().optional().describe("Page size (default: 20)"),
+      ids: z.array(z.string()).optional().describe("Filter by specific subscription IDs"),
+      invoice_id: z.string().optional().describe("Find subscriptions that generated the given invoice ID"),
+      deal_id: z.string().optional().describe("Filter on subscriptions created from a deal ID"),
+      department_id: z.string().optional().describe("Filter by department ID"),
+      customer_type: z.enum(["contact", "company"]).optional().describe("Customer type for customer filter (must provide with customer_id)"),
+      customer_id: z.string().optional().describe("Customer ID for customer filter (must provide with customer_type)"),
       status: z
         .array(z.enum(["active", "deactivated"]))
         .optional()
         .describe("Filter by status: 'active' or 'deactivated'"),
-      department_id: z.string().optional().describe("Filter by department ID"),
-      updated_since: z.string().optional().describe("ISO 8601 date — only subscriptions updated after this date"),
+      sort_field: z.enum(["title", "created_at", "status"]).optional().describe("Sort field"),
+      sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -44,10 +50,19 @@ export function registerSubscriptionTools(
       }
 
       const filter: Record<string, unknown> = {};
-      if (params.status) filter.status = params.status;
+      if (params.ids) filter.ids = params.ids;
+      if (params.invoice_id) filter.invoice_id = params.invoice_id;
+      if (params.deal_id) filter.deal_id = params.deal_id;
       if (params.department_id) filter.department_id = params.department_id;
-      if (params.updated_since) filter.updated_since = params.updated_since;
+      if (params.customer_type && params.customer_id) {
+        filter.customer = { type: params.customer_type, id: params.customer_id };
+      }
+      if (params.status) filter.status = params.status;
       if (Object.keys(filter).length > 0) body.filter = filter;
+
+      if (params.sort_field) {
+        body.sort = [{ field: params.sort_field, order: params.sort_order ?? "asc" }];
+      }
 
       const result = await client.request<TeamleaderListResponse<Subscription>>({
         endpoint: "subscriptions.list",

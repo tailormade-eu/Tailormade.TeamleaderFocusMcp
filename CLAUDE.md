@@ -38,13 +38,38 @@ Never derive a Teamleader API implementation from general knowledge. The API has
 
 These legacy endpoints still exist in the Teamleader API but represent the old data model. All new work uses `projects-v2/`.
 
-### Out of Scope (Niche / HR)
+### Out of Scope (HR)
 
 | Endpoint group | Reason |
 |----------------|--------|
-| `users.*` HR fields | Only `users.list` and `users.info` are in scope |
-| `webhooks.*` | Infrastructure, not relevant for MCP |
+| `users.listDaysOff`, `users.getWeekSchedule` | HR |
+| `closingDays.*`, `dayOffTypes.*`, `daysOff.*` | HR |
+| `userAvailability.*` | HR/planning |
+
+### Out of Scope (Accounting / Bookkeeping)
+
+| Endpoint group | Reason |
+|----------------|--------|
+| `incomingInvoices.*` | Bookkeeping, not CRM/PM |
+| `incomingCreditNotes.*` | Bookkeeping |
+| `receipts.*` | Bookkeeping |
+| `bookkeepingSubmissions.list` | Bookkeeping |
+
+### Out of Scope (Admin / Infra / Niche)
+
+| Endpoint group | Reason |
+|----------------|--------|
 | `customFieldDefinitions.*` | Admin/schema management |
+| `webhooks.*` | Infrastructure |
+| `migrate.*` | One-time migration |
+| `cloudPlatforms.*`, `accounts.*` | Infrastructure |
+| `emailTracking.*` | Niche |
+| `externalParties.*` | Niche project feature |
+| `levelTwoAreas.list` | Geographic/niche |
+| `plannableItems.*`, `reservations.*` | Planning/niche |
+| `contacts.uploadAvatar`, `companies.uploadLogo` | Binary upload, skip |
+
+**Out-of-scope decisions are also recorded in `tools/coverage-config.json`** (used by `npm run check-coverage`).
 
 ---
 
@@ -68,22 +93,28 @@ These legacy endpoints still exist in the Teamleader API but represent the old d
 Each domain has its own file in `src/tools/`. Export a `register*Tools(server, client)` function and import it in `src/index.ts`.
 
 ```
-src/tools/contacts.ts       → registerContactTools      (list, get, create, update, delete, link, unlink, tag/untag)
-src/tools/companies.ts      → registerCompanyTools      (list, get, create, update)
-src/tools/deals.ts          → registerDealTools         (list, get, create, update, delete, lose, win, move + lookups)
+src/tools/contacts.ts       → registerContactTools      (list, get, create, update, delete, link, unlink, tag, untag, updateCompanyLink)
+src/tools/companies.ts      → registerCompanyTools      (list, get, create, update, delete, tag, untag)
+src/tools/deals.ts          → registerDealTools         (list, get, create, update, delete, lose, win, move + pipelines/phases/sources CRUD + lookups)
 src/tools/tasks.ts          → registerTaskTools         (standalone tasks: list, get, create, update, delete, complete, reopen, schedule)
-src/tools/events.ts         → registerEventTools        (list, get, create)
+src/tools/events.ts         → registerEventTools        (list, get, create, update, cancel)
 src/tools/invoices.ts       → registerInvoiceTools      (list, get, create, book, send, delete, update, payment, credit + lookups)
-src/tools/timetracking.ts   → registerTimeTrackingTools (list, get, add, update, delete, timers.start/stop/current/update, resume)
-src/tools/projects.ts       → registerProjectTools      (full CRUD + lifecycle + relationships + task lifecycle)
+src/tools/timetracking.ts   → registerTimeTrackingTools (list, get, add, update, delete, resume + timers.start/stop/current/update)
+src/tools/projects.ts       → registerProjectTools      (full CRUD + lifecycle + relationships + projectGroups + projectLines + project tasks)
 src/tools/resolve.ts        → registerResolveTools      (smart tools: find_task, log_time, load_tasks, task_action, cache_stats, clear_cache)
 src/tools/users.ts          → registerUserTools         (list, get)
-src/tools/tickets.ts        → registerTicketTools       (list, get, create, update, messages, reply, internal)
+src/tools/tickets.ts        → registerTicketTools       (list, get, create, update, messages, reply, internal, importMessage)
 src/tools/meetings.ts       → registerMeetingTools      (list, get, schedule, update, complete, delete, report)
 src/tools/departments.ts    → registerDepartmentTools   (list, get)
-src/tools/lookups.ts        → registerLookupTools       (activityTypes, taxRates, paymentTerms, ticketStatuses, products, productCategories, workTypes, teams, tags, expenses)
+src/tools/lookups.ts        → registerLookupTools       (activityTypes, taxRates, paymentTerms, paymentMethods, ticketStatuses, products, productCategories, workTypes, teams, tags, expenses, mailTemplates, lostReasons, businessTypes, callOutcomes, currencies, documentTemplates, priceLists, unitsOfMeasure, withholdingTaxRates, commercialDiscounts)
 src/tools/files.ts          → registerFileTools         (list, get, download, delete, upload)
 src/tools/notes.ts          → registerNoteTools         (list, create, update)
+src/tools/subscriptions.ts  → registerSubscriptionTools (list, get, create, update, deactivate)
+src/tools/quotations.ts     → registerQuotationTools    (list, get, create, update, delete, accept, send, download)  [🔨 task 26]
+src/tools/creditnotes.ts    → registerCreditNoteTools   (list, get, download, sendViaPeppol)  [🔨 task 27]
+src/tools/materials.ts      → registerMaterialTools     (list, get, create, update, delete, assign, unassign, duplicate)  [🔨 task 30]
+src/tools/calls.ts          → registerCallTools         (list, get, add, update, complete)  [🔨 task 38]
+src/tools/orders.ts         → registerOrderTools        (list, get)  [🔨 task 37]
 ```
 
 ### Cache
@@ -312,20 +343,38 @@ src/
     client.ts         — HTTP client (all POST)
     cache.ts          — Cache types, TTL, CRUD, task tree functions
   tools/
-    resolve.ts        — Smart tools (find_task, log_time, load_tasks, task_action, cache_stats, clear_cache)
-    contacts.ts       — Contact CRUD
-    companies.ts      — Company CRUD
-    deals.ts          — Deal CRUD
-    tasks.ts          — Legacy task tools
-    events.ts         — Event tools
-    invoices.ts       — Invoice tools
-    timetracking.ts   — Time tracking + timers tools
-    projects.ts       — Projects v2 tools
+    resolve.ts        — Smart tools (find_task, log_time, load_tasks, task_action)
+    contacts.ts       — Contact CRUD + tag/link
+    companies.ts      — Company CRUD + tag
+    deals.ts          — Deal CRUD + pipelines/phases CRUD + lookups
+    tasks.ts          — Standalone tasks
+    events.ts         — Events
+    invoices.ts       — Invoices + payment + credit
+    timetracking.ts   — Time tracking + timers
+    projects.ts       — Projects v2 + groups + lines + project tasks
+    subscriptions.ts  — Subscriptions
+    quotations.ts     — Quotations [🔨 task 26]
+    creditnotes.ts    — Credit notes [🔨 task 27]
+    materials.ts      — Materials [🔨 task 30]
+    calls.ts          — CRM calls [🔨 task 38]
+    orders.ts         — Orders [🔨 task 37]
+    users.ts          — Users
+    tickets.ts        — Tickets + messages
+    meetings.ts       — Meetings
+    departments.ts    — Departments
+    lookups.ts        — All reference data lists
+    files.ts          — Files
+    notes.ts          — Notes
   index.ts            — Server entry point
 docs/
-  api/                — Scraped Teamleader Focus API docs (187 pages, 2026-03-03)
-  find-task-business-logic.md  — Detailed business logic documentation
-tasks/                — CodingMachine task queue (planned additions, see README Roadmap)
+  api/                — Scraped Teamleader Focus API docs (360 pages, 2026-03-05)
+  TESTING.md          — Manual test checklist per tool
+  audit-*.md          — Audit output files (generated by CodingMachine audit tasks)
+tools/
+  tl_docs_scraper.py    — BFS scraper for Teamleader API docs (Selenium/Edge)
+  check-coverage.ts     — Coverage verification script [🔨 task 39]
+  coverage-config.json  — Endpoint→tool mapping + out-of-scope decisions [🔨 task 39]
+tasks/                — CodingMachine task queue
 dist/                 — Compiled output (gitignored)
 ```
 
@@ -334,13 +383,21 @@ dist/                 — Compiled output (gitignored)
 ## Build & Test
 
 ```bash
-npm run build        # compile TypeScript → dist/
-npm run typecheck    # type check without emit
-npm run dev          # watch mode
+npm run build          # compile TypeScript → dist/
+npm run typecheck      # type check without emit
+npm run dev            # watch mode
+npm run check-coverage # verify all API endpoints covered (reads INDEX.md + scans src/tools/)
+npm test               # unit tests (body construction, no live API)
 
 # Test with inspector:
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
+
+### Coverage verification
+
+`npm run check-coverage` compares `docs/api/INDEX.md` (scraped API endpoint list) against `src/tools/*.ts`.
+Mapping and out-of-scope decisions live in `tools/coverage-config.json`.
+**Never create a manual coverage matrix** — it duplicates INDEX.md and will go out of sync.
 
 ---
 
