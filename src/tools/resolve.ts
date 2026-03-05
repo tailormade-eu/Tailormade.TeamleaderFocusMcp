@@ -424,6 +424,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       "If not in cache: run teamleader_find_task first.",
       "Formats: ISO 8601, 'YYYY-MM-DD HH:MM', or 'HH:MM' (uses today's date).",
       "Deduplication: checks existing entries before adding. Use force=true to override.",
+      "CRITICAL: Never guess or invent a task_id. An invalid task_id returns '400 Invalid subject' — not a 'not found' error, making it hard to diagnose. Always get task_id from load_tasks + task_selection=N first.",
     ].join("\n"),
     {
       company_name: z.string().describe("Company name (partial match)"),
