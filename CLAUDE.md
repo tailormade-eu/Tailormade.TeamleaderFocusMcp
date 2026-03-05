@@ -4,6 +4,23 @@ This file provides context for AI agents (Claude Code, CodingMachine) working on
 
 ---
 
+## ⚠️ CRITICAL: Always Read the API Doc First
+
+**Before implementing OR modifying any tool, read the corresponding doc in `docs/api/`.**
+
+Never derive a Teamleader API implementation from general knowledge. The API has non-obvious field names, nested structures, and filter params that differ from what you'd expect.
+
+| Action | Required |
+|--------|----------|
+| Implementing a new tool | Read `docs/api/*-{endpoint}.md` |
+| Adding a filter param | Read the full filter object in the doc |
+| Unsure about a field name | Read the doc — do not guess |
+| Auditing existing tools | Read doc + compare every param |
+
+**The docs are in `docs/api/` — use them. This is not optional.**
+
+---
+
 ## Scope — What to Implement
 
 ### In Scope
