@@ -178,4 +178,78 @@ export function registerCompanyTools(
       };
     }
   );
+
+  // ── Delete Company ──────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_delete_company",
+    "Delete a company from Teamleader Focus. This is irreversible.",
+    {
+      id: z.string().describe("The company ID to delete"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "companies.delete",
+        body: { id: params.id },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Company ${params.id} deleted` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Tag Company ─────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_tag_company",
+    "Add one or more tags to a company. Tags that don't exist yet will be created automatically.",
+    {
+      id: z.string().describe("The company ID to tag"),
+      tags: z.array(z.string()).describe("Tags to add to the company"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "companies.tag",
+        body: { id: params.id, tags: params.tags },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Tags added to company ${params.id}` }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ── Untag Company ───────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_untag_company",
+    "Remove one or more tags from a company.",
+    {
+      id: z.string().describe("The company ID to untag"),
+      tags: z.array(z.string()).describe("Tags to remove from the company"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "companies.untag",
+        body: { id: params.id, tags: params.tags },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ success: true, message: `Tags removed from company ${params.id}` }),
+          },
+        ],
+      };
+    }
+  );
 }
