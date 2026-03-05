@@ -17,7 +17,7 @@ export function registerTimeTrackingTools(
   // ── List Time Tracking ───────────────────────────────────────────────────
   server.tool(
     "teamleader_list_timetracking",
-    "List time tracking entries from Teamleader Focus. Use to review logged hours, verify entries, or audit time spent. Returns array of entries with id, subject, user, started_on, ended_on, duration, description, work_type. Next steps: use teamleader_get_timetracking for full details, teamleader_update_timetracking to edit, or teamleader_delete_timetracking to remove. CRITICAL: started_after/started_before/ended_after/ended_before accept date-only format (YYYY-MM-DD) — datetime strings cause 400 Bad Request.",
+    "List time tracking entries from Teamleader Focus. Use to review logged hours, verify entries, or audit time spent. Returns array of entries with id, subject, user, started_on, ended_on, duration, description, work_type. Next steps: use teamleader_get_timetracking for full details, teamleader_update_timetracking to edit, or teamleader_delete_timetracking to remove. NOTE: Pass date filters as YYYY-MM-DD — they are automatically converted to ISO 8601 datetime (T00:00:00+00:00 for after/start, T23:59:59+00:00 for before/end).",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),

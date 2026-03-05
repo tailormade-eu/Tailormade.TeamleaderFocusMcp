@@ -358,12 +358,14 @@ export function registerDealTools(
     "List deal phases for a pipeline. Use the returned IDs with teamleader_move_deal or teamleader_create_deal.",
     {
       pipeline_id: z.string().optional().describe("Pipeline ID to filter phases (omit for all pipelines)"),
+      ids: z.array(z.string()).optional().describe("Filter by specific phase IDs"),
     },
     async (params) => {
       const body: Record<string, unknown> = { page: { size: 100, number: 1 } };
-      if (params.pipeline_id) {
-        body.filter = { deal_pipeline_id: params.pipeline_id };
-      }
+      const filter: Record<string, unknown> = {};
+      if (params.pipeline_id) filter.deal_pipeline_id = params.pipeline_id;
+      if (params.ids) filter.ids = params.ids;
+      if (Object.keys(filter).length > 0) body.filter = filter;
 
       const result = await client.request<TeamleaderListResponse<{ id: string; name: string; pipeline: { type: string; id: string } }>>({
         endpoint: "dealPhases.list",
@@ -401,11 +403,20 @@ export function registerDealTools(
   server.tool(
     "teamleader_list_deal_pipelines",
     "List all deal pipelines. Use the returned IDs with teamleader_list_deal_phases to see phases within a pipeline.",
-    {},
-    async () => {
+    {
+      ids: z.array(z.string()).optional().describe("Filter by specific pipeline IDs"),
+      status: z.array(z.enum(["open", "pending_deletion"])).optional().describe("Filter by pipeline status"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { page: { size: 100, number: 1 } };
+      const filter: Record<string, unknown> = {};
+      if (params.ids) filter.ids = params.ids;
+      if (params.status) filter.status = params.status;
+      if (Object.keys(filter).length > 0) body.filter = filter;
+
       const result = await client.request<TeamleaderListResponse<{ id: string; name: string }>>({
         endpoint: "dealPipelines.list",
-        body: { page: { size: 100, number: 1 } },
+        body,
       });
 
       const pipelines = result.data ?? [];
