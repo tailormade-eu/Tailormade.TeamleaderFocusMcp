@@ -411,6 +411,14 @@ when used, the response will include `totals.due_incasso_inclusive`, `totals.fix
 
 **type** string
 
+**subscription** objectnullable
+
+**id** string
+
+**Example:**`eab232c6-49b2-4b7e-a977-5e1148dad471`
+
+**type** string
+
 **delivery_date** stringnullable
 
 **Example:**`2025-12-08`
@@ -515,6 +523,10 @@ when used, the response will include `totals.due_incasso_inclusive`, `totals.fix
           "project": {  
             "type": "project",  
             "id": "179e1564-493b-4305-8c54-a34fc80920fc"  
+          },  
+          "subscription": {  
+            "type": "subscription",  
+            "id": "8631bbbf-bead-4f6e-a2ab-58ec9bbd997a"  
           }  
         }  
       ]  
@@ -616,6 +628,10 @@ when used, the response will include `totals.due_incasso_inclusive`, `totals.fix
           "project": {  
             "type": "project",  
             "id": "179e1564-493b-4305-8c54-a34fc80920fc"  
+          },  
+          "subscription": {  
+            "type": "subscription",  
+            "id": "8631bbbf-bead-4f6e-a2ab-58ec9bbd997a"  
           }  
         }  
       ]  
