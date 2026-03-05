@@ -35,6 +35,7 @@ import { registerNoteTools } from "./tools/notes.js";
 import { registerSubscriptionTools } from "./tools/subscriptions.js";
 import { registerQuotationTools } from "./tools/quotations.js";
 import { registerCreditNoteTools } from "./tools/creditnotes.js";
+import { registerProductTools } from "./tools/products.js";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -89,6 +90,7 @@ async function main(): Promise<void> {
   registerSubscriptionTools(server, client);
   registerQuotationTools(server, client);
   registerCreditNoteTools(server, client);
+  registerProductTools(server, client);
 
   // Initialize cache (active user + work types)
   await initializeCache(client);
