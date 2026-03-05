@@ -485,12 +485,13 @@ export function registerTimeTrackingTools(
   // ── Timesheet ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_timesheet",
-    "Day-by-day overview of time tracking entries with resolved task/group/project/client/user info. Use for daily or period reports. Resolves todo->group->project->client chain via API calls (cached per request). Parameters from_date/to_date are inclusive (YYYY-MM-DD). Use desc_length=0 for full descriptions, default truncates to 50 chars. NOTE: Resolve chain makes multiple API calls per entry. Recommend max 2 weeks per call.",
+    "Day-by-day overview of time tracking entries with resolved task/group/project/client/user info. Use for daily or period reports. Resolves todo->group->project->client chain via API calls (cached per request). Parameters from_date/to_date are inclusive (YYYY-MM-DD). Use desc_length=0 for full descriptions, default truncates to 50 chars. format=beauty (default): compact display optimized for reading — no User column, task titles truncated to 40 chars, emoji day headers. format=md: full markdown table with all columns for file export. NOTE: Resolve chain makes multiple API calls per entry. Recommend max 2 weeks per call.",
     {
       from_date: z.string().describe("Start date inclusive (YYYY-MM-DD). Converted to T00:00:00+00:00."),
       to_date: z.string().describe("End date inclusive (YYYY-MM-DD). Converted to T23:59:59+00:00."),
       user_id: z.string().optional().describe("Filter by user ID. Omit for all users."),
       desc_length: z.number().optional().default(50).describe("Max description length (chars). 0 = full. Default: 50. Newlines replaced with spaces."),
+      format: z.enum(["md", "beauty"]).optional().default("beauty").describe("Output format: 'beauty' = compact display (no User col, truncated task titles), 'md' = full markdown table for file export."),
     },
     async (params) => {
       const toDate = (s: string, endOfDay = false) => {
@@ -780,6 +781,7 @@ export function registerTimeTrackingTools(
         return maxLen > 0 && flat.length > maxLen ? flat.slice(0, maxLen) + "…" : flat;
       }
 
+      const isBeauty = params.format !== "md";
       let totalSeconds = 0;
       const sections: string[] = [];
 
@@ -791,17 +793,31 @@ export function registerTimeTrackingTools(
           const end = formatTime(e.ended_at);
           const dur = formatDuration(e.duration);
           const desc = formatDesc(e.description, params.desc_length) || "—";
+          const taskTitle = isBeauty ? formatDesc(e.task, 40) : e.task;
+          if (isBeauty) {
+            return `| ${start} | ${end} | ${dur} | ${desc} | ${taskTitle} | ${e.group} | ${e.project} | ${e.client_name} |`;
+          }
           return `| ${start} | ${end} | ${dur} | ${desc} | ${e.task} | ${e.group} | ${e.project} | ${e.client_name} | ${e.user} |`;
         });
         totalSeconds += daySeconds;
 
-        sections.push(
-          `## ${day}\n\n` +
-          `| Start | End | Dur | Description | Task | Group | Project | Client | User |\n` +
-          `|-------|-----|-----|-------------|------|-------|---------|--------|------|\n` +
-          rows.join("\n") + "\n\n" +
-          `**Totaal: ${formatDuration(daySeconds)}**`
-        );
+        if (isBeauty) {
+          sections.push(
+            `### \u{1F4C5} ${day}\n\n` +
+            `| Start | End | Dur | Description | Task | Group | Project | Client |\n` +
+            `|-------|-----|-----|-------------|------|-------|---------|--------|\n` +
+            rows.join("\n") + "\n\n" +
+            `**Totaal: ${formatDuration(daySeconds)}**`
+          );
+        } else {
+          sections.push(
+            `## ${day}\n\n` +
+            `| Start | End | Dur | Description | Task | Group | Project | Client | User |\n` +
+            `|-------|-----|-----|-------------|------|-------|---------|--------|------|\n` +
+            rows.join("\n") + "\n\n" +
+            `**Totaal: ${formatDuration(daySeconds)}**`
+          );
+        }
       }
 
       const output = sections.join("\n\n---\n\n") + `\n\n---\n\n**Totaal periode: ${formatDuration(totalSeconds)}**`;
