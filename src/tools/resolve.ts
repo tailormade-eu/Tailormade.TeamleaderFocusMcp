@@ -1135,6 +1135,11 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
         if (!taskId) return respond(`Provide task_id or task_number for move_to_group.`);
         if (!params.group_id) return respond(`group_id required for move_to_group.`);
+        // Step 1: remove from current group (no-op if ungrouped)
+        try {
+          await client.request({ endpoint: "projects-v2/projectLines.removeFromGroup", body: { line_id: taskId } });
+        } catch { /* task may not be in a group yet — ignore */ }
+        // Step 2: add to target group
         await client.request({ endpoint: "projects-v2/projectLines.addToGroup", body: { line_id: taskId, group_id: params.group_id } });
         invalidateTaskTree(companyId!);
         return respond(`✅ Task ${taskId} moved to group ${params.group_id}.\n\nReload tree: teamleader_load_tasks(company_name="${companyName}", force_refresh=true)`);
