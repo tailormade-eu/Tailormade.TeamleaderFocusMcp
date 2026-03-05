@@ -479,11 +479,12 @@ export function registerTimeTrackingTools(
   // ── Timesheet ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_timesheet",
-    "Day-by-day overview of time tracking entries with resolved task/group/project/client/user info. Use for daily or period reports. Resolves todo->group->project->client chain via API calls (cached per request). Parameters from_date/to_date are inclusive (YYYY-MM-DD). NOTE: Resolve chain makes multiple API calls per entry. Recommend max 2 weeks per call.",
+    "Day-by-day overview of time tracking entries with resolved task/group/project/client/user info. Use for daily or period reports. Resolves todo->group->project->client chain via API calls (cached per request). Parameters from_date/to_date are inclusive (YYYY-MM-DD). Use desc_length=0 for full descriptions, default truncates to 50 chars. NOTE: Resolve chain makes multiple API calls per entry. Recommend max 2 weeks per call.",
     {
       from_date: z.string().describe("Start date inclusive (YYYY-MM-DD). Converted to T00:00:00+00:00."),
       to_date: z.string().describe("End date inclusive (YYYY-MM-DD). Converted to T23:59:59+00:00."),
       user_id: z.string().optional().describe("Filter by user ID. Omit for all users."),
+      desc_length: z.number().optional().default(50).describe("Max description length (chars). 0 = full. Default: 50. Newlines replaced with spaces."),
     },
     async (params) => {
       const toDate = (s: string, endOfDay = false) => {
@@ -756,6 +757,11 @@ export function registerTimeTrackingTools(
         return `${h}:${m.toString().padStart(2, "0")}`;
       }
 
+      function formatDesc(raw: string, maxLen: number): string {
+        const flat = raw.replace(/\r\n|\r|\n/g, " ").trim();
+        return maxLen > 0 && flat.length > maxLen ? flat.slice(0, maxLen) + "…" : flat;
+      }
+
       let totalSeconds = 0;
       const sections: string[] = [];
 
@@ -766,7 +772,7 @@ export function registerTimeTrackingTools(
           const start = formatTime(e.started_at);
           const end = formatTime(e.ended_at);
           const dur = formatDuration(e.duration);
-          const desc = e.description || "—";
+          const desc = formatDesc(e.description, params.desc_length) || "—";
           return `| ${start} | ${end} | ${dur} | ${desc} | ${e.task} | ${e.group} | ${e.project} | ${e.client_name} | ${e.user} |`;
         });
         totalSeconds += daySeconds;
