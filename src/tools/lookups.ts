@@ -284,6 +284,38 @@ export function registerLookupTools(
     }
   );
 
+  // ── Bookkeeping Submissions ─────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_bookkeeping_submissions",
+    "List bookkeeping submissions for a specific financial document (incoming invoice, incoming credit note, or receipt). Returns submission status and email address.",
+    {
+      subject_id: z.string().describe("UUID of the financial document"),
+      subject_type: z.enum(["incoming_invoice", "incoming_credit_note", "receipt"])
+        .describe("Type of the financial document"),
+    },
+    async (params) => {
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        subject: { id: string; type: string };
+        email_address: string;
+        status: string;
+        created_at: string;
+      }>>({
+        endpoint: "bookkeepingSubmissions.list",
+        body: {
+          filter: {
+            subject: { id: params.subject_id, type: params.subject_type },
+          },
+        },
+      });
+
+      const lines = (result.data ?? []).map((bs, i) =>
+        `${i + 1}. ${bs.email_address} [${bs.status}] — ${bs.created_at} (${bs.id})`
+      );
+      return respond(lines.length ? lines.join("\n") : "No bookkeeping submissions found.");
+    }
+  );
+
   // ── Business Types ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_business_types",
