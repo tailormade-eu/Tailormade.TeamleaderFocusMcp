@@ -26,6 +26,9 @@ export function registerInvoiceTools(
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
+      ids: z.array(z.string()).optional().describe("Filter by specific invoice IDs"),
+      term: z.string().optional().describe("Search term — filters on invoice number, purchase order number, payment reference, and invoicee name"),
+      invoice_number: z.string().optional().describe("Filter by exact invoice number (e.g. '2017 / 5')"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Filter by customer type (use with customer_id)"),
       customer_id: z.string().optional().describe("Filter by customer ID (company or contact ID)"),
       department_id: z.string().optional().describe("Filter by department ID (use teamleader_list_departments to find)"),
@@ -37,17 +40,22 @@ export function registerInvoiceTools(
         .string()
         .optional()
         .describe("ISO 8601 date - only invoices updated after this date"),
+      purchase_order_number: z.string().optional().describe("Filter by purchase order number (exact match)"),
+      payment_reference: z.string().optional().describe("Filter by payment reference (exact match, e.g. '+++084/2613/66074+++')"),
       invoice_date_after: z
         .string()
         .optional()
-        .describe("Filter invoices dated after (YYYY-MM-DD)"),
+        .describe("Filter invoices dated after (YYYY-MM-DD, inclusive)"),
       invoice_date_before: z
         .string()
         .optional()
-        .describe("Filter invoices dated before (YYYY-MM-DD)"),
+        .describe("Filter invoices dated before (YYYY-MM-DD, inclusive)"),
       subscription_id: z.string().optional().describe("Filter by subscription ID"),
       deal_id: z.string().optional().describe("Filter by deal ID"),
       project_id: z.string().optional().describe("Filter by project ID"),
+      sort_field: z.enum(["invoice_number", "invoice_date"]).optional().describe("Sort field (default: invoice_number)"),
+      sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: desc)"),
+      includes: z.literal("late_fees").optional().describe("Pass 'late_fees' to include totals.due_incasso_inclusive, totals.fixed_late_fee, and totals.interest in response"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -60,12 +68,17 @@ export function registerInvoiceTools(
       }
 
       const filter: Record<string, unknown> = {};
+      if (params.ids) filter.ids = params.ids;
+      if (params.term) filter.term = params.term;
+      if (params.invoice_number) filter.invoice_number = params.invoice_number;
       if (params.customer_type && params.customer_id) {
         filter.customer = { type: params.customer_type, id: params.customer_id };
       }
       if (params.department_id) filter.department_id = params.department_id;
       if (params.status) filter.status = params.status;
       if (params.updated_since) filter.updated_since = params.updated_since;
+      if (params.purchase_order_number) filter.purchase_order_number = params.purchase_order_number;
+      if (params.payment_reference) filter.payment_reference = params.payment_reference;
       if (params.invoice_date_after)
         filter.invoice_date_after = params.invoice_date_after;
       if (params.invoice_date_before)
@@ -74,6 +87,11 @@ export function registerInvoiceTools(
       if (params.deal_id) filter.deal_id = params.deal_id;
       if (params.project_id) filter.project_id = params.project_id;
       if (Object.keys(filter).length > 0) body.filter = filter;
+
+      if (params.sort_field || params.sort_order) {
+        body.sort = [{ field: params.sort_field ?? "invoice_number", order: params.sort_order ?? "desc" }];
+      }
+      if (params.includes) body.includes = params.includes;
 
       const result = await client.request<TeamleaderListResponse<Invoice>>({
         endpoint: "invoices.list",
@@ -120,16 +138,15 @@ export function registerInvoiceTools(
         .string()
         .optional()
         .describe("Invoice date (YYYY-MM-DD, defaults to today)"),
+      purchase_order_number: z.string().optional().describe("Purchase order number"),
+      project_id: z.string().optional().describe("Link to a project ID"),
       note: z.string().optional().describe("Note to include on the invoice"),
       line_items: z
         .array(
           z.object({
             quantity: z.number().describe("Quantity"),
             description: z.string().describe("Line item description"),
-            unit_price_amount: z.number().describe("Unit price amount"),
-            unit_price_currency: z
-              .string()
-              .describe("Currency code (e.g. 'EUR')"),
+            unit_price_amount: z.number().describe("Unit price amount (tax exclusive)"),
             tax_rate_id: z.string().describe("Tax rate ID (use teamleader_list_tax_rates to find)"),
             product_id: z
               .string()
@@ -161,7 +178,7 @@ export function registerInvoiceTools(
               description: item.description,
               unit_price: {
                 amount: item.unit_price_amount,
-                currency: item.unit_price_currency,
+                tax: "excluding",
               },
               tax_rate_id: item.tax_rate_id,
               ...(item.product_id && { product_id: item.product_id }),
@@ -171,6 +188,8 @@ export function registerInvoiceTools(
       };
 
       if (params.invoice_date) body.invoice_date = params.invoice_date;
+      if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
+      if (params.project_id) body.project_id = params.project_id;
       if (params.note) body.note = params.note;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
@@ -246,6 +265,10 @@ export function registerInvoiceTools(
         )
         .optional()
         .describe("Optional BCC recipients"),
+      attachments: z
+        .array(z.string())
+        .optional()
+        .describe("Array of file IDs to attach (use teamleader_list_files to find)"),
     },
     async (params) => {
       const mapRecipients = (
@@ -271,6 +294,7 @@ export function registerInvoiceTools(
           ...(params.cc && { cc: mapRecipients(params.cc) }),
           ...(params.bcc && { bcc: mapRecipients(params.bcc) }),
         },
+        ...(params.attachments && { attachments: params.attachments }),
       };
 
       await client.request<void>({ endpoint: "invoices.send", body });
@@ -333,7 +357,6 @@ export function registerInvoiceTools(
             quantity: z.number().describe("Quantity"),
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            unit_price_currency: z.string().describe("Currency code (e.g. 'EUR')"),
             tax_rate_id: z.string().describe("Tax rate ID"),
             product_id: z.string().optional().describe("Product ID"),
           })
@@ -365,7 +388,7 @@ export function registerInvoiceTools(
             line_items: params.line_items.map((item) => ({
               quantity: item.quantity,
               description: item.description,
-              unit_price: { amount: item.unit_price_amount, currency: item.unit_price_currency },
+              unit_price: { amount: item.unit_price_amount, tax: "excluding" },
               tax_rate_id: item.tax_rate_id,
               ...(item.product_id && { product_id: item.product_id }),
             })),
@@ -400,7 +423,6 @@ export function registerInvoiceTools(
             quantity: z.number().describe("Quantity"),
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            unit_price_currency: z.string().describe("Currency code (e.g. 'EUR')"),
             tax_rate_id: z.string().describe("Tax rate ID"),
             product_id: z.string().optional().describe("Product ID"),
           })
@@ -431,7 +453,7 @@ export function registerInvoiceTools(
             line_items: params.line_items.map((item) => ({
               quantity: item.quantity,
               description: item.description,
-              unit_price: { amount: item.unit_price_amount, currency: item.unit_price_currency },
+              unit_price: { amount: item.unit_price_amount, tax: "excluding" },
               tax_rate_id: item.tax_rate_id,
               ...(item.product_id && { product_id: item.product_id }),
             })),
