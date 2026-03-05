@@ -16,7 +16,8 @@
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "check-coverage": "npx tsx tools/check-coverage.ts"
   },
   "keywords": [
     "mcp",
