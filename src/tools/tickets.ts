@@ -31,6 +31,10 @@ export function registerTicketTools(
         .string()
         .optional()
         .describe("Customer ID to filter by (use with customer_type). Mapped to 'relates_to' filter internally."),
+      ids: z
+        .array(z.string())
+        .optional()
+        .describe("Filter by specific ticket IDs"),
       project_ids: z
         .array(z.string())
         .optional()
@@ -57,6 +61,7 @@ export function registerTicketTools(
           id: params.customer_id,
         };
       }
+      if (params.ids) filter.ids = params.ids;
       if (params.project_ids) filter.project_ids = params.project_ids;
       if (params.exclude_status_ids) {
         filter.exclude = { status_ids: params.exclude_status_ids };
@@ -330,6 +335,10 @@ export function registerTicketTools(
         .string()
         .optional()
         .describe("Optionally set ticket status after replying (use teamleader_list_ticket_statuses to find IDs)"),
+      attachments: z
+        .array(z.string())
+        .optional()
+        .describe("Array of file IDs to attach (use teamleader_upload_file to create)"),
     },
     async (params) => {
       const reqBody: Record<string, unknown> = {
@@ -339,6 +348,7 @@ export function registerTicketTools(
 
       if (params.ticket_status_id)
         reqBody.ticket_status_id = params.ticket_status_id;
+      if (params.attachments) reqBody.attachments = params.attachments;
 
       const result = await client.request<
         TeamleaderInfoResponse<{ id: string; type: string }>
@@ -369,6 +379,10 @@ export function registerTicketTools(
         .string()
         .optional()
         .describe("Optionally set ticket status (use teamleader_list_ticket_statuses to find IDs)"),
+      attachments: z
+        .array(z.string())
+        .optional()
+        .describe("Array of file IDs to attach (use teamleader_upload_file to create)"),
     },
     async (params) => {
       const reqBody: Record<string, unknown> = {
@@ -378,6 +392,7 @@ export function registerTicketTools(
 
       if (params.ticket_status_id)
         reqBody.ticket_status_id = params.ticket_status_id;
+      if (params.attachments) reqBody.attachments = params.attachments;
 
       const result = await client.request<
         TeamleaderInfoResponse<{ id: string; type: string }>
@@ -393,6 +408,38 @@ export function registerTicketTools(
             text: JSON.stringify(result, null, 2),
           },
         ],
+      };
+    }
+  );
+
+  // ── Import Ticket Message ────────────────────────────────────────────────
+  server.tool(
+    "teamleader_import_ticket_message",
+    "Import an external message into a ticket (e.g. for migration). Unlike addReply, this allows setting the sender and timestamp. The body should be HTML formatted.",
+    {
+      id: z.string().describe("The ticket ID"),
+      body: z.string().describe("Message body (HTML formatted)"),
+      sent_by_type: z.enum(["company", "contact", "user"]).describe("Sender entity type"),
+      sent_by_id: z.string().describe("Sender entity ID"),
+      sent_at: z.string().describe("When the message was sent (ISO 8601 datetime)"),
+      attachments: z.array(z.string()).optional().describe("Array of file IDs to attach"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {
+        id: params.id,
+        body: params.body,
+        sent_by: { type: params.sent_by_type, id: params.sent_by_id },
+        sent_at: params.sent_at,
+      };
+      if (params.attachments) body.attachments = params.attachments;
+
+      const result = await client.request<{ data: { id: string; type: string } }>({
+        endpoint: "tickets.importMessage",
+        body,
+      });
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
       };
     }
   );

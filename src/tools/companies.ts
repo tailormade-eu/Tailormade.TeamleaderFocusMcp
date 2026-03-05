@@ -24,6 +24,8 @@ export function registerCompanyTools(
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
       term: z.string().optional().describe("Search term to filter companies"),
       tags: z.array(z.string()).optional().describe("Filter by tags"),
+      ids: z.array(z.string()).optional().describe("Filter by specific company IDs"),
+      status: z.enum(["active", "deactivated"]).optional().describe("Filter by status: 'active' or 'deactivated'"),
       vat_number: z.string().optional().describe("Filter by VAT number"),
       updated_since: z
         .string()
@@ -43,6 +45,8 @@ export function registerCompanyTools(
       const filter: Record<string, unknown> = {};
       if (params.term) filter.term = params.term;
       if (params.tags) filter.tags = params.tags;
+      if (params.ids) filter.ids = params.ids;
+      if (params.status) filter.status = params.status;
       if (params.vat_number) filter.vat_number = params.vat_number;
       if (params.updated_since) filter.updated_since = params.updated_since;
       if (Object.keys(filter).length > 0) body.filter = filter;
@@ -90,7 +94,7 @@ export function registerCompanyTools(
   // ── Create Company ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_company",
-    "Create a new company. Returns {id, type}. Next steps: teamleader_link_contact_to_company to associate people, teamleader_create_project_v2 to create a project for this company.",
+    "Create a new company. Returns {id, type}. Next steps: teamleader_link_contact_to_company to associate people, teamleader_create_project_v2 to create a project for this company. NOTE: Company telephones only support 'phone' and 'fax' types (no 'mobile').",
     {
       name: z.string().describe("Company name"),
       email: z.string().optional().describe("Primary email address"),
@@ -98,6 +102,8 @@ export function registerCompanyTools(
       vat_number: z.string().optional().describe("VAT number"),
       website: z.string().optional().describe("Website URL"),
       language: z.string().optional().describe("Language code (e.g. 'en', 'fr', 'nl')"),
+      remarks: z.string().optional().describe("Remarks (markdown supported)"),
+      responsible_user_id: z.string().optional().describe("Responsible user ID"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
     },
     async (params) => {
@@ -116,6 +122,8 @@ export function registerCompanyTools(
       if (params.vat_number) body.vat_number = params.vat_number;
       if (params.website) body.website = params.website;
       if (params.language) body.language = params.language;
+      if (params.remarks) body.remarks = params.remarks;
+      if (params.responsible_user_id) body.responsible_user_id = params.responsible_user_id;
       if (params.tags) body.tags = params.tags;
 
       const result = await client.request<TeamleaderInfoResponse<{ id: string; type: string }>>({
@@ -137,7 +145,7 @@ export function registerCompanyTools(
   // ── Update Company ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_company",
-    "Update an existing company. Only provided fields are changed.",
+    "Update an existing company. Only provided fields are changed. WARNING: the `tags` param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_company / teamleader_untag_company for incremental changes.",
     {
       id: z.string().describe("The company ID to update"),
       name: z.string().optional().describe("Company name"),
@@ -146,6 +154,8 @@ export function registerCompanyTools(
       vat_number: z.string().optional().describe("VAT number"),
       website: z.string().optional().describe("Website URL"),
       language: z.string().optional().describe("Language code (e.g. 'en', 'fr', 'nl')"),
+      remarks: z.string().nullable().optional().describe("Remarks (markdown supported)"),
+      responsible_user_id: z.string().nullable().optional().describe("Responsible user ID"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
     },
     async (params) => {
@@ -161,6 +171,8 @@ export function registerCompanyTools(
       if (params.vat_number) body.vat_number = params.vat_number;
       if (params.website) body.website = params.website;
       if (params.language) body.language = params.language;
+      if (params.remarks !== undefined) body.remarks = params.remarks;
+      if (params.responsible_user_id !== undefined) body.responsible_user_id = params.responsible_user_id;
       if (params.tags) body.tags = params.tags;
 
       await client.request({

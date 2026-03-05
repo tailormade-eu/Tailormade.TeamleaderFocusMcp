@@ -35,8 +35,9 @@ export function registerDepartmentTools(
   // ── List Departments ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_departments",
-    "List departments (legal entities / billing divisions). Returns id, name, status, VAT number, currency. Use the IDs when creating invoices (teamleader_create_invoice department_id) or filtering data.",
+    "List departments (legal entities / billing divisions). Returns id, name, status, VAT number, currency. Use the IDs when creating invoices (teamleader_create_invoice department_id) or filtering data. NOTE: Department IDs are needed for invoices (teamleader_create_invoice department_id param). Most accounts have very few departments.",
     {
+      ids: z.array(z.string()).optional().describe("Filter by specific department IDs"),
       status: z
         .array(z.enum(["active", "archived"]))
         .optional()
@@ -54,6 +55,7 @@ export function registerDepartmentTools(
       const body: Record<string, unknown> = {};
 
       const filter: Record<string, unknown> = {};
+      if (params.ids) filter.ids = params.ids;
       if (params.status) filter.status = params.status;
       if (Object.keys(filter).length > 0) body.filter = filter;
 

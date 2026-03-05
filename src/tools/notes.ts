@@ -11,10 +11,28 @@ function respond(text: string) {
 }
 
 const SUBJECT_TYPES = [
-  "contact",
   "company",
+  "contact",
+  "creditNote",
   "deal",
+  "invoice",
+  "nextgenProject",
+  "product",
   "project",
+  "quotation",
+  "subscription",
+] as const;
+
+const CREATE_SUBJECT_TYPES = [
+  "company",
+  "contact",
+  "creditNote",
+  "deal",
+  "invoice",
+  "nextgenProject",
+  "product",
+  "quotation",
+  "subscription",
 ] as const;
 
 export function registerNoteTools(
@@ -91,10 +109,10 @@ export function registerNoteTools(
   // ── Create Note ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_note",
-    "Create a new note on a Teamleader entity (contact, company, deal, project). Notes are free-text content attached to the entity.",
+    "Create a new note on a Teamleader entity (contact, company, deal, invoice, quotation, etc.). Notes are free-text content attached to the entity.",
     {
       subject_type: z
-        .enum(SUBJECT_TYPES)
+        .enum(CREATE_SUBJECT_TYPES)
         .describe("Type of entity to attach the note to"),
       subject_id: z.string().describe("ID of the entity"),
       content: z.string().describe("Note content (free text)"),

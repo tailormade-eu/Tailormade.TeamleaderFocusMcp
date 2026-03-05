@@ -34,6 +34,10 @@ export function registerMeetingTools(
         .string()
         .optional()
         .describe("Filter meetings ending before this date (ISO 8601)"),
+      ids: z
+        .array(z.string())
+        .optional()
+        .describe("Filter by specific meeting IDs"),
       term: z.string().optional().describe("Search term to filter meetings"),
       sort_order: z
         .enum(["asc", "desc"])
@@ -51,6 +55,7 @@ export function registerMeetingTools(
       }
 
       const filter: Record<string, unknown> = {};
+      if (params.ids) filter.ids = params.ids;
       if (params.employee_id) filter.employee_id = params.employee_id;
       if (params.start_date) filter.start_date = params.start_date;
       if (params.end_date) filter.end_date = params.end_date;

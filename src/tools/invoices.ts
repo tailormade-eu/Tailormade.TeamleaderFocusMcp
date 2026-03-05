@@ -108,11 +108,15 @@ export function registerInvoiceTools(
     "Get full details of an invoice including line items, payment status, customer, totals, and payment term. Next steps: teamleader_book_invoice (if draft), teamleader_register_payment (if outstanding), teamleader_credit_invoice (to credit).",
     {
       id: z.string().describe("The invoice ID"),
+      includes: z.literal("late_fees").optional().describe("Pass 'late_fees' to include late fee totals in response"),
     },
     async (params) => {
+      const body: Record<string, unknown> = { id: params.id };
+      if (params.includes) body.includes = params.includes;
+
       const result = await client.request<TeamleaderInfoResponse<Invoice>>({
         endpoint: "invoices.info",
-        body: { id: params.id },
+        body,
       });
 
       return respond(JSON.stringify(result, null, 2));
@@ -321,7 +325,7 @@ export function registerInvoiceTools(
   // ── Delete Invoice ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_invoice",
-    "Delete a draft invoice. Only draft invoices can be deleted.",
+    "Delete an invoice. Only draft invoices or the last booked invoice can be deleted.",
     {
       id: z.string().describe("The invoice ID to delete"),
     },

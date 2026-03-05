@@ -28,7 +28,7 @@ export function registerProjectTools(
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
       term: z.string().optional().describe("Search term to filter projects"),
       status: z
-        .enum(["active", "on_hold", "done", "cancelled"])
+        .enum(["open", "planned", "running", "overdue", "over_budget", "closed"])
         .optional()
         .describe("Filter by project status"),
       company_id: z
@@ -99,37 +99,28 @@ export function registerProjectTools(
   // ── Create Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_v2",
-    "Create a new project. Returns {id, type}. Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams.",
+    "Create a new project. Returns {id, type}. NOTE: API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on'). To assign users, use teamleader_assign_project after creation. To add owners, use teamleader_add_project_owner. Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams.",
     {
       title: z.string().describe("Project title"),
       description: z.string().optional().describe("Project description"),
-      status: z
-        .enum(["active", "on_hold", "done", "cancelled"])
-        .default("active")
-        .describe("Project status"),
       customer_type: z
         .enum(["company", "contact"])
         .describe("Customer type (company or contact)"),
       customer_id: z
         .string()
         .describe("Customer ID (company or contact)"),
-      responsible_user_id: z
-        .string()
-        .optional()
-        .describe("ID of responsible user"),
-      starts_on: z
+      start_date: z
         .string()
         .optional()
         .describe("Project start date (YYYY-MM-DD)"),
-      due_on: z
+      end_date: z
         .string()
         .optional()
-        .describe("Project due date (YYYY-MM-DD)"),
+        .describe("Project end date (YYYY-MM-DD)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
         title: params.title,
-        status: params.status,
         customers: [
           {
             type: params.customer_type,
@@ -139,9 +130,8 @@ export function registerProjectTools(
       };
 
       if (params.description) body.description = params.description;
-      if (params.responsible_user_id) body.responsible_user_id = params.responsible_user_id;
-      if (params.starts_on) body.starts_on = params.starts_on;
-      if (params.due_on) body.due_on = params.due_on;
+      if (params.start_date) body.start_date = params.start_date;
+      if (params.end_date) body.end_date = params.end_date;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "projects-v2/projects.create",
@@ -162,21 +152,13 @@ export function registerProjectTools(
   // ── Update Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_project_v2",
-    "Update an existing project. Only provided fields are changed. Returns {id, type}.",
+    "Update an existing project. Only provided fields are changed. Returns {id, type}. NOTE: To change status, use teamleader_close_project_v2 or teamleader_reopen_project_v2.",
     {
       id: z.string().describe("Project ID"),
       title: z.string().optional().describe("New project title"),
       description: z.string().optional().describe("New description"),
-      status: z
-        .enum(["active", "on_hold", "done", "cancelled"])
-        .optional()
-        .describe("New project status"),
-      responsible_user_id: z
-        .string()
-        .optional()
-        .describe("New responsible user ID"),
-      starts_on: z.string().optional().describe("New start date (YYYY-MM-DD)"),
-      due_on: z.string().optional().describe("New due date (YYYY-MM-DD)"),
+      start_date: z.string().optional().describe("New start date (YYYY-MM-DD)"),
+      end_date: z.string().optional().describe("New end date (YYYY-MM-DD)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -185,10 +167,8 @@ export function registerProjectTools(
 
       if (params.title) body.title = params.title;
       if (params.description) body.description = params.description;
-      if (params.status) body.status = params.status;
-      if (params.responsible_user_id) body.responsible_user_id = params.responsible_user_id;
-      if (params.starts_on) body.starts_on = params.starts_on;
-      if (params.due_on) body.due_on = params.due_on;
+      if (params.start_date) body.start_date = params.start_date;
+      if (params.end_date) body.end_date = params.end_date;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "projects-v2/projects.update",
@@ -682,14 +662,18 @@ export function registerProjectTools(
   // ── Delete Project Task (v2) ───────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_task",
-    "Delete a project task. This action is irreversible. Time tracking entries linked to this task are NOT deleted.",
+    "Delete a project task. This action is irreversible. CRITICAL: requires delete_strategy — 'unlink_time_tracking' keeps time entries, 'delete_time_tracking' removes them.",
     {
       id: z.string().describe("Project task ID"),
+      delete_strategy: z
+        .enum(["unlink_time_tracking", "delete_time_tracking"])
+        .default("unlink_time_tracking")
+        .describe("What to do with linked time tracking entries: 'unlink_time_tracking' (default, keeps entries) or 'delete_time_tracking' (removes them)"),
     },
     async (params) => {
       await client.request({
         endpoint: "projects-v2/tasks.delete",
-        body: { id: params.id },
+        body: { id: params.id, delete_strategy: params.delete_strategy },
       });
       return {
         content: [{ type: "text" as const, text: `Project task ${params.id} deleted.` }],

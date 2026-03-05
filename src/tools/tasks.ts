@@ -17,11 +17,17 @@ export function registerTaskTools(
   // ── List Tasks ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tasks",
-    "List standalone tasks (NOT project tasks — use teamleader_list_project_tasks_v2 for those). Returns array with id, title, due_on, status, assignee, customer. Next steps: teamleader_get_task for details, teamleader_complete_task to mark done.",
+    "List standalone tasks (NOT project tasks — use teamleader_list_project_tasks_v2 for those). Returns array with id, title, due_on, status, assignee, customer. Next steps: teamleader_get_task for details, teamleader_complete_task to mark done. NOTE: Useful filters exist: completed (true/false), scheduled, due_by/due_from date range, user_id.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
       term: z.string().optional().describe("Search term to filter tasks"),
+      ids: z.array(z.string()).optional().describe("Filter by specific task IDs"),
+      user_id: z.string().optional().describe("Filter by assigned user ID"),
+      completed: z.boolean().optional().describe("Filter by completion status (true=completed, false=open)"),
+      scheduled: z.boolean().optional().describe("Filter by scheduled status"),
+      due_by: z.string().optional().describe("Tasks due before this date (YYYY-MM-DD)"),
+      due_from: z.string().optional().describe("Tasks due after this date (YYYY-MM-DD)"),
       customer_type: z
         .enum(["contact", "company"])
         .optional()
@@ -43,6 +49,12 @@ export function registerTaskTools(
 
       const filter: Record<string, unknown> = {};
       if (params.term) filter.term = params.term;
+      if (params.ids) filter.ids = params.ids;
+      if (params.user_id) filter.user_id = params.user_id;
+      if (params.completed !== undefined) filter.completed = params.completed;
+      if (params.scheduled !== undefined) filter.scheduled = params.scheduled;
+      if (params.due_by) filter.due_by = params.due_by;
+      if (params.due_from) filter.due_from = params.due_from;
       if (params.customer_type && params.customer_id) {
         filter.customer = {
           type: params.customer_type,
@@ -98,6 +110,7 @@ export function registerTaskTools(
         .describe("Estimated duration in minutes"),
       deal_id: z.string().optional().describe("Deal ID to link to"),
       ticket_id: z.string().optional().describe("Ticket ID to link to"),
+      project_id: z.string().optional().describe("Link task to a project ID"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -124,6 +137,7 @@ export function registerTaskTools(
       }
       if (params.deal_id) body.deal_id = params.deal_id;
       if (params.ticket_id) body.ticket_id = params.ticket_id;
+      if (params.project_id) body.project_id = params.project_id;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "tasks.create",
@@ -183,12 +197,21 @@ export function registerTaskTools(
         .string()
         .optional()
         .describe("Assignee ID (both assignee_type and assignee_id required together)"),
+      customer_type: z
+        .enum(["contact", "company"])
+        .optional()
+        .describe("Customer type to link"),
+      customer_id: z
+        .string()
+        .optional()
+        .describe("Customer ID to link (both customer_type and customer_id required together)"),
       estimated_duration: z
         .number()
         .optional()
         .describe("Estimated duration in minutes"),
       deal_id: z.string().nullable().optional().describe("Deal ID to link (null to unlink)"),
       ticket_id: z.string().nullable().optional().describe("Ticket ID to link (null to unlink)"),
+      project_id: z.string().nullable().optional().describe("Project ID to link (null to unlink)"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
@@ -200,11 +223,15 @@ export function registerTaskTools(
       if (params.assignee_type && params.assignee_id) {
         body.assignee = { type: params.assignee_type, id: params.assignee_id };
       }
+      if (params.customer_type && params.customer_id) {
+        body.customer = { type: params.customer_type, id: params.customer_id };
+      }
       if (params.estimated_duration !== undefined) {
         body.estimated_duration = { unit: "min", value: params.estimated_duration };
       }
       if (params.deal_id !== undefined) body.deal_id = params.deal_id;
       if (params.ticket_id !== undefined) body.ticket_id = params.ticket_id;
+      if (params.project_id !== undefined) body.project_id = params.project_id;
 
       await client.request<void>({
         endpoint: "tasks.update",

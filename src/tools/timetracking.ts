@@ -17,7 +17,7 @@ export function registerTimeTrackingTools(
   // ── List Time Tracking ───────────────────────────────────────────────────
   server.tool(
     "teamleader_list_timetracking",
-    "List time tracking entries from Teamleader Focus. Use to review logged hours, verify entries, or audit time spent. Returns array of entries with id, subject, user, started_on, ended_on, duration, description, work_type. Next steps: use teamleader_get_timetracking for full details, teamleader_update_timetracking to edit, or teamleader_delete_timetracking to remove. CRITICAL: started_after/started_before accept date-only format (YYYY-MM-DD) — datetime strings cause 400 Bad Request.",
+    "List time tracking entries from Teamleader Focus. Use to review logged hours, verify entries, or audit time spent. Returns array of entries with id, subject, user, started_on, ended_on, duration, description, work_type. Next steps: use teamleader_get_timetracking for full details, teamleader_update_timetracking to edit, or teamleader_delete_timetracking to remove. CRITICAL: started_after/started_before/ended_after/ended_before accept date-only format (YYYY-MM-DD) — datetime strings cause 400 Bad Request.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -30,10 +30,18 @@ export function registerTimeTrackingTools(
         .string()
         .optional()
         .describe("Filter entries started before this date (YYYY-MM-DD). Time is stripped automatically."),
-      subject_type: z
-        .enum(["nextgenTask", "todo", "project", "milestone", "ticket"])
+      ended_after: z
+        .string()
         .optional()
-        .describe("Filter by subject type (nextgenTask for project tasks)"),
+        .describe("Filter entries ended after this date (YYYY-MM-DD). Time is stripped automatically."),
+      ended_before: z
+        .string()
+        .optional()
+        .describe("Filter entries ended before this date (YYYY-MM-DD). Time is stripped automatically."),
+      subject_type: z
+        .enum(["company", "contact", "event", "todo", "milestone", "ticket"])
+        .optional()
+        .describe("Filter by subject type"),
       subject_id: z
         .string()
         .optional()
@@ -49,13 +57,18 @@ export function registerTimeTrackingTools(
         };
       }
 
-      // API only accepts YYYY-MM-DD for started_after/started_before — strip time if present
-      const toDate = (s: string) => s.substring(0, 10);
+      // API requires ISO 8601 datetime with timezone — convert YYYY-MM-DD to start/end of day
+      const toDate = (s: string, endOfDay = false) => {
+        const date = s.substring(0, 10);
+        return endOfDay ? `${date}T23:59:59+00:00` : `${date}T00:00:00+00:00`;
+      };
 
       const filter: Record<string, unknown> = {};
       if (params.user_id) filter.user_id = params.user_id;
       if (params.started_after) filter.started_after = toDate(params.started_after);
-      if (params.started_before) filter.started_before = toDate(params.started_before);
+      if (params.started_before) filter.started_before = toDate(params.started_before, true);
+      if (params.ended_after) filter.ended_after = toDate(params.ended_after);
+      if (params.ended_before) filter.ended_before = toDate(params.ended_before, true);
       if (params.subject_type && params.subject_id) {
         filter.subject = {
           type: params.subject_type,
@@ -107,43 +120,58 @@ export function registerTimeTrackingTools(
   // ── Add Time Tracking ────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_timetracking",
-    "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}. NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.",
+    "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}. NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically. NOTE: You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().",
     {
-      user_id: z.string().describe("ID of user who performed the work"),
-      work_type_id: z
-        .string()
-        .describe("Work type ID (use teamleader_list_work_types to find valid IDs)"),
       started_on: z
         .string()
         .describe("Start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+01:00). WARNING: do not include milliseconds — causes dedup mismatches."),
       ended_on: z
         .string()
         .optional()
-        .describe("End datetime in ISO 8601 format (e.g., 2024-01-15T10:00:00+01:00)"),
+        .describe("End datetime in ISO 8601 format (e.g., 2024-01-15T10:00:00+01:00). Alternative to duration."),
+      duration: z
+        .number()
+        .optional()
+        .describe("Duration in seconds. Alternative to ended_on — do not provide both."),
+      user_id: z.string().optional().describe("ID of user who performed the work (defaults to authenticated user)"),
+      work_type_id: z
+        .string()
+        .optional()
+        .describe("Work type ID (use teamleader_list_work_types to find valid IDs)"),
       subject_type: z
-        .enum(["nextgenTask", "todo", "project", "milestone", "ticket"])
+        .enum(["company", "contact", "event", "milestone", "nextgenTask", "ticket", "todo"])
+        .optional()
         .describe("What the time was tracked against (use nextgenTask for project tasks)"),
       subject_id: z
         .string()
-        .describe("ID of the project/milestone/ticket"),
+        .optional()
+        .describe("ID of the subject being tracked against"),
       description: z
         .string()
         .optional()
         .describe("Description of work performed"),
+      invoiceable: z
+        .boolean()
+        .optional()
+        .describe("Whether the tracked time is invoiceable"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
-        user_id: params.user_id,
-        work_type_id: params.work_type_id,
         started_at: params.started_on,
-        subject: {
-          type: params.subject_type,
-          id: params.subject_id,
-        },
       };
 
+      if (params.user_id) body.user_id = params.user_id;
+      if (params.work_type_id) body.work_type_id = params.work_type_id;
+      if (params.subject_type && params.subject_id) {
+        body.subject = {
+          type: params.subject_type,
+          id: params.subject_id,
+        };
+      }
       if (params.ended_on) body.ended_at = params.ended_on;
+      if (params.duration !== undefined) body.duration = params.duration;
       if (params.description) body.description = params.description;
+      if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "timeTracking.add",
@@ -164,7 +192,7 @@ export function registerTimeTrackingTools(
   // ── Update Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timetracking",
-    "Update an existing time tracking entry. You can send only the fields you want to change. CRITICAL: API requires started_at + ended_at together — if you send only one, this tool auto-fetches the other. Returns {id, type}.",
+    "Update an existing time tracking entry. You can send only the fields you want to change. CRITICAL: API uses started_at + duration (seconds), NOT ended_at. Duration is in seconds. Returns {id, type}.",
     {
       id: z.string().describe("Time tracking entry ID"),
       work_type_id: z
@@ -175,14 +203,26 @@ export function registerTimeTrackingTools(
         .string()
         .optional()
         .describe("Start datetime in ISO 8601 format"),
-      ended_on: z
-        .string()
+      duration: z
+        .number()
         .optional()
-        .describe("End datetime in ISO 8601 format"),
+        .describe("Duration in seconds"),
       description: z
         .string()
         .optional()
         .describe("Description of work performed"),
+      subject_type: z
+        .enum(["company", "contact", "event", "milestone", "nextgenTask", "ticket", "todo"])
+        .optional()
+        .describe("Change subject type"),
+      subject_id: z
+        .string()
+        .optional()
+        .describe("Change subject ID (must provide subject_type too)"),
+      invoiceable: z
+        .boolean()
+        .optional()
+        .describe("Whether the tracked time is invoiceable"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -191,23 +231,14 @@ export function registerTimeTrackingTools(
 
       if (params.work_type_id) body.work_type_id = params.work_type_id;
       if (params.description) body.description = params.description;
-
-      // API requires started_at + ended_at together — fetch existing if one is missing
-      if (params.started_on || params.ended_on) {
-        let startedAt = params.started_on;
-        let endedAt = params.ended_on;
-
-        if (!startedAt || !endedAt) {
-          const existing = await client.request<{ data: TimeTracking }>({
-            endpoint: "timeTracking.info",
-            body: { id: params.id },
-          });
-          if (!startedAt) startedAt = existing.data.started_on;
-          if (!endedAt) endedAt = existing.data.ended_on;
-        }
-
-        body.started_at = startedAt;
-        body.ended_at = endedAt;
+      if (params.started_on) body.started_at = params.started_on;
+      if (params.duration !== undefined) body.duration = params.duration;
+      if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;
+      if (params.subject_type && params.subject_id) {
+        body.subject = {
+          type: params.subject_type,
+          id: params.subject_id,
+        };
       }
 
       const result = await client.request<{ data: { id: string; type: string } }>({
@@ -253,34 +284,46 @@ export function registerTimeTrackingTools(
   // ── Start Timer ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_start_timer",
-    "Start a running timer for time tracking. Only one timer can run per user — starting a new timer does NOT stop the previous one (use teamleader_stop_timer first). Returns {id, type}. Next step: use teamleader_stop_timer to stop it, or teamleader_get_current_timer to check status.",
+    "Start a running timer for time tracking. Only one timer can run per user — starting a new timer does NOT stop the previous one (use teamleader_stop_timer first). Returns {id, type}. Next step: use teamleader_stop_timer to stop it, or teamleader_get_current_timer to check status. NOTE: No user_id parameter — always starts timer for the authenticated user.",
     {
-      user_id: z.string().describe("ID of user (use teamleader_list_users to find)"),
       work_type_id: z
         .string()
+        .optional()
         .describe("Work type ID (use teamleader_list_work_types to find valid IDs)"),
       subject_type: z
-        .enum(["nextgenTask", "todo", "project", "milestone", "ticket"])
-        .describe("What the time will be tracked against (use nextgenTask for project tasks)"),
+        .enum(["company", "contact", "event", "todo", "milestone", "ticket"])
+        .optional()
+        .describe("What the time will be tracked against"),
       subject_id: z
         .string()
-        .describe("ID of the project/milestone/ticket"),
+        .optional()
+        .describe("ID of the subject being tracked against"),
       description: z
         .string()
         .optional()
         .describe("Description of work to be performed"),
+      started_at: z
+        .string()
+        .optional()
+        .describe("Start datetime in ISO 8601 format. Defaults to current time if not provided."),
+      invoiceable: z
+        .boolean()
+        .optional()
+        .describe("Whether the tracked time is invoiceable"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {
-        user_id: params.user_id,
-        work_type_id: params.work_type_id,
-        subject: {
+      const body: Record<string, unknown> = {};
+
+      if (params.work_type_id) body.work_type_id = params.work_type_id;
+      if (params.subject_type && params.subject_id) {
+        body.subject = {
           type: params.subject_type,
           id: params.subject_id,
-        },
-      };
-
+        };
+      }
       if (params.description) body.description = params.description;
+      if (params.started_at) body.started_at = params.started_at;
+      if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "timers.start",

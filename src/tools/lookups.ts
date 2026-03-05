@@ -48,11 +48,15 @@ export function registerLookupTools(
     "teamleader_list_tax_rates",
     "List all tax rates with description and percentage. Returns numbered list with rate and ID. Use the IDs for invoice line items (teamleader_create_invoice, teamleader_credit_invoice_partially).",
     {
+      department_id: z.string().optional().describe("Filter by department ID (use teamleader_list_departments to find)"),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
+      if (params.department_id) {
+        body.filter = { department_id: params.department_id };
+      }
       if (params.page || params.page_size) {
         body.page = { number: params.page ?? 1, size: params.page_size ?? 20 };
       }
@@ -277,6 +281,223 @@ export function registerLookupTools(
       const items = workTypes ?? [];
       const lines = items.map((wt, i) => `${i + 1}. ${wt.name} (${wt.id})`);
       return respond(lines.length ? lines.join("\n") : "No work types found.");
+    }
+  );
+
+  // ── Business Types ──────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_business_types",
+    "List business types (legal structures) for companies in a given country. Returns IDs usable when creating/updating companies.",
+    {
+      country: z.string().describe("Country code (e.g. 'BE', 'NL', 'FR')"),
+    },
+    async (params) => {
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        name: string;
+        country: string;
+      }>>({
+        endpoint: "businessTypes.list",
+        body: { country: params.country },
+      });
+
+      const lines = (result.data ?? []).map((bt, i) => `${i + 1}. ${bt.name} (${bt.id})`);
+      return respond(lines.length ? lines.join("\n") : "No business types found.");
+    }
+  );
+
+  // ── Call Outcomes ───────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_call_outcomes",
+    "List all call outcomes. Returns IDs needed for CRM calls (teamleader_add_call outcome_id param).",
+    {
+      page: z.number().optional().describe("Page number (default: 1)"),
+      page_size: z.number().optional().describe("Page size (default: 20)"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {};
+      if (params.page || params.page_size) {
+        body.page = { number: params.page ?? 1, size: params.page_size ?? 20 };
+      }
+
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        name: string;
+      }>>({
+        endpoint: "callOutcomes.list",
+        body,
+      });
+
+      const lines = (result.data ?? []).map((co, i) => `${i + 1}. ${co.name} (${co.id})`);
+      return respond(lines.length ? lines.join("\n") : "No call outcomes found.");
+    }
+  );
+
+  // ── Commercial Discounts ────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_commercial_discounts",
+    "List commercial discounts. Returns discount names and department references.",
+    {
+      department_id: z.string().optional().describe("Filter by department ID"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {};
+      if (params.department_id) {
+        body.filter = { department_id: params.department_id };
+      }
+
+      const result = await client.request<TeamleaderListResponse<{
+        name: string;
+        department?: { id: string; type: string };
+      }>>({
+        endpoint: "commercialDiscounts.list",
+        body,
+      });
+
+      const lines = (result.data ?? []).map((cd, i) =>
+        `${i + 1}. ${cd.name} — dept: ${cd.department?.id ?? "n/a"}`
+      );
+      return respond(lines.length ? lines.join("\n") : "No commercial discounts found.");
+    }
+  );
+
+  // ── Document Templates ──────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_document_templates",
+    "List document templates for a specific department and document type. Returns IDs usable when sending invoices/quotations.",
+    {
+      department_id: z.string().describe("Department ID (required)"),
+      document_type: z.enum(["delivery_note", "invoice", "order", "order_confirmation", "quotation", "timetracking_report", "workorder"])
+        .describe("Document type to filter by"),
+      status: z.array(z.enum(["active", "archived"])).optional().describe("Filter by status"),
+    },
+    async (params) => {
+      const filter: Record<string, unknown> = {
+        department_id: params.department_id,
+        document_type: params.document_type,
+      };
+      if (params.status) filter.status = params.status;
+
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        name: string;
+        document_type: string;
+        is_default: boolean;
+        status: string;
+        department: { id: string; type: string };
+      }>>({
+        endpoint: "documentTemplates.list",
+        body: { filter },
+      });
+
+      const lines = (result.data ?? []).map((dt, i) =>
+        `${i + 1}. ${dt.name} [${dt.document_type}]${dt.is_default ? " (default)" : ""} — ${dt.status} (${dt.id})`
+      );
+      return respond(lines.length ? lines.join("\n") : "No document templates found.");
+    }
+  );
+
+  // ── Price Lists ─────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_price_lists",
+    "List price lists. Returns IDs for use in product pricing (teamleader_add_product, teamleader_update_product price_list_prices param).",
+    {
+      ids: z.array(z.string()).optional().describe("Filter by specific price list IDs"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {};
+      if (params.ids) {
+        body.filter = { ids: params.ids };
+      }
+
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        name: string;
+        calculation_method: string;
+      }>>({
+        endpoint: "priceLists.list",
+        body,
+      });
+
+      const lines = (result.data ?? []).map((pl, i) =>
+        `${i + 1}. ${pl.name} [${pl.calculation_method}] (${pl.id})`
+      );
+      return respond(lines.length ? lines.join("\n") : "No price lists found.");
+    }
+  );
+
+  // ── Units of Measure ────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_units_of_measure",
+    "List all units of measure. Returns IDs for use in products (teamleader_add_product unit_of_measure_id param).",
+    {},
+    async () => {
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        name: string;
+      }>>({
+        endpoint: "unitsOfMeasure.list",
+        body: {},
+      });
+
+      const lines = (result.data ?? []).map((u, i) => `${i + 1}. ${u.name} (${u.id})`);
+      return respond(lines.length ? lines.join("\n") : "No units of measure found.");
+    }
+  );
+
+  // ── Withholding Tax Rates ───────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_withholding_tax_rates",
+    "List withholding tax rates. Returns IDs for use in invoices.",
+    {
+      department_id: z.string().optional().describe("Filter by department ID"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {};
+      if (params.department_id) {
+        body.filter = { department_id: params.department_id };
+      }
+
+      const result = await client.request<TeamleaderListResponse<{
+        id: string;
+        description: string;
+        rate: number;
+        department: { id: string; type: string };
+      }>>({
+        endpoint: "withholdingTaxRates.list",
+        body,
+      });
+
+      const lines = (result.data ?? []).map((wt, i) =>
+        `${i + 1}. ${wt.description} — ${wt.rate * 100}% (${wt.id})`
+      );
+      return respond(lines.length ? lines.join("\n") : "No withholding tax rates found.");
+    }
+  );
+
+  // ── Currencies (Exchange Rates) ─────────────────────────────────────────
+  server.tool(
+    "teamleader_list_currencies",
+    "List currencies with exchange rates relative to a base currency. Returns currency codes, names, symbols, and exchange rates.",
+    {
+      base: z.enum(["BAM","CAD","CHF","CLP","CNY","COP","CZK","DKK","EUR","GBP","INR","ISK","JPY","MAD","MXN","NOK","PEN","PLN","RON","SEK","TRY","USD","ZAR"])
+        .describe("Base currency code (e.g. 'EUR')"),
+    },
+    async (params) => {
+      const result = await client.request<TeamleaderListResponse<{
+        code: string;
+        symbol: string;
+        name: string;
+        exchange_rate: number;
+      }>>({
+        endpoint: "currencies.exchangeRates",
+        body: { base: params.base },
+      });
+
+      const lines = (result.data ?? []).map((c, i) =>
+        `${i + 1}. ${c.name} (${c.code}) ${c.symbol} — rate: ${c.exchange_rate}`
+      );
+      return respond(lines.length ? lines.join("\n") : "No currencies found.");
     }
   );
 }

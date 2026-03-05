@@ -93,7 +93,7 @@ export function registerSubscriptionTools(
   // ── Create Subscription ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_subscription",
-    "Create a new subscription (recurring invoice) in Teamleader Focus. Returns {id, type}. billing_cycle uses unit ('week','month','year') + period (e.g. period=3,unit=month = quarterly). days_in_advance = how many days before renewal the invoice is created. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types).",
+    "Create a new subscription (recurring invoice) in Teamleader Focus. Returns {id, type}. billing_cycle uses unit ('week','month','year') + period (e.g. period=3,unit=month = quarterly). days_in_advance = how many days before renewal the invoice is created. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types). CRITICAL: `invoice_generation` is required — it controls what happens when a subscription generates an invoice (draft/book/book_and_send). `title` is also required. Line items use unit_price.tax = 'excluding' (NOT a currency field).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -112,16 +112,24 @@ export function registerSubscriptionTools(
         .string()
         .describe("Payment term type (use teamleader_list_payment_terms to find valid types)"),
       payment_term_days: z.number().optional().describe("Days for payment term"),
-      title: z.string().optional().describe("Subscription title"),
+      title: z.string().describe("Subscription title (required)"),
+      invoice_generation_action: z
+        .enum(["draft", "book", "book_and_send"])
+        .describe("What happens when subscription generates an invoice: 'draft', 'book', or 'book_and_send'"),
+      invoice_generation_send_mail_template_id: z
+        .string()
+        .optional()
+        .describe("Mail template ID for sending — only used when invoice_generation_action = 'book_and_send'"),
       ends_on: z.string().optional().describe("End date (YYYY-MM-DD) — omit for indefinite"),
       note: z.string().optional().describe("Note on the subscription"),
+      deal_id: z.string().optional().describe("Link to a deal ID"),
+      project_id: z.string().optional().describe("Link to a project ID"),
       line_items: z
         .array(
           z.object({
             quantity: z.number().describe("Quantity"),
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            unit_price_currency: z.string().describe("Currency code (e.g. 'EUR')"),
             tax_rate_id: z.string().describe("Tax rate ID (use teamleader_list_tax_rates to find)"),
             product_id: z.string().optional().describe("Product ID (optional)"),
           })
@@ -129,7 +137,15 @@ export function registerSubscriptionTools(
         .describe("Line items for the subscription invoice"),
     },
     async (params) => {
+      const invoiceGeneration: Record<string, unknown> = {
+        action: params.invoice_generation_action,
+      };
+      if (params.invoice_generation_send_mail_template_id) {
+        invoiceGeneration.send = { mail_template_id: params.invoice_generation_send_mail_template_id };
+      }
+
       const body: Record<string, unknown> = {
+        title: params.title,
         invoicee: {
           customer: {
             type: params.customer_type,
@@ -149,6 +165,7 @@ export function registerSubscriptionTools(
           type: params.payment_term_type,
           ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
         },
+        invoice_generation: invoiceGeneration,
         grouped_lines: [
           {
             line_items: params.line_items.map((item) => ({
@@ -156,7 +173,7 @@ export function registerSubscriptionTools(
               description: item.description,
               unit_price: {
                 amount: item.unit_price_amount,
-                currency: item.unit_price_currency,
+                tax: "excluding",
               },
               tax_rate_id: item.tax_rate_id,
               ...(item.product_id && { product_id: item.product_id }),
@@ -165,9 +182,10 @@ export function registerSubscriptionTools(
         ],
       };
 
-      if (params.title) body.title = params.title;
       if (params.ends_on) body.ends_on = params.ends_on;
       if (params.note) body.note = params.note;
+      if (params.deal_id) body.deal_id = params.deal_id;
+      if (params.project_id) body.project_id = params.project_id;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "subscriptions.create",
@@ -187,6 +205,7 @@ export function registerSubscriptionTools(
       title: z.string().optional().describe("Subscription title"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
+      department_id: z.string().optional().describe("Department ID"),
       starts_on: z.string().optional().describe("Start date (YYYY-MM-DD)"),
       ends_on: z.string().optional().describe("End date (YYYY-MM-DD)"),
       billing_unit: z
@@ -197,14 +216,19 @@ export function registerSubscriptionTools(
       days_in_advance: z.number().optional().describe("Days in advance to create the invoice"),
       payment_term_type: z.string().optional().describe("Payment term type"),
       payment_term_days: z.number().optional().describe("Payment term days"),
+      invoice_generation_action: z
+        .enum(["draft", "book", "book_and_send"])
+        .optional()
+        .describe("What happens when subscription generates an invoice: 'draft', 'book', or 'book_and_send'"),
       note: z.string().optional().describe("Note on the subscription"),
+      deal_id: z.string().optional().describe("Link to a deal ID"),
+      project_id: z.string().optional().describe("Link to a project ID"),
       line_items: z
         .array(
           z.object({
             quantity: z.number().describe("Quantity"),
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            unit_price_currency: z.string().describe("Currency code (e.g. 'EUR')"),
             tax_rate_id: z.string().describe("Tax rate ID"),
             product_id: z.string().optional().describe("Product ID"),
           })
@@ -237,14 +261,20 @@ export function registerSubscriptionTools(
           ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
         };
       }
+      if (params.department_id) body.department_id = params.department_id;
+      if (params.invoice_generation_action) {
+        body.invoice_generation = { action: params.invoice_generation_action };
+      }
       if (params.note !== undefined) body.note = params.note || null;
+      if (params.deal_id) body.deal_id = params.deal_id;
+      if (params.project_id) body.project_id = params.project_id;
       if (params.line_items) {
         body.grouped_lines = [
           {
             line_items: params.line_items.map((item) => ({
               quantity: item.quantity,
               description: item.description,
-              unit_price: { amount: item.unit_price_amount, currency: item.unit_price_currency },
+              unit_price: { amount: item.unit_price_amount, tax: "excluding" },
               tax_rate_id: item.tax_rate_id,
               ...(item.product_id && { product_id: item.product_id }),
             })),

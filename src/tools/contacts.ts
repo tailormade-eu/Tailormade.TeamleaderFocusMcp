@@ -18,12 +18,15 @@ export function registerContactTools(
   // ── List Contacts ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_contacts",
-    "List contacts (people) from Teamleader Focus. Returns array with id, first_name, last_name, emails, tags. Use to find contact IDs. Next steps: teamleader_get_contact for full details, teamleader_link_contact_to_company to associate with a company.",
+    "List contacts (people) from Teamleader Focus. Returns array with id, first_name, last_name, emails, tags. Use to find contact IDs. Next steps: teamleader_get_contact for full details, teamleader_link_contact_to_company to associate with a company. NOTE: `tags` filter uses AND logic — contacts must have ALL specified tags. List returns primary_address (flat), NOT full addresses[]. Use teamleader_get_contact for full details.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
       term: z.string().optional().describe("Search term to filter contacts"),
       tags: z.array(z.string()).optional().describe("Filter by tags"),
+      ids: z.array(z.string()).optional().describe("Filter by specific contact IDs"),
+      company_id: z.string().optional().describe("Filter by linked company ID"),
+      status: z.enum(["active", "deactivated"]).optional().describe("Filter by status: 'active' or 'deactivated'"),
       updated_since: z
         .string()
         .optional()
@@ -42,6 +45,9 @@ export function registerContactTools(
       const filter: Record<string, unknown> = {};
       if (params.term) filter.term = params.term;
       if (params.tags) filter.tags = params.tags;
+      if (params.ids) filter.ids = params.ids;
+      if (params.company_id) filter.company_id = params.company_id;
+      if (params.status) filter.status = params.status;
       if (params.updated_since) filter.updated_since = params.updated_since;
       if (Object.keys(filter).length > 0) body.filter = filter;
 
@@ -88,22 +94,26 @@ export function registerContactTools(
   // ── Create Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_contact",
-    "Create a new contact (person). Returns {id, type}. Next step: teamleader_link_contact_to_company to associate with a company.",
+    "Create a new contact (person). Returns {id, type}. Next step: teamleader_link_contact_to_company to associate with a company. NOTE: only `last_name` is required by the API — first_name is optional.",
     {
-      first_name: z.string().describe("First name"),
+      first_name: z.string().optional().describe("First name"),
       last_name: z.string().describe("Last name"),
       email: z.string().optional().describe("Primary email address"),
       phone: z.string().optional().describe("Phone number"),
       mobile: z.string().optional().describe("Mobile number"),
       language: z.string().optional().describe("Language code (e.g. 'en', 'fr', 'nl')"),
-      gender: z.enum(["male", "female"]).optional().describe("Gender"),
+      gender: z.enum(["male", "female", "non_binary", "prefers_not_to_say", "unknown"]).optional().describe("Gender"),
+      salutation: z.string().optional().describe("Salutation (e.g. 'Mr', 'Mrs', 'Dr')"),
+      website: z.string().optional().describe("Website URL"),
+      remarks: z.string().optional().describe("Remarks (markdown supported)"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
-        first_name: params.first_name,
         last_name: params.last_name,
       };
+
+      if (params.first_name) body.first_name = params.first_name;
 
       if (params.email) {
         body.emails = [{ type: "primary", email: params.email }];
@@ -116,6 +126,9 @@ export function registerContactTools(
 
       if (params.language) body.language = params.language;
       if (params.gender) body.gender = params.gender;
+      if (params.salutation) body.salutation = params.salutation;
+      if (params.website) body.website = params.website;
+      if (params.remarks) body.remarks = params.remarks;
       if (params.tags) body.tags = params.tags;
 
       const result = await client.request<TeamleaderInfoResponse<{ id: string; type: string }>>({
@@ -137,16 +150,19 @@ export function registerContactTools(
   // ── Update Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_contact",
-    "Update an existing contact. Only provided fields are changed.",
+    "Update an existing contact. Only provided fields are changed. WARNING: the `tags` param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_contact / teamleader_untag_contact for incremental changes.",
     {
       id: z.string().describe("The contact ID to update"),
-      first_name: z.string().optional().describe("First name"),
+      first_name: z.string().nullable().optional().describe("First name"),
       last_name: z.string().optional().describe("Last name"),
       email: z.string().optional().describe("Primary email address"),
       phone: z.string().optional().describe("Phone number"),
       mobile: z.string().optional().describe("Mobile number"),
       language: z.string().optional().describe("Language code"),
-      gender: z.enum(["male", "female"]).optional().describe("Gender"),
+      gender: z.enum(["male", "female", "non_binary", "prefers_not_to_say", "unknown"]).optional().describe("Gender"),
+      salutation: z.string().nullable().optional().describe("Salutation (e.g. 'Mr', 'Mrs', 'Dr')"),
+      website: z.string().nullable().optional().describe("Website URL"),
+      remarks: z.string().nullable().optional().describe("Remarks (markdown supported)"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
     },
     async (params) => {
@@ -165,6 +181,9 @@ export function registerContactTools(
 
       if (params.language) body.language = params.language;
       if (params.gender) body.gender = params.gender;
+      if (params.salutation !== undefined) body.salutation = params.salutation;
+      if (params.website !== undefined) body.website = params.website;
+      if (params.remarks !== undefined) body.remarks = params.remarks;
       if (params.tags) body.tags = params.tags;
 
       await client.request({

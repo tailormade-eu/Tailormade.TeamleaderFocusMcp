@@ -17,6 +17,8 @@ const SUBJECT_TYPES = [
   "invoice",
   "creditNote",
   "nextgenProject",
+  "product",
+  "project",
   "ticket",
 ] as const;
 
