@@ -130,6 +130,18 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_create_deal` | Create | ❌ | |
 | `teamleader_update_deal` | Update | ❌ | |
 
+## Subscriptions
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_subscriptions` | Basic list (no filter) | ✅ | Returns billing_cycle + next_renewal_date + total |
+| `teamleader_list_subscriptions` | Filter by status=active | ✅ | Correct results |
+| `teamleader_list_subscriptions` | Filter by status=deactivated | ✅ | |
+| `teamleader_get_subscription` | Get by ID | ❌ | |
+| `teamleader_create_subscription` | Create (billing_cycle, lines, payment_term) | ❌ | |
+| `teamleader_update_subscription` | Update billing_cycle / lines | ❌ | |
+| `teamleader_deactivate_subscription` | Deactivate active subscription | ❌ | |
+
 ## Invoices & Events
 
 | Tool | Test | Status | Notes |
@@ -311,6 +323,8 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
 | `projects-v2/projectLines.create` | Does NOT exist — was wrong endpoint. Use `projectGroups.create` for groups and `tasks.create` for tasks |
 | `projects-v2/projectGroups.delete` | Requires `delete_strategy` param: `"ungroup_tasks_and_materials"` or `"delete_tasks_and_materials"` |
+| `subscriptions.list` | Uses `billing_cycle.periodicity.{unit,period}` + `days_in_advance` (NOT `renewal_period`) |
+| `subscriptions.list` | `next_renewal_date` (not `next_renewal_on`); no company_id filter → filter client-side on `invoicee.customer.id` |
 | `invoices.registerPayment` | Uses `paid_at` (not `payment_date`), nested `payment` object (not flat params) |
 | `invoices.creditPartially` | `unit_price.tax: "excluding"` (not a currency field) |
 | `tickets.list` | Customer filter = `relates_to: {type, id}`, status filter = `exclude.status_ids` array |

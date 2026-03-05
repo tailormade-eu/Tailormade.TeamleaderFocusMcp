@@ -22,7 +22,7 @@ export function registerSubscriptionTools(
   // ── List Subscriptions ───────────────────────────────────────────────────
   server.tool(
     "teamleader_list_subscriptions",
-    "List subscriptions (recurring invoices) from Teamleader Focus. Returns array with id, title, status, invoicee, renewal_period, next_renewal_on, grouped_lines. Valid statuses: 'active', 'deactivated'. Next steps: teamleader_get_subscription for full details.",
+    "List subscriptions (recurring invoices) from Teamleader Focus. Returns array with id, title, status, invoicee, billing_cycle, next_renewal_date, total. billing_cycle = {periodicity: {unit: 'week'|'month'|'year', period: N}, days_in_advance: N}. Valid statuses: 'active', 'deactivated'. No company_id filter — filter by invoicee.customer.id client-side. Next steps: teamleader_get_subscription for full details.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
