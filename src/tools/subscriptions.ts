@@ -78,19 +78,21 @@ export function registerSubscriptionTools(
   // ── Create Subscription ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_subscription",
-    "Create a new subscription (recurring invoice) in Teamleader Focus. Returns {id, type}. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types).",
+    "Create a new subscription (recurring invoice) in Teamleader Focus. Returns {id, type}. billing_cycle uses unit ('week','month','year') + period (e.g. period=3,unit=month = quarterly). days_in_advance = how many days before renewal the invoice is created. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
       department_id: z.string().describe("Department ID (use teamleader_list_departments to find)"),
       starts_on: z.string().describe("Start date (YYYY-MM-DD)"),
-      renewal_frequency: z
-        .enum(["weekly", "monthly", "quarterly", "yearly"])
-        .describe("Renewal frequency"),
-      renewal_interval: z
+      billing_unit: z
+        .enum(["week", "month", "year"])
+        .describe("Billing period unit: 'week', 'month', or 'year'"),
+      billing_period: z
         .number()
-        .optional()
-        .describe("Number of periods between renewals (default: 1)"),
+        .describe("Number of units per billing cycle (e.g. 1 for monthly, 3 for quarterly, 1 for yearly)"),
+      days_in_advance: z
+        .number()
+        .describe("Days before renewal date that the invoice is created (e.g. 28)"),
       payment_term_type: z
         .string()
         .describe("Payment term type (use teamleader_list_payment_terms to find valid types)"),
@@ -121,9 +123,12 @@ export function registerSubscriptionTools(
         },
         department_id: params.department_id,
         starts_on: params.starts_on,
-        renewal_period: {
-          frequency: params.renewal_frequency,
-          ...(params.renewal_interval !== undefined && { interval: params.renewal_interval }),
+        billing_cycle: {
+          periodicity: {
+            unit: params.billing_unit,
+            period: params.billing_period,
+          },
+          days_in_advance: params.days_in_advance,
         },
         payment_term: {
           type: params.payment_term_type,
@@ -169,11 +174,12 @@ export function registerSubscriptionTools(
       customer_id: z.string().optional().describe("Customer ID"),
       starts_on: z.string().optional().describe("Start date (YYYY-MM-DD)"),
       ends_on: z.string().optional().describe("End date (YYYY-MM-DD)"),
-      renewal_frequency: z
-        .enum(["weekly", "monthly", "quarterly", "yearly"])
+      billing_unit: z
+        .enum(["week", "month", "year"])
         .optional()
-        .describe("Renewal frequency"),
-      renewal_interval: z.number().optional().describe("Renewal interval"),
+        .describe("Billing period unit: 'week', 'month', or 'year'"),
+      billing_period: z.number().optional().describe("Number of units per billing cycle"),
+      days_in_advance: z.number().optional().describe("Days in advance to create the invoice"),
       payment_term_type: z.string().optional().describe("Payment term type"),
       payment_term_days: z.number().optional().describe("Payment term days"),
       note: z.string().optional().describe("Note on the subscription"),
@@ -202,10 +208,12 @@ export function registerSubscriptionTools(
       }
       if (params.starts_on) body.starts_on = params.starts_on;
       if (params.ends_on !== undefined) body.ends_on = params.ends_on;
-      if (params.renewal_frequency) {
-        body.renewal_period = {
-          frequency: params.renewal_frequency,
-          ...(params.renewal_interval !== undefined && { interval: params.renewal_interval }),
+      if (params.billing_unit || params.billing_period !== undefined || params.days_in_advance !== undefined) {
+        body.billing_cycle = {
+          ...(params.billing_unit && params.billing_period !== undefined && {
+            periodicity: { unit: params.billing_unit, period: params.billing_period },
+          }),
+          ...(params.days_in_advance !== undefined && { days_in_advance: params.days_in_advance }),
         };
       }
       if (params.payment_term_type) {

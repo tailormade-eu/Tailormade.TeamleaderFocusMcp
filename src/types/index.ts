@@ -536,21 +536,27 @@ export interface Subscription {
   status?: "active" | "deactivated";
   invoicee?: {
     customer: IdObject;
-    for_attention_of?: IdObject;
+    for_attention_of?: { name?: string; contact?: IdObject } | null;
   };
   starts_on?: string;
-  ends_on?: string;
-  next_renewal_on?: string;
-  renewal_period?: {
-    frequency: "weekly" | "monthly" | "quarterly" | "yearly";
-    interval?: number;
+  ends_on?: string | null;
+  next_renewal_date?: string | null;
+  billing_cycle?: {
+    periodicity: {
+      unit: "week" | "month" | "year";
+      period: number;
+    };
+    days_in_advance: number;
+  };
+  project?: IdObject | null;
+  total?: {
+    tax_exclusive: Money;
+    tax_inclusive: Money;
+    taxes: { rate: number; taxable: Money; tax: Money }[];
   };
   grouped_lines?: InvoiceGroupedLine[];
-  payment_term?: {
-    type: string;
-    days?: number;
-  };
-  note?: string;
+  note?: string | null;
+  web_url?: string;
   created_at?: string;
   updated_at?: string;
 }
