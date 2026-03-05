@@ -222,7 +222,7 @@ export function registerSubscriptionTools(
           ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
         };
       }
-      if (params.note !== undefined) body.note = params.note;
+      if (params.note !== undefined) body.note = params.note || null;
       if (params.line_items) {
         body.grouped_lines = [
           {
