@@ -527,6 +527,40 @@ export interface Meeting {
   custom_fields?: Array<{ definition: IdObject; value: unknown }>;
 }
 
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+export interface Subscription {
+  id: string;
+  title?: string;
+  department?: IdObject;
+  status?: "active" | "deactivated";
+  invoicee?: {
+    customer: IdObject;
+    for_attention_of?: IdObject;
+  };
+  starts_on?: string;
+  ends_on?: string;
+  next_renewal_on?: string;
+  renewal_period?: {
+    frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+    interval?: number;
+  };
+  grouped_lines?: InvoiceGroupedLine[];
+  payment_term?: {
+    type: string;
+    days?: number;
+  };
+  note?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SubscriptionListFilter {
+  department_id?: string;
+  status?: string[];
+  updated_since?: string;
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface TeamleaderListResponse<T> {

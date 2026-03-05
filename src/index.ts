@@ -32,6 +32,7 @@ import { registerDepartmentTools } from "./tools/departments.js";
 import { registerLookupTools } from "./tools/lookups.js";
 import { registerFileTools } from "./tools/files.js";
 import { registerNoteTools } from "./tools/notes.js";
+import { registerSubscriptionTools } from "./tools/subscriptions.js";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -83,6 +84,7 @@ async function main(): Promise<void> {
   registerLookupTools(server, client);
   registerFileTools(server, client);
   registerNoteTools(server, client);
+  registerSubscriptionTools(server, client);
 
   // Initialize cache (active user + work types)
   await initializeCache(client);
