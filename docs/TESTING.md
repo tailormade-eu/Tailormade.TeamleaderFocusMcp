@@ -414,6 +414,24 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_unassign_material` | Unassign from material | ❌ | |
 | `teamleader_duplicate_material` | Duplicate material | ❌ | |
 
+## Calls
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_calls` | Basic list | ❌ | |
+| `teamleader_list_calls` | Filter by customer / user | ❌ | |
+| `teamleader_get_call` | Get by ID | ❌ | |
+| `teamleader_add_call` | Add call | ❌ | |
+| `teamleader_update_call` | Update call | ❌ | |
+| `teamleader_complete_call` | Complete call | ❌ | |
+
+## Orders
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_orders` | Basic list | ❌ | |
+| `teamleader_get_order` | Get by ID | ❌ | |
+
 ## Lookup Lists
 
 | Tool | Test | Status | Notes |

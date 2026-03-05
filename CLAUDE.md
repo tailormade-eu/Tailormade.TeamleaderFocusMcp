@@ -390,7 +390,7 @@ dist/                 — Compiled output (gitignored)
 npm run build          # compile TypeScript → dist/
 npm run typecheck      # type check without emit
 npm run dev            # watch mode
-npm run check-coverage # verify all API endpoints covered (reads INDEX.md + scans src/tools/)
+npm run check-coverage # verify API endpoints + TESTING.md coverage
 npm test               # unit tests (body construction, no live API)
 
 # Test with inspector:

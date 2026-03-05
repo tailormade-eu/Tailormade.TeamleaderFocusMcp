@@ -65,4 +65,26 @@ for (const endpoint of endpoints) {
 console.log(
   `\n  ${endpoints.length} endpoints: ${covered} ✅ covered, ${planned} 🔨 planned, ${outOfScope} ⛔ out-of-scope, ${gaps} ❌ gaps`
 );
-if (gaps > 0) process.exit(1);
+
+// 5. TESTING.md coverage check
+console.log("\n=== TESTING.md Coverage ===");
+const testingMd = readFileSync(join(root, "docs/TESTING.md"), "utf-8");
+const testingTools = new Set<string>();
+const testingToolRegex = /`(teamleader_[a-z0-9_]+)`/g;
+for (const [, name] of testingMd.matchAll(testingToolRegex)) {
+  testingTools.add(name);
+}
+
+const sortedTools = [...tools].sort();
+let testingMissing = 0;
+for (const tool of sortedTools) {
+  if (testingTools.has(tool)) {
+    console.log(`  ✅ ${tool}`);
+  } else {
+    console.log(`  ❌ ${tool}  ← not in TESTING.md`);
+    testingMissing++;
+  }
+}
+
+console.log(`\n  Missing from TESTING.md: ${testingMissing}`);
+if (gaps > 0 || testingMissing > 0) process.exit(1);
