@@ -147,7 +147,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_invoices` | Basic list | ❌ | |
+| `teamleader_list_invoices` | Filter by customer (company) | ✅ | Returns all 8 invoices for S&D Boetiek in 1 call |
 | `teamleader_get_invoice` | Get by ID | ❌ | |
 | `teamleader_create_invoice` | Create draft | ❌ | |
 | `teamleader_list_events` | Basic list | ❌ | |
@@ -325,7 +325,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `projects-v2/projectLines.create` | Does NOT exist — was wrong endpoint. Use `projectGroups.create` for groups and `tasks.create` for tasks |
 | `projects-v2/projectGroups.delete` | Requires `delete_strategy` param: `"ungroup_tasks_and_materials"` or `"delete_tasks_and_materials"` |
 | `subscriptions.list` | Uses `billing_cycle.periodicity.{unit,period}` + `days_in_advance` (NOT `renewal_period`) |
-| `subscriptions.list` | `next_renewal_date` (not `next_renewal_on`); no company_id filter → filter client-side on `invoicee.customer.id` |
+| `subscriptions.list` | `next_renewal_date` (not `next_renewal_on`); no customer filter → filter client-side on `invoicee.customer.id` (unlike invoices.list which has filter.customer) |
 | `subscriptions.info` | `unit_price.tax: "excluding"` in line_items (string, NOT currency field) — same as invoices.creditPartially |
 | `subscriptions.info` | Tax field in line_items = `{type: "taxRate", id: "..."}` (not flat `tax_rate_id`) |
 | `subscriptions.update` | `note: ""` (empty string) → 400 "must not be empty" — use `null` to clear |
