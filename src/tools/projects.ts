@@ -314,19 +314,23 @@ export function registerProjectTools(
   // ── Create Project Group (Phase) ─────────────────────────────────────────
   server.tool(
     "teamleader_create_project_group",
-    "Create a new project group (phase) within a project. Returns {id, type}. WARNING: the API uses 'start_date'/'end_date' internally (NOT 'starts_on'/'due_on') — this tool maps the params automatically. Next step: teamleader_create_project_task_v2 to add tasks to this group.",
+    "Create a new project group (phase) within a project. Returns {id, type}. Next step: teamleader_create_project_task_v2 to add tasks to this group.",
     {
       project_id: z.string().describe("Parent project ID"),
       title: z.string().describe("Group/phase title"),
       description: z.string().optional().describe("Group/phase description"),
-      starts_on: z
-        .string()
-        .optional()
-        .describe("Start date (YYYY-MM-DD). Mapped to API field 'start_date' automatically."),
-      due_on: z
-        .string()
-        .optional()
-        .describe("Due/end date (YYYY-MM-DD). Mapped to API field 'end_date' automatically."),
+      color: z.enum(["#00B2B2", "#008A8C", "#992600", "#ED9E00", "#D157D3", "#A400B2", "#0071F2", "#004DA6", "#64788F", "#C0C0C4", "#82828C", "#1A1C20"]).optional().describe("Group color"),
+      billing_method: z.enum(["time_and_materials", "fixed_price", "parent_fixed_price", "non_billable"]).optional().describe("Billing method"),
+      fixed_price_amount: z.number().optional().describe("Fixed price amount (requires billing_method=fixed_price)"),
+      fixed_price_currency: z.string().optional().describe("Fixed price currency (e.g. EUR)"),
+      external_budget_amount: z.number().optional().describe("External budget amount (requires billing_method=time_and_materials)"),
+      external_budget_currency: z.string().optional().describe("External budget currency (e.g. EUR)"),
+      internal_budget_amount: z.number().optional().describe("Internal/cost budget amount"),
+      internal_budget_currency: z.string().optional().describe("Internal/cost budget currency (e.g. EUR)"),
+      start_date: z.string().optional().describe("Start date (YYYY-MM-DD)"),
+      end_date: z.string().optional().describe("End date (YYYY-MM-DD)"),
+      assignee_id: z.string().optional().describe("Assignee user ID"),
+      assignee_type: z.enum(["user", "team"]).default("user").optional().describe("Assignee type"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -335,8 +339,14 @@ export function registerProjectTools(
       };
 
       if (params.description) body.description = params.description;
-      if (params.starts_on) body.start_date = params.starts_on;
-      if (params.due_on) body.end_date = params.due_on;
+      if (params.color) body.color = params.color;
+      if (params.billing_method) body.billing_method = params.billing_method;
+      if (params.fixed_price_amount != null) body.fixed_price = { amount: params.fixed_price_amount, currency: params.fixed_price_currency ?? "EUR" };
+      if (params.external_budget_amount != null) body.external_budget = { amount: params.external_budget_amount, currency: params.external_budget_currency ?? "EUR" };
+      if (params.internal_budget_amount != null) body.internal_budget = { amount: params.internal_budget_amount, currency: params.internal_budget_currency ?? "EUR" };
+      if (params.start_date) body.start_date = params.start_date;
+      if (params.end_date) body.end_date = params.end_date;
+      if (params.assignee_id) body.assignees = [{ type: params.assignee_type ?? "user", id: params.assignee_id }];
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "projects-v2/projectGroups.create",
@@ -594,20 +604,34 @@ export function registerProjectTools(
   // ── Update Project Group (Phase) ───────────────────────────────────────
   server.tool(
     "teamleader_update_project_group",
-    "Update a project group (phase). All fields except id are optional. WARNING: API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — params are named correctly here.",
+    "Update a project group (phase). All fields except id are optional. Providing null clears nullable fields.",
     {
       id: z.string().describe("Project group ID"),
       title: z.string().optional().describe("New group title"),
-      description: z.string().optional().describe("New description"),
-      start_date: z.string().optional().describe("Start date (YYYY-MM-DD). API field name is 'start_date' (NOT 'starts_on')."),
-      end_date: z.string().optional().describe("End date (YYYY-MM-DD). API field name is 'end_date' (NOT 'due_on')."),
+      description: z.string().nullable().optional().describe("New description (null to clear)"),
+      color: z.enum(["#00B2B2", "#008A8C", "#992600", "#ED9E00", "#D157D3", "#A400B2", "#0071F2", "#004DA6", "#64788F", "#C0C0C4", "#82828C", "#1A1C20"]).optional().describe("Group color"),
+      billing_method_value: z.enum(["time_and_materials", "fixed_price", "parent_fixed_price", "non_billable"]).optional().describe("Billing method value"),
+      billing_method_update_strategy: z.enum(["none", "cascade"]).default("none").optional().describe("Billing method update strategy: none or cascade to child items"),
+      fixed_price_amount: z.number().optional().describe("Fixed price amount"),
+      fixed_price_currency: z.string().optional().describe("Fixed price currency (e.g. EUR)"),
+      external_budget_amount: z.number().optional().describe("External budget amount"),
+      external_budget_currency: z.string().optional().describe("External budget currency (e.g. EUR)"),
+      internal_budget_amount: z.number().optional().describe("Internal/cost budget amount"),
+      internal_budget_currency: z.string().optional().describe("Internal/cost budget currency (e.g. EUR)"),
+      start_date: z.string().nullable().optional().describe("Start date (YYYY-MM-DD) or null to clear"),
+      end_date: z.string().nullable().optional().describe("End date (YYYY-MM-DD) or null to clear"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
       if (params.title) body.title = params.title;
-      if (params.description) body.description = params.description;
-      if (params.start_date) body.start_date = params.start_date;
-      if (params.end_date) body.end_date = params.end_date;
+      if (params.description !== undefined) body.description = params.description;
+      if (params.color) body.color = params.color;
+      if (params.billing_method_value) body.billing_method = { value: params.billing_method_value, update_strategy: params.billing_method_update_strategy ?? "none" };
+      if (params.fixed_price_amount != null) body.fixed_price = { amount: params.fixed_price_amount, currency: params.fixed_price_currency ?? "EUR" };
+      if (params.external_budget_amount != null) body.external_budget = { amount: params.external_budget_amount, currency: params.external_budget_currency ?? "EUR" };
+      if (params.internal_budget_amount != null) body.internal_budget = { amount: params.internal_budget_amount, currency: params.internal_budget_currency ?? "EUR" };
+      if (params.start_date !== undefined) body.start_date = params.start_date;
+      if (params.end_date !== undefined) body.end_date = params.end_date;
 
       await client.request({
         endpoint: "projects-v2/projectGroups.update",
@@ -697,28 +721,25 @@ export function registerProjectTools(
     "Create a new task within a project or project group (phase). Returns {id, type}. NOTE: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id).",
     {
       project_id: z.string().describe("Parent project ID"),
-      project_group_id: z
-        .string()
-        .optional()
-        .describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
+      project_group_id: z.string().optional().describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
       title: z.string().describe("Task title"),
       description: z.string().optional().describe("Task description"),
-      assignee_id: z
-        .string()
-        .optional()
-        .describe("Assignee user ID (use teamleader_list_users to find). Mapped to API field 'assignees: [{type:user, id}]' automatically."),
-      work_type_id: z
-        .string()
-        .optional()
-        .describe("Work type ID (use teamleader_list_work_types to find)"),
-      estimated_duration: z
-        .number()
-        .optional()
-        .describe("Estimated duration in seconds"),
-      due_on: z
-        .string()
-        .optional()
-        .describe("Due date (YYYY-MM-DD)"),
+      assignee_id: z.string().optional().describe("Assignee user ID"),
+      assignee_type: z.enum(["user", "team"]).default("user").optional().describe("Assignee type"),
+      work_type_id: z.string().optional().describe("Work type ID (use teamleader_list_work_types to find)"),
+      billing_method: z.enum(["user_rate", "work_type_rate", "custom_rate", "fixed_price", "parent_fixed_price", "non_billable"]).optional().describe("Billing method"),
+      fixed_price_amount: z.number().optional().describe("Fixed price amount"),
+      fixed_price_currency: z.string().optional().describe("Fixed price currency (e.g. EUR)"),
+      external_budget_amount: z.number().optional().describe("External budget amount"),
+      external_budget_currency: z.string().optional().describe("External budget currency (e.g. EUR)"),
+      internal_budget_amount: z.number().optional().describe("Internal/cost budget amount"),
+      internal_budget_currency: z.string().optional().describe("Internal/cost budget currency (e.g. EUR)"),
+      custom_rate_amount: z.number().optional().describe("Custom rate amount (requires billing_method=custom_rate)"),
+      custom_rate_currency: z.string().optional().describe("Custom rate currency (e.g. EUR)"),
+      start_date: z.string().optional().describe("Start date (YYYY-MM-DD)"),
+      end_date: z.string().optional().describe("End/due date (YYYY-MM-DD)"),
+      time_estimated_value: z.number().optional().describe("Estimated time value (e.g. 480)"),
+      time_estimated_unit: z.enum(["hours", "minutes", "seconds"]).default("minutes").optional().describe("Estimated time unit"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -728,10 +749,16 @@ export function registerProjectTools(
 
       if (params.project_group_id) body.group_id = params.project_group_id;
       if (params.description) body.description = params.description;
-      if (params.assignee_id) body.assignees = [{ type: "user", id: params.assignee_id }];
+      if (params.assignee_id) body.assignees = [{ type: params.assignee_type ?? "user", id: params.assignee_id }];
       if (params.work_type_id) body.work_type_id = params.work_type_id;
-      if (params.estimated_duration) body.estimated_duration = params.estimated_duration;
-      if (params.due_on) body.due_on = params.due_on;
+      if (params.billing_method) body.billing_method = params.billing_method;
+      if (params.fixed_price_amount != null) body.fixed_price = { amount: params.fixed_price_amount, currency: params.fixed_price_currency ?? "EUR" };
+      if (params.external_budget_amount != null) body.external_budget = { amount: params.external_budget_amount, currency: params.external_budget_currency ?? "EUR" };
+      if (params.internal_budget_amount != null) body.internal_budget = { amount: params.internal_budget_amount, currency: params.internal_budget_currency ?? "EUR" };
+      if (params.custom_rate_amount != null) body.custom_rate = { amount: params.custom_rate_amount, currency: params.custom_rate_currency ?? "EUR" };
+      if (params.start_date) body.start_date = params.start_date;
+      if (params.end_date) body.end_date = params.end_date;
+      if (params.time_estimated_value != null) body.time_estimated = { value: params.time_estimated_value, unit: params.time_estimated_unit ?? "minutes" };
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "projects-v2/tasks.create",
@@ -745,6 +772,293 @@ export function registerProjectTools(
             text: JSON.stringify(result, null, 2),
           },
         ],
+      };
+    }
+  );
+
+  // ── List Project Lines ──────────────────────────────────────────────────
+  server.tool(
+    "teamleader_list_project_lines",
+    "List all project lines (tasks, materials, groups) for a project. Returns array of {line: {type, id}, group: {type, id} | null}. Use filter.types to restrict to specific line types. Use this to see which lines belong to which groups.",
+    {
+      project_id: z.string().describe("Project ID"),
+      types: z.array(z.enum(["nextgenTask", "nextgenMaterial", "nextgenProjectGroup"])).optional().describe("Filter by line types"),
+      assignee_id: z.string().optional().describe("Filter by assignee ID"),
+      assignee_type: z.enum(["user", "team"]).optional().describe("Assignee type (required if assignee_id is set)"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {
+        project_id: params.project_id,
+      };
+      const filter: Record<string, unknown> = {};
+      if (params.types) filter.types = params.types;
+      if (params.assignee_id) filter.assignees = [{ type: params.assignee_type ?? "user", id: params.assignee_id }];
+      if (Object.keys(filter).length > 0) body.filter = filter;
+
+      const result = await client.request<TeamleaderListResponse<ProjectLine>>({
+        endpoint: "projects-v2/projectLines.list",
+        body,
+      });
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // ── Add Project Line to Group ───────────────────────────────────────────
+  server.tool(
+    "teamleader_add_project_line_to_group",
+    "Add an existing task or material to a group. The line must not be a group itself.",
+    {
+      line_id: z.string().describe("Task or material ID to add to the group"),
+      group_id: z.string().describe("Target group ID"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/projectLines.addToGroup",
+        body: { line_id: params.line_id, group_id: params.group_id },
+      });
+      return {
+        content: [{ type: "text" as const, text: `Line ${params.line_id} added to group ${params.group_id}.` }],
+      };
+    }
+  );
+
+  // ── Get Project Group (Info) ────────────────────────────────────────────
+  server.tool(
+    "teamleader_get_project_group",
+    "Get full details of a project group (phase) including title, description, color, billing, assignees, start/end dates, time estimated/tracked, budgets, margins.",
+    {
+      id: z.string().describe("Project group ID"),
+    },
+    async (params) => {
+      const result = await client.request<{ data: ProjectGroup }>({
+        endpoint: "projects-v2/projectGroups.info",
+        body: { id: params.id },
+      });
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // ── Assign User/Team to Project Group ───────────────────────────────────
+  server.tool(
+    "teamleader_assign_project_group",
+    "Assign a user or team to a project group (phase).",
+    {
+      id: z.string().describe("Project group ID"),
+      assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
+      assignee_id: z.string().describe("User or team ID to assign"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/projectGroups.assign",
+        body: { id: params.id, assignee: { type: params.assignee_type, id: params.assignee_id } },
+      });
+      return {
+        content: [{ type: "text" as const, text: `${params.assignee_type} ${params.assignee_id} assigned to group ${params.id}.` }],
+      };
+    }
+  );
+
+  // ── Unassign User/Team from Project Group ───────────────────────────────
+  server.tool(
+    "teamleader_unassign_project_group",
+    "Unassign a user or team from a project group (phase).",
+    {
+      id: z.string().describe("Project group ID"),
+      assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
+      assignee_id: z.string().describe("User or team ID to unassign"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/projectGroups.unassign",
+        body: { id: params.id, assignee: { type: params.assignee_type, id: params.assignee_id } },
+      });
+      return {
+        content: [{ type: "text" as const, text: `${params.assignee_type} ${params.assignee_id} unassigned from group ${params.id}.` }],
+      };
+    }
+  );
+
+  // ── Duplicate Project Group ─────────────────────────────────────────────
+  server.tool(
+    "teamleader_duplicate_project_group",
+    "Duplicate a project group and its entities (without time trackings). Returns {id, type} of the new group.",
+    {
+      origin_id: z.string().describe("ID of the group to duplicate"),
+    },
+    async (params) => {
+      const result = await client.request<{ data: { id: string; type: string } }>({
+        endpoint: "projects-v2/projectGroups.duplicate",
+        body: { origin_id: params.origin_id },
+      });
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // ── Get Project Task (Info) ─────────────────────────────────────────────
+  server.tool(
+    "teamleader_get_project_task",
+    "Get full details of a project task including title, status, description, billing, assignees, dates, time estimated/tracked, budgets, custom fields.",
+    {
+      id: z.string().describe("Project task ID"),
+    },
+    async (params) => {
+      const result = await client.request<{ data: unknown }>({
+        endpoint: "projects-v2/tasks.info",
+        body: { id: params.id },
+      });
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // ── Update Project Task ─────────────────────────────────────────────────
+  server.tool(
+    "teamleader_update_project_task",
+    "Update a project task. All fields except id are optional. Providing null clears nullable fields.",
+    {
+      id: z.string().describe("Project task ID"),
+      title: z.string().optional().describe("New task title"),
+      description: z.string().nullable().optional().describe("New description (null to clear)"),
+      status: z.enum(["to_do", "in_progress", "on_hold", "done"]).optional().describe("Task status"),
+      work_type_id: z.string().nullable().optional().describe("Work type ID (null to clear, cannot be null if billing_method is work_type_rate)"),
+      billing_method: z.enum(["user_rate", "work_type_rate", "custom_rate", "fixed_price", "parent_fixed_price", "non_billable"]).optional().describe("Billing method"),
+      fixed_price_amount: z.number().optional().describe("Fixed price amount"),
+      fixed_price_currency: z.string().optional().describe("Fixed price currency (e.g. EUR)"),
+      external_budget_amount: z.number().optional().describe("External budget amount"),
+      external_budget_currency: z.string().optional().describe("External budget currency (e.g. EUR)"),
+      internal_budget_amount: z.number().optional().describe("Internal/cost budget amount"),
+      internal_budget_currency: z.string().optional().describe("Internal/cost budget currency (e.g. EUR)"),
+      custom_rate_amount: z.number().optional().describe("Custom rate amount"),
+      custom_rate_currency: z.string().optional().describe("Custom rate currency (e.g. EUR)"),
+      start_date: z.string().nullable().optional().describe("Start date (YYYY-MM-DD) or null to clear"),
+      end_date: z.string().nullable().optional().describe("End date (YYYY-MM-DD) or null to clear"),
+      time_estimated_value: z.number().optional().describe("Estimated time value (e.g. 480)"),
+      time_estimated_unit: z.enum(["hours", "minutes", "seconds"]).default("minutes").optional().describe("Estimated time unit"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = { id: params.id };
+      if (params.title) body.title = params.title;
+      if (params.description !== undefined) body.description = params.description;
+      if (params.status) body.status = params.status;
+      if (params.work_type_id !== undefined) body.work_type_id = params.work_type_id;
+      if (params.billing_method) body.billing_method = params.billing_method;
+      if (params.fixed_price_amount != null) body.fixed_price = { amount: params.fixed_price_amount, currency: params.fixed_price_currency ?? "EUR" };
+      if (params.external_budget_amount != null) body.external_budget = { amount: params.external_budget_amount, currency: params.external_budget_currency ?? "EUR" };
+      if (params.internal_budget_amount != null) body.internal_budget = { amount: params.internal_budget_amount, currency: params.internal_budget_currency ?? "EUR" };
+      if (params.custom_rate_amount != null) body.custom_rate = { amount: params.custom_rate_amount, currency: params.custom_rate_currency ?? "EUR" };
+      if (params.start_date !== undefined) body.start_date = params.start_date;
+      if (params.end_date !== undefined) body.end_date = params.end_date;
+      if (params.time_estimated_value != null) body.time_estimated = { value: params.time_estimated_value, unit: params.time_estimated_unit ?? "minutes" };
+
+      await client.request({
+        endpoint: "projects-v2/tasks.update",
+        body,
+      });
+      return {
+        content: [{ type: "text" as const, text: `Project task ${params.id} updated.` }],
+      };
+    }
+  );
+
+  // ── Duplicate Project Task ──────────────────────────────────────────────
+  server.tool(
+    "teamleader_duplicate_project_task",
+    "Duplicate a project task (without time trackings). Returns {id, type} of the new task.",
+    {
+      origin_id: z.string().describe("ID of the task to duplicate"),
+    },
+    async (params) => {
+      const result = await client.request<{ data: { id: string; type: string } }>({
+        endpoint: "projects-v2/tasks.duplicate",
+        body: { origin_id: params.origin_id },
+      });
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // ── Assign User/Team to Project Task ────────────────────────────────────
+  server.tool(
+    "teamleader_assign_project_task",
+    "Assign a user or team to a project task.",
+    {
+      id: z.string().describe("Project task ID"),
+      assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
+      assignee_id: z.string().describe("User or team ID to assign"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/tasks.assign",
+        body: { id: params.id, assignee: { type: params.assignee_type, id: params.assignee_id } },
+      });
+      return {
+        content: [{ type: "text" as const, text: `${params.assignee_type} ${params.assignee_id} assigned to task ${params.id}.` }],
+      };
+    }
+  );
+
+  // ── Unassign User/Team from Project Task ────────────────────────────────
+  server.tool(
+    "teamleader_unassign_project_task",
+    "Unassign a user or team from a project task.",
+    {
+      id: z.string().describe("Project task ID"),
+      assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
+      assignee_id: z.string().describe("User or team ID to unassign"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/tasks.unassign",
+        body: { id: params.id, assignee: { type: params.assignee_type, id: params.assignee_id } },
+      });
+      return {
+        content: [{ type: "text" as const, text: `${params.assignee_type} ${params.assignee_id} unassigned from task ${params.id}.` }],
+      };
+    }
+  );
+
+  // ── Add Quotation to Project ────────────────────────────────────────────
+  server.tool(
+    "teamleader_add_project_quotation",
+    "Add a quotation to a project. Idempotent: does not fail if the quotation was already added.",
+    {
+      id: z.string().describe("Project ID"),
+      quotation_id: z.string().describe("Quotation ID to link"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/projects.addQuotation",
+        body: { id: params.id, quotation_id: params.quotation_id },
+      });
+      return {
+        content: [{ type: "text" as const, text: `Quotation ${params.quotation_id} added to project ${params.id}.` }],
+      };
+    }
+  );
+
+  // ── Remove Quotation from Project ───────────────────────────────────────
+  server.tool(
+    "teamleader_remove_project_quotation",
+    "Remove a quotation from a project. Idempotent: does not fail if the quotation was already removed.",
+    {
+      id: z.string().describe("Project ID"),
+      quotation_id: z.string().describe("Quotation ID to unlink"),
+    },
+    async (params) => {
+      await client.request({
+        endpoint: "projects-v2/projects.removeQuotation",
+        body: { id: params.id, quotation_id: params.quotation_id },
+      });
+      return {
+        content: [{ type: "text" as const, text: `Quotation ${params.quotation_id} removed from project ${params.id}.` }],
       };
     }
   );
