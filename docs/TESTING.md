@@ -62,16 +62,22 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_task_action` | tree cache invalidated after create | ✅ | invalidateTaskTree called |
 | `teamleader_task_action` | tree cache invalidated after delete_group | ✅ | invalidateTaskTree called |
 
-## Tasks (Legacy API)
+## Standalone Tasks
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_list_tasks` | Basic list (no filter) | ❌ | |
 | `teamleader_list_tasks` | Filter by customer_id + customer_type | ❌ | |
 | `teamleader_list_tasks` | Filter by term | ❌ | |
+| `teamleader_get_task` | Get by ID | ❌ | |
 | `teamleader_create_task` | Create (description only) | ❌ | |
 | `teamleader_create_task` | Create with assignee + due_on + work_type | ❌ | |
 | `teamleader_create_task` | Create linked to customer | ❌ | |
+| `teamleader_update_task` | Update description / due date | ❌ | |
+| `teamleader_delete_task` | Delete | ❌ | |
+| `teamleader_complete_task` | Mark as completed | ❌ | |
+| `teamleader_reopen_task` | Reopen completed task | ❌ | |
+| `teamleader_schedule_task` | Schedule task (start_date + due_on) | ❌ | |
 
 ## Time Tracking (raw)
 
@@ -87,8 +93,16 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_update_timetracking` | Update description | ✅ | Returns {} (normal for Teamleader updates) |
 | `teamleader_update_timetracking` | Update times | ❌ | |
 | `teamleader_delete_timetracking` | Delete entry | ✅ | |
+
+## Timers
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
 | `teamleader_start_timer` | Start running timer | ❌ | |
 | `teamleader_stop_timer` | Stop running timer | ❌ | |
+| `teamleader_get_current_timer` | Get currently running timer | ❌ | |
+| `teamleader_update_timer` | Update running timer description | ❌ | |
+| `teamleader_resume_timetracking` | Resume a past time entry | ❌ | |
 
 ## Cache Management
 
@@ -108,27 +122,169 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_list_projects_v2` | Filter by company_id | ❌ | |
 | `teamleader_get_project_v2` | Get by ID | ❌ | |
 | `teamleader_create_project_v2` | Create | ❌ | |
-| `teamleader_update_project_v2` | Update status | ❌ | |
-| `teamleader_list_project_groups` | List groups | ❌ | |
-| `teamleader_list_project_tasks_v2` | List tasks | ❌ | |
-| `teamleader_create_project_task_v2` | Create task | ❌ | |
-| `teamleader_create_project_group` | Create group | ❌ | |
+| `teamleader_update_project_v2` | Update status / details | ❌ | |
+| `teamleader_close_project_v2` | Close project (closing_strategy) | ❌ | |
+| `teamleader_reopen_project_v2` | Reopen project | ❌ | |
+| `teamleader_delete_project_v2` | Delete project (delete_strategy) | ❌ | |
+| `teamleader_duplicate_project_v2` | Duplicate project | ❌ | |
+| `teamleader_assign_project` | Assign user/team to project | ❌ | |
+| `teamleader_unassign_project` | Unassign from project | ❌ | |
 
-## CRM
+## Project Customers / Deals / Owners / Quotations
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_add_project_customer` | Add customer to project | ❌ | |
+| `teamleader_remove_project_customer` | Remove customer from project | ❌ | |
+| `teamleader_add_project_deal` | Link deal to project | ❌ | |
+| `teamleader_remove_project_deal` | Unlink deal from project | ❌ | |
+| `teamleader_add_project_owner` | Add owner/member | ❌ | |
+| `teamleader_remove_project_owner` | Remove owner/member | ❌ | |
+| `teamleader_add_project_quotation` | Link quotation to project | ❌ | |
+| `teamleader_remove_project_quotation` | Unlink quotation from project | ❌ | |
+
+## Project Groups
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_project_groups` | List groups for project | ❌ | |
+| `teamleader_get_project_group` | Get group details by ID | ❌ | |
+| `teamleader_create_project_group` | Create group (start_date/end_date) | ❌ | |
+| `teamleader_update_project_group` | Update group details | ❌ | |
+| `teamleader_assign_project_group` | Assign user/team to group | ❌ | |
+| `teamleader_unassign_project_group` | Unassign from group | ❌ | |
+| `teamleader_duplicate_project_group` | Duplicate group | ❌ | |
+
+## Project Lines
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_project_lines` | List lines for project | ❌ | project_id is top-level, NOT in filter |
+| `teamleader_add_project_line_to_group` | Add line to group | ❌ | |
+| `teamleader_remove_task_from_group` | Remove task from group | ❌ | |
+
+## Project Tasks
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_project_tasks_v2` | List tasks for project | ❌ | |
+| `teamleader_get_project_task` | Get task details | ❌ | |
+| `teamleader_create_project_task_v2` | Create task (group_id, assignees) | ❌ | |
+| `teamleader_update_project_task` | Update task details | ❌ | |
+| `teamleader_complete_project_task` | Mark task as done | ❌ | |
+| `teamleader_reopen_project_task` | Reopen done task | ❌ | |
+| `teamleader_delete_project_task` | Delete task | ❌ | |
+| `teamleader_assign_project_task` | Assign user/team to task | ❌ | |
+| `teamleader_unassign_project_task` | Unassign from task | ❌ | |
+| `teamleader_duplicate_project_task` | Duplicate task | ❌ | |
+
+## Companies
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_list_companies` | Basic list | ❌ | |
+| `teamleader_list_companies` | Filter by term | ❌ | |
 | `teamleader_get_company` | Get by ID | ❌ | |
 | `teamleader_create_company` | Create | ❌ | |
+| `teamleader_update_company` | Update company details | ❌ | |
+| `teamleader_delete_company` | Delete company | ❌ | |
+| `teamleader_tag_company` | Add tag to company | ❌ | |
+| `teamleader_untag_company` | Remove tag from company | ❌ | |
+
+## Contacts
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
 | `teamleader_list_contacts` | Basic list | ❌ | |
+| `teamleader_list_contacts` | Filter by term | ❌ | |
 | `teamleader_get_contact` | Get by ID | ❌ | |
 | `teamleader_create_contact` | Create | ❌ | |
 | `teamleader_update_contact` | Update | ❌ | |
+| `teamleader_delete_contact` | Delete contact | ❌ | |
+| `teamleader_link_contact_to_company` | Link contact to company | ❌ | |
+| `teamleader_unlink_contact_from_company` | Unlink contact from company | ❌ | |
+| `teamleader_update_contact_company_link` | Update link (role/position) | ❌ | |
+| `teamleader_tag_contact` | Add tag to contact | ❌ | |
+| `teamleader_untag_contact` | Remove tag from contact | ❌ | |
+
+## Deals
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
 | `teamleader_list_deals` | Basic list | ❌ | |
+| `teamleader_list_deals` | Filter by phase / pipeline / customer | ❌ | |
 | `teamleader_get_deal` | Get by ID | ❌ | |
 | `teamleader_create_deal` | Create | ❌ | |
 | `teamleader_update_deal` | Update | ❌ | |
+| `teamleader_delete_deal` | Delete deal | ❌ | |
+| `teamleader_lose_deal` | Mark as lost (reason_id optional) | ❌ | |
+| `teamleader_win_deal` | Mark as won | ❌ | |
+| `teamleader_move_deal` | Move to different phase | ❌ | |
+
+## Deal Pipelines & Phases
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_deal_pipelines` | List pipelines | ❌ | |
+| `teamleader_create_deal_pipeline` | Create pipeline | ❌ | |
+| `teamleader_update_deal_pipeline` | Update pipeline | ❌ | |
+| `teamleader_delete_deal_pipeline` | Delete pipeline | ❌ | |
+| `teamleader_duplicate_deal_pipeline` | Duplicate pipeline | ❌ | |
+| `teamleader_mark_deal_pipeline_default` | Mark as default | ❌ | |
+| `teamleader_list_deal_phases` | List phases for pipeline | ❌ | |
+| `teamleader_create_deal_phase` | Create phase | ❌ | |
+| `teamleader_update_deal_phase` | Update phase | ❌ | |
+| `teamleader_delete_deal_phase` | Delete phase | ❌ | |
+| `teamleader_duplicate_deal_phase` | Duplicate phase | ❌ | |
+| `teamleader_move_deal_phase` | Move/reorder phase | ❌ | |
+| `teamleader_list_deal_sources` | List deal sources | ❌ | |
+
+## Quotations
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_quotations` | Basic list (no filter) | ❌ | |
+| `teamleader_list_quotations` | Filter by deal_id | ❌ | |
+| `teamleader_get_quotation` | Get by ID | ❌ | |
+| `teamleader_create_quotation` | Create with grouped_lines | ❌ | Requires deal_id + grouped_lines or text |
+| `teamleader_create_quotation` | Create with text only | ❌ | |
+| `teamleader_update_quotation` | Update line items / text | ❌ | |
+| `teamleader_delete_quotation` | Delete | ❌ | |
+| `teamleader_accept_quotation` | Accept + verify 204 | ❌ | Returns 204 No Content |
+| `teamleader_send_quotation` | Send via email | ❌ | |
+| `teamleader_download_quotation` | Get download URL | ❌ | |
+
+## Credit Notes
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_credit_notes` | Basic list (no filter) | ❌ | |
+| `teamleader_list_credit_notes` | Filter by department_id | ❌ | |
+| `teamleader_get_credit_note` | Get by ID | ❌ | |
+| `teamleader_download_credit_note` | Get download URL | ❌ | |
+| `teamleader_send_credit_note_peppol` | Send via Peppol | ❌ | Requires customer to have Peppol ID |
+
+## Invoices
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_invoices` | Filter by customer (company) | ✅ | Returns all 8 invoices for S&D Boetiek in 1 call |
+| `teamleader_list_invoices` | Filter by status | ❌ | |
+| `teamleader_get_invoice` | Get by ID | ❌ | |
+| `teamleader_create_invoice` | Create draft | ❌ | |
+| `teamleader_update_invoice` | Update line items / dates | ❌ | |
+| `teamleader_update_booked_invoice` | Update booked invoice | ❌ | |
+| `teamleader_book_invoice` | Book draft invoice | ❌ | |
+| `teamleader_send_invoice` | Send via email | ❌ | |
+| `teamleader_send_invoice_peppol` | Send via Peppol | ❌ | |
+| `teamleader_download_invoice` | Download PDF | ❌ | |
+| `teamleader_delete_invoice` | Delete draft | ❌ | |
+| `teamleader_register_payment` | Register payment (nested payment obj) | ❌ | Uses `paid_at` not `payment_date` |
+| `teamleader_remove_payments` | Remove payments | ❌ | |
+| `teamleader_copy_invoice` | Copy to new draft | ❌ | |
+| `teamleader_credit_invoice` | Full credit note | ❌ | |
+| `teamleader_credit_invoice_partially` | Partial credit note | ❌ | `unit_price.tax: "excluding"` |
+| `teamleader_list_bookkeeping_submissions` | List submissions | ❌ | |
 
 ## Subscriptions
 
@@ -137,177 +293,143 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_list_subscriptions` | Basic list (no filter) | ✅ | Returns billing_cycle + next_renewal_date + total |
 | `teamleader_list_subscriptions` | Filter by status=active | ✅ | Correct results |
 | `teamleader_list_subscriptions` | Filter by status=deactivated | ✅ | |
+| `teamleader_list_subscriptions` | Filter by ids | ❌ | |
+| `teamleader_list_subscriptions` | Filter by invoice_id | ❌ | |
+| `teamleader_list_subscriptions` | Filter by deal_id | ❌ | |
+| `teamleader_list_subscriptions` | Filter by customer | ❌ | |
+| `teamleader_list_subscriptions` | Sort options | ❌ | |
 | `teamleader_get_subscription` | Get by ID | ✅ | Returns grouped_lines, payment_term, invoice_generation, document_template |
 | `teamleader_create_subscription` | Create (billing_cycle, lines, payment_term) | ⚠️ | Schema correct; test blocked by MCP tool call type coercion (numbers as strings) — works in production |
 | `teamleader_update_subscription` | Update note | ✅ | Note updated + verified via get |
 | `teamleader_update_subscription` | Clear note (empty string) | 🐛 | API returns 400 "note must not be empty" → fixed: empty string → null |
 | `teamleader_deactivate_subscription` | Deactivate already-deactivated | ✅ | Idempotent — no error |
 
-## Invoices & Events
+## Events
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_invoices` | Filter by customer (company) | ✅ | Returns all 8 invoices for S&D Boetiek in 1 call |
-| `teamleader_get_invoice` | Get by ID | ❌ | |
-| `teamleader_create_invoice` | Create draft | ❌ | |
 | `teamleader_list_events` | Basic list | ❌ | |
+| `teamleader_list_events` | Filter by activity_type_id | ❌ | |
 | `teamleader_get_event` | Get by ID | ❌ | |
 | `teamleader_create_event` | Create | ❌ | |
+| `teamleader_update_event` | Update details | ❌ | |
+| `teamleader_cancel_event` | Cancel event | ❌ | |
 
-## Users (task 01 — not yet implemented)
+## Meetings
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_meetings` | Basic list | ❌ | |
+| `teamleader_list_meetings` | Filter by attendee / customer | ❌ | |
+| `teamleader_get_meeting` | Get by ID | ❌ | |
+| `teamleader_schedule_meeting` | Schedule new meeting | ❌ | |
+| `teamleader_update_meeting` | Update details | ❌ | |
+| `teamleader_complete_meeting` | Mark as completed | ❌ | |
+| `teamleader_delete_meeting` | Delete | ❌ | |
+| `teamleader_create_meeting_report` | Add report/notes to meeting | ❌ | |
+
+## Tickets
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_tickets` | Basic list | ❌ | |
+| `teamleader_list_tickets` | Filter by status / team / assignee | ❌ | Customer filter = `relates_to: {type, id}` |
+| `teamleader_get_ticket` | Get by ID | ❌ | |
+| `teamleader_create_ticket` | Create (subject, customer, team_id) | ❌ | |
+| `teamleader_update_ticket` | Update status / assignee | ❌ | |
+| `teamleader_list_ticket_messages` | List messages for ticket | ❌ | |
+| `teamleader_get_ticket_message` | Get single message by ID | ❌ | |
+| `teamleader_reply_ticket` | Reply (external message) | ❌ | |
+| `teamleader_internal_message_ticket` | Add internal note | ❌ | |
+| `teamleader_import_ticket_message` | Import external message | ❌ | |
+
+## Users
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_list_users` | Basic list | ❌ | |
 | `teamleader_list_users` | Filter by team_id | ❌ | |
+| `teamleader_list_users` | Filter by status | ❌ | |
 | `teamleader_get_user` | Get by ID | ❌ | |
 
-## Tickets (task 02 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_list_tickets` | Basic list | ❌ | |
-| `teamleader_list_tickets` | Filter by status / team / assignee | ❌ | |
-| `teamleader_get_ticket` | Get by ID (incl. messages) | ❌ | |
-| `teamleader_create_ticket` | Create (subject, customer, team_id) | ❌ | |
-| `teamleader_update_ticket` | Update status / assignee | ❌ | |
-| `teamleader_reply_ticket` | Reply (external message) | ❌ | |
-| `teamleader_internal_ticket` | Add internal note | ❌ | |
-| `teamleader_get_ticket_message` | Get single message by ID | ❌ | |
-
-## Invoices — workflow (task 03 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_book_invoice` | Book draft invoice | ❌ | |
-| `teamleader_send_invoice` | Send via email | ❌ | |
-| `teamleader_delete_invoice` | Delete draft | ❌ | |
-| `teamleader_update_invoice` | Update line items / dates | ❌ | |
-| `teamleader_add_payment` | Register payment | ❌ | |
-| `teamleader_credit_invoice` | Full credit note | ❌ | |
-| `teamleader_credit_invoice_partially` | Partial credit note | ❌ | |
-| `teamleader_copy_invoice` | Copy to new draft | ❌ | |
-| `teamleader_list_mail_templates` | List mail templates | ❌ | |
-| `teamleader_list_payment_methods` | List payment methods | ❌ | |
-
-## Meetings (task 04 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_list_meetings` | Basic list | ❌ | |
-| `teamleader_get_meeting` | Get by ID | ❌ | |
-| `teamleader_schedule_meeting` | Schedule new meeting | ❌ | |
-| `teamleader_complete_meeting` | Mark as completed | ❌ | |
-| `teamleader_delete_meeting` | Delete | ❌ | |
-| `teamleader_update_meeting` | Update details | ❌ | |
-| `teamleader_add_meeting_report` | Add report/notes to meeting | ❌ | |
-
-## Standalone Tasks — complete (task 05 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_get_task` | Get by ID | ❌ | |
-| `teamleader_update_task` | Update description / due date | ❌ | |
-| `teamleader_delete_task` | Delete | ❌ | |
-| `teamleader_complete_task` | Mark as completed | ❌ | |
-| `teamleader_reopen_task` | Reopen completed task | ❌ | |
-| `teamleader_schedule_task` | Schedule task | ❌ | |
-
-## Deals — workflow (task 06 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_delete_deal` | Delete deal | ❌ | |
-| `teamleader_lose_deal` | Mark as lost (reason_id optional) | ❌ | |
-| `teamleader_win_deal` | Mark as won | ❌ | |
-| `teamleader_move_deal` | Move to different phase | ❌ | |
-| `teamleader_list_lost_reasons` | List lost reason IDs | ❌ | |
-| `teamleader_list_deal_phases` | List deal phase IDs | ❌ | |
-| `teamleader_list_deal_sources` | List deal source IDs | ❌ | |
-| `teamleader_list_deal_pipelines` | List deal pipeline IDs | ❌ | |
-
-## Departments (task 07 — not yet implemented)
+## Departments
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_list_departments` | Basic list | ❌ | |
 | `teamleader_get_department` | Get by ID | ❌ | |
 
-## Companies + Contacts — extended CRUD (task 08 — not yet implemented)
+## Notes
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_update_company` | Update company details | ❌ | |
-| `teamleader_delete_contact` | Delete contact | ❌ | |
-| `teamleader_link_contact_to_company` | Link contact to company | ❌ | |
-| `teamleader_unlink_contact_from_company` | Unlink contact from company | ❌ | |
-| `teamleader_update_contact_company_link` | Update link (role/position) | ❌ | |
-| `teamleader_tag_contact` | Add tag to contact | ❌ | |
-| `teamleader_untag_contact` | Remove tag from contact | ❌ | |
+| `teamleader_list_notes` | List notes for contact/company/deal | ❌ | |
+| `teamleader_list_notes` | Filter by subject type | ❌ | |
+| `teamleader_create_note` | Create note on subject | ❌ | |
+| `teamleader_update_note` | Update note content | ❌ | |
 
-## Lookup Lists (task 09 — not yet implemented)
+## Files
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_files` | List files for subject | ❌ | |
+| `teamleader_list_files` | Filter by subject type + id | ❌ | |
+| `teamleader_get_file` | Get file metadata by ID | ❌ | |
+| `teamleader_download_file` | Get download URL | ❌ | |
+| `teamleader_delete_file` | Delete file | ❌ | |
+| `teamleader_upload_file` | Upload file (two-step: pre-signed URL → binary POST) | ❌ | |
+
+## Products
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_products` | Basic list | ❌ | |
+| `teamleader_list_products` | Filter by term | ❌ | |
+| `teamleader_get_product` | Get by ID | ❌ | |
+| `teamleader_add_product` | Add product | ❌ | |
+| `teamleader_update_product` | Update product | ❌ | |
+| `teamleader_delete_product` | Delete product | ❌ | |
+
+## Materials
+
+| Tool | Test | Status | Notes |
+|------|------|--------|-------|
+| `teamleader_list_materials` | Basic list for project | ❌ | |
+| `teamleader_list_materials` | Filter by group_id | ❌ | |
+| `teamleader_get_material` | Get by ID | ❌ | |
+| `teamleader_create_material` | Create material (project_id, product_id, quantity) | ❌ | |
+| `teamleader_update_material` | Update quantity / details | ❌ | |
+| `teamleader_delete_material` | Delete material | ❌ | |
+| `teamleader_assign_material` | Assign user/team to material | ❌ | `assignee: {type, id}` object |
+| `teamleader_unassign_material` | Unassign from material | ❌ | |
+| `teamleader_duplicate_material` | Duplicate material | ❌ | |
+
+## Lookup Lists
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_list_activity_types` | List activity types (for events) | ❌ | |
 | `teamleader_list_tax_rates` | List tax rates (for invoices) | ❌ | |
 | `teamleader_list_payment_terms` | List payment terms | ❌ | |
+| `teamleader_list_payment_methods` | List payment methods | ❌ | |
 | `teamleader_list_ticket_statuses` | List ticket statuses | ❌ | |
 | `teamleader_list_products` | List products (for invoice line items) | ❌ | |
 | `teamleader_list_product_categories` | List product categories | ❌ | |
-
-## Projects — lifecycle (task 10 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_close_project` | Close project | ❌ | |
-| `teamleader_reopen_project` | Reopen project | ❌ | |
-| `teamleader_delete_project` | Delete project | ❌ | |
-| `teamleader_duplicate_project` | Duplicate project | ❌ | |
-| `teamleader_add_customer_to_project` | Add customer relationship | ❌ | |
-| `teamleader_remove_customer_from_project` | Remove customer relationship | ❌ | |
-| `teamleader_add_deal_to_project` | Link deal to project | ❌ | |
-| `teamleader_remove_deal_from_project` | Unlink deal from project | ❌ | |
-| `teamleader_add_owner_to_project` | Add owner/member | ❌ | |
-| `teamleader_remove_owner_from_project` | Remove owner/member | ❌ | |
-| `teamleader_update_project_group` | Update group/phase details | ❌ | |
-| `teamleader_complete_project_task` | Mark task as done | ❌ | |
-| `teamleader_reopen_project_task` | Reopen done task | ❌ | |
-| `teamleader_delete_project_task` | Delete task | ❌ | |
-| `teamleader_remove_task_from_group` | Move task out of group | ❌ | |
-
-## Timers — complete (task 11 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_current_timer` | Get currently running timer | ❌ | |
-| `teamleader_update_timer` | Update running timer description | ❌ | |
-| `teamleader_resume_timetracking` | Resume a past time entry | ❌ | |
-
-## Files (task 12 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_list_files` | List files for subject | ❌ | |
-| `teamleader_get_file` | Get file metadata by ID | ❌ | |
-| `teamleader_download_file` | Get download URL | ❌ | |
-| `teamleader_delete_file` | Delete file | ❌ | |
-| `teamleader_upload_file` | Upload file (multipart — needs client.ts extension) | ❌ | |
-
-## Misc Lookups (task 13 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
+| `teamleader_list_work_types` | List work types | ❌ | |
 | `teamleader_list_teams` | List teams (for tickets) | ❌ | |
 | `teamleader_list_tags` | List tags (for contacts/companies) | ❌ | |
 | `teamleader_list_expenses` | List expense entries | ❌ | |
-
-## Notes (task 14 — not yet implemented)
-
-| Tool | Test | Status | Notes |
-|------|------|--------|-------|
-| `teamleader_list_notes` | List notes for contact/company/deal | ❌ | |
-| `teamleader_create_note` | Create note on subject | ❌ | |
+| `teamleader_list_mail_templates` | List mail templates | ❌ | |
+| `teamleader_list_lost_reasons` | List lost reasons | ❌ | |
+| `teamleader_list_business_types` | List business types | ❌ | |
+| `teamleader_list_call_outcomes` | List call outcomes | ❌ | |
+| `teamleader_list_currencies` | List currencies | ❌ | |
+| `teamleader_list_document_templates` | List document templates | ❌ | |
+| `teamleader_list_price_lists` | List price lists | ❌ | |
+| `teamleader_list_units_of_measure` | List units of measure | ❌ | |
+| `teamleader_list_withholding_tax_rates` | List withholding tax rates | ❌ | |
+| `teamleader_list_commercial_discounts` | List commercial discounts | ❌ | |
+| `teamleader_list_deal_sources` | List deal sources | ❌ | |
 
 ---
 
@@ -321,11 +443,19 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `tasks.create` | use `group_id` not `project_group_id` |
 | `timeTracking.list` | returns `subject.type: "todo"` — ID differs from `nextgenTask` ID |
 | `timeTracking.add` | strip milliseconds: `.replace(/\.\d+Z$/, "+00:00")` |
+| `timeTracking.list` | `filter.started_after` / `filter.started_before` accept **date only** (`YYYY-MM-DD`) — datetime strings cause 400 |
+| `timeTracking.update` | No partial updates for time fields — always send `started_at` + `ended_at` together |
 | `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
 | `projects-v2/projectLines.create` | Does NOT exist — was wrong endpoint. Use `projectGroups.create` for groups and `tasks.create` for tasks |
+| `projects-v2/projectGroups.create` | Use `start_date` / `end_date` (NOT `starts_on` / `due_on`) |
+| `projects-v2/projectGroups.update` | Uses `start_date`/`end_date` (not `starts_on`/`due_on`) |
 | `projects-v2/projectGroups.delete` | Requires `delete_strategy` param: `"ungroup_tasks_and_materials"` or `"delete_tasks_and_materials"` |
+| `projects.close` | Requires `closing_strategy` param: `"mark_tasks_and_materials_as_done"` or `"none"` |
+| `projects.delete` | Requires `delete_strategy` param: `"unlink_tasks_and_time_trackings"` or `"delete_tasks_and_time_trackings"` |
+| `projects.assign` | Uses `assignee: {type, id}` object (not flat ID) |
+| `projects.addCustomer` | Uses `customer: {type, id}` object (not flat ID) |
 | `subscriptions.list` | Uses `billing_cycle.periodicity.{unit,period}` + `days_in_advance` (NOT `renewal_period`) |
-| `subscriptions.list` | `next_renewal_date` (not `next_renewal_on`); no customer filter → filter client-side on `invoicee.customer.id` (unlike invoices.list which has filter.customer) |
+| `subscriptions.list` | `next_renewal_date` (not `next_renewal_on`); no customer filter → filter client-side on `invoicee.customer.id` |
 | `subscriptions.info` | `unit_price.tax: "excluding"` in line_items (string, NOT currency field) — same as invoices.creditPartially |
 | `subscriptions.info` | Tax field in line_items = `{type: "taxRate", id: "..."}` (not flat `tax_rate_id`) |
 | `subscriptions.update` | `note: ""` (empty string) → 400 "must not be empty" — use `null` to clear |
@@ -333,12 +463,14 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `invoices.registerPayment` | Uses `paid_at` (not `payment_date`), nested `payment` object (not flat params) |
 | `invoices.creditPartially` | `unit_price.tax: "excluding"` (not a currency field) |
 | `tickets.list` | Customer filter = `relates_to: {type, id}`, status filter = `exclude.status_ids` array |
-| `projects.close` | Requires `closing_strategy` param |
-| `projects.delete` | Requires `delete_strategy` param |
-| `projects.assign` | Uses `assignee: {type, id}` object |
-| `projects.addCustomer` | Uses `customer: {type, id}` object |
-| `projectGroups.update` | Uses `start_date`/`end_date` (not `starts_on`/`due_on`) |
 | `files.upload` | Two-step: get pre-signed URL via API, then binary POST to that URL (no auth needed) |
+| `quotations.accept` | Returns 204 No Content (not the updated quotation) |
+| `quotations.create` | Requires `deal_id`; needs `grouped_lines` and/or `text` to be valid |
+| `quotations.create` | `unit_price.tax: "excluding"` (same pattern as invoices/subscriptions) |
+| `quotations.create` | `discount.type` only supports `"percentage"` (values 0-100) |
+| `creditNotes.sendViaPeppol` | Returns 204 No Content; customer must have Peppol ID configured |
+| `materials.assign` | Uses `assignee: {type, id}` object (same pattern as projects.assign) |
+| `materials.assign` | Returns 204 No Content |
 
 ---
 
@@ -355,4 +487,4 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 ## Priority Testing Queue
 
-All high-priority items tested. Remaining ❌ are raw API wrappers (CRM, Invoices, Events, Legacy Tasks) with no custom logic.
+All high-priority items tested. Remaining ❌ are raw API wrappers (CRM, Invoices, Events, Quotations, Credit Notes, Materials, Products, etc.) with no custom logic.
