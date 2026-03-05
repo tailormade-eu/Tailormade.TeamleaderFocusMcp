@@ -22,10 +22,12 @@ export function registerInvoiceTools(
   // ── List Invoices ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_invoices",
-    "List invoices from Teamleader Focus. Returns array of invoices with id, number, status, invoicee, total, invoice_date. Supports filtering by department, status, date range. Next steps: teamleader_get_invoice for details, teamleader_book_invoice to book drafts, teamleader_send_invoice to email. IMPORTANT: No company_id filter available — to find invoices for a specific company, fetch all pages and filter by invoicee.customer.id. Valid statuses: 'draft' (not yet booked), 'outstanding' (booked/sent, unpaid), 'matched' (fully paid). 'paid' is NOT a valid status — use 'matched' instead.",
+    "List invoices from Teamleader Focus. Returns array of invoices with id, number, status, invoicee, total, invoice_date. Supports filtering by customer, department, status, date range. Next steps: teamleader_get_invoice for details, teamleader_book_invoice to book drafts, teamleader_send_invoice to email. Valid statuses: 'draft' (not yet booked), 'outstanding' (booked/sent, unpaid), 'matched' (fully paid). 'paid' is NOT a valid status — use 'matched' instead.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
+      customer_type: z.enum(["contact", "company"]).optional().describe("Filter by customer type (use with customer_id)"),
+      customer_id: z.string().optional().describe("Filter by customer ID (company or contact ID)"),
       department_id: z.string().optional().describe("Filter by department ID (use teamleader_list_departments to find)"),
       status: z
         .array(z.string())
@@ -43,6 +45,9 @@ export function registerInvoiceTools(
         .string()
         .optional()
         .describe("Filter invoices dated before (YYYY-MM-DD)"),
+      subscription_id: z.string().optional().describe("Filter by subscription ID"),
+      deal_id: z.string().optional().describe("Filter by deal ID"),
+      project_id: z.string().optional().describe("Filter by project ID"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -55,6 +60,9 @@ export function registerInvoiceTools(
       }
 
       const filter: Record<string, unknown> = {};
+      if (params.customer_type && params.customer_id) {
+        filter.customer = { type: params.customer_type, id: params.customer_id };
+      }
       if (params.department_id) filter.department_id = params.department_id;
       if (params.status) filter.status = params.status;
       if (params.updated_since) filter.updated_since = params.updated_since;
@@ -62,6 +70,9 @@ export function registerInvoiceTools(
         filter.invoice_date_after = params.invoice_date_after;
       if (params.invoice_date_before)
         filter.invoice_date_before = params.invoice_date_before;
+      if (params.subscription_id) filter.subscription_id = params.subscription_id;
+      if (params.deal_id) filter.deal_id = params.deal_id;
+      if (params.project_id) filter.project_id = params.project_id;
       if (Object.keys(filter).length > 0) body.filter = filter;
 
       const result = await client.request<TeamleaderListResponse<Invoice>>({
