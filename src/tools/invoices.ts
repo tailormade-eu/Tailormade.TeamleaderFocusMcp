@@ -22,7 +22,7 @@ export function registerInvoiceTools(
   // ── List Invoices ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_invoices",
-    "List invoices from Teamleader Focus. Returns array of invoices with id, number, status, invoicee, total, invoice_date. Supports filtering by department, status, date range. Next steps: teamleader_get_invoice for details, teamleader_book_invoice to book drafts, teamleader_send_invoice to email.",
+    "List invoices from Teamleader Focus. Returns array of invoices with id, number, status, invoicee, total, invoice_date. Supports filtering by department, status, date range. Next steps: teamleader_get_invoice for details, teamleader_book_invoice to book drafts, teamleader_send_invoice to email. IMPORTANT: No company_id filter available — to find invoices for a specific company, fetch all pages and filter by invoicee.customer.id. Valid statuses: 'draft' (not yet booked), 'outstanding' (booked/sent, unpaid), 'matched' (fully paid). 'paid' is NOT a valid status — use 'matched' instead.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -30,7 +30,7 @@ export function registerInvoiceTools(
       status: z
         .array(z.string())
         .optional()
-        .describe("Filter by status (e.g. ['draft', 'outstanding', 'paid'])"),
+        .describe("Filter by status. Valid values: 'draft', 'outstanding', 'matched'. Do NOT use 'paid' or 'booked' — these are invalid and return 400."),
       updated_since: z
         .string()
         .optional()
