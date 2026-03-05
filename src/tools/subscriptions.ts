@@ -15,6 +15,50 @@ function respond(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
+// ── Body Builders (exported for testing) ─────────────────────────────────────
+
+export interface ListSubscriptionsParams {
+  page?: number;
+  page_size?: number;
+  ids?: string[];
+  invoice_id?: string;
+  deal_id?: string;
+  department_id?: string;
+  customer_type?: "contact" | "company";
+  customer_id?: string;
+  status?: Array<"active" | "deactivated">;
+  sort_field?: "title" | "created_at" | "status";
+  sort_order?: "asc" | "desc";
+}
+
+export function buildListSubscriptionsBody(params: ListSubscriptionsParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+
+  if (params.page || params.page_size) {
+    body.page = {
+      number: params.page ?? 1,
+      size: params.page_size ?? 20,
+    };
+  }
+
+  const filter: Record<string, unknown> = {};
+  if (params.ids) filter.ids = params.ids;
+  if (params.invoice_id) filter.invoice_id = params.invoice_id;
+  if (params.deal_id) filter.deal_id = params.deal_id;
+  if (params.department_id) filter.department_id = params.department_id;
+  if (params.customer_type && params.customer_id) {
+    filter.customer = { type: params.customer_type, id: params.customer_id };
+  }
+  if (params.status) filter.status = params.status;
+  if (Object.keys(filter).length > 0) body.filter = filter;
+
+  if (params.sort_field) {
+    body.sort = [{ field: params.sort_field, order: params.sort_order ?? "asc" }];
+  }
+
+  return body;
+}
+
 export function registerSubscriptionTools(
   server: McpServer,
   client: TeamleaderClient
@@ -40,29 +84,7 @@ export function registerSubscriptionTools(
       sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {};
-
-      if (params.page || params.page_size) {
-        body.page = {
-          number: params.page ?? 1,
-          size: params.page_size ?? 20,
-        };
-      }
-
-      const filter: Record<string, unknown> = {};
-      if (params.ids) filter.ids = params.ids;
-      if (params.invoice_id) filter.invoice_id = params.invoice_id;
-      if (params.deal_id) filter.deal_id = params.deal_id;
-      if (params.department_id) filter.department_id = params.department_id;
-      if (params.customer_type && params.customer_id) {
-        filter.customer = { type: params.customer_type, id: params.customer_id };
-      }
-      if (params.status) filter.status = params.status;
-      if (Object.keys(filter).length > 0) body.filter = filter;
-
-      if (params.sort_field) {
-        body.sort = [{ field: params.sort_field, order: params.sort_order ?? "asc" }];
-      }
+      const body = buildListSubscriptionsBody(params);
 
       const result = await client.request<TeamleaderListResponse<Subscription>>({
         endpoint: "subscriptions.list",

@@ -15,6 +15,123 @@ function respond(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
+// ── Body Builders (exported for testing) ─────────────────────────────────────
+
+export interface ListInvoicesParams {
+  page?: number;
+  page_size?: number;
+  ids?: string[];
+  term?: string;
+  invoice_number?: string;
+  customer_type?: "contact" | "company";
+  customer_id?: string;
+  department_id?: string;
+  status?: string[];
+  updated_since?: string;
+  purchase_order_number?: string;
+  payment_reference?: string;
+  invoice_date_after?: string;
+  invoice_date_before?: string;
+  subscription_id?: string;
+  deal_id?: string;
+  project_id?: string;
+  sort_field?: "invoice_number" | "invoice_date";
+  sort_order?: "asc" | "desc";
+  includes?: "late_fees";
+}
+
+export function buildListInvoicesBody(params: ListInvoicesParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+
+  if (params.page || params.page_size) {
+    body.page = {
+      number: params.page ?? 1,
+      size: params.page_size ?? 20,
+    };
+  }
+
+  const filter: Record<string, unknown> = {};
+  if (params.ids) filter.ids = params.ids;
+  if (params.term) filter.term = params.term;
+  if (params.invoice_number) filter.invoice_number = params.invoice_number;
+  if (params.customer_type && params.customer_id) {
+    filter.customer = { type: params.customer_type, id: params.customer_id };
+  }
+  if (params.department_id) filter.department_id = params.department_id;
+  if (params.status) filter.status = params.status;
+  if (params.updated_since) filter.updated_since = params.updated_since;
+  if (params.purchase_order_number) filter.purchase_order_number = params.purchase_order_number;
+  if (params.payment_reference) filter.payment_reference = params.payment_reference;
+  if (params.invoice_date_after) filter.invoice_date_after = params.invoice_date_after;
+  if (params.invoice_date_before) filter.invoice_date_before = params.invoice_date_before;
+  if (params.subscription_id) filter.subscription_id = params.subscription_id;
+  if (params.deal_id) filter.deal_id = params.deal_id;
+  if (params.project_id) filter.project_id = params.project_id;
+  if (Object.keys(filter).length > 0) body.filter = filter;
+
+  if (params.sort_field || params.sort_order) {
+    body.sort = [{ field: params.sort_field ?? "invoice_number", order: params.sort_order ?? "desc" }];
+  }
+  if (params.includes) body.includes = params.includes;
+
+  return body;
+}
+
+export interface RegisterPaymentParams {
+  id: string;
+  amount: number;
+  currency: string;
+  paid_at: string;
+  payment_method_id?: string;
+}
+
+export function buildRegisterPaymentBody(params: RegisterPaymentParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    id: params.id,
+    payment: { amount: params.amount, currency: params.currency },
+    paid_at: params.paid_at,
+  };
+  if (params.payment_method_id) body.payment_method_id = params.payment_method_id;
+  return body;
+}
+
+export interface CreditPartiallyParams {
+  id: string;
+  credit_note_date?: string;
+  line_items: Array<{
+    quantity: number;
+    description: string;
+    unit_price_amount: number;
+    tax_rate_id: string;
+    extended_description?: string;
+    product_id?: string;
+    discount_value?: number;
+  }>;
+}
+
+export function buildCreditPartiallyBody(params: CreditPartiallyParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    id: params.id,
+    grouped_lines: [
+      {
+        line_items: params.line_items.map((item) => ({
+          quantity: item.quantity,
+          description: item.description,
+          unit_price: { amount: item.unit_price_amount, tax: "excluding" },
+          tax_rate_id: item.tax_rate_id,
+          ...(item.extended_description && { extended_description: item.extended_description }),
+          ...(item.product_id && { product_id: item.product_id }),
+          ...(item.discount_value !== undefined && {
+            discount: { value: item.discount_value, type: "percentage" },
+          }),
+        })),
+      },
+    ],
+  };
+  if (params.credit_note_date) body.credit_note_date = params.credit_note_date;
+  return body;
+}
+
 export function registerInvoiceTools(
   server: McpServer,
   client: TeamleaderClient
@@ -58,40 +175,7 @@ export function registerInvoiceTools(
       includes: z.literal("late_fees").optional().describe("Pass 'late_fees' to include totals.due_incasso_inclusive, totals.fixed_late_fee, and totals.interest in response"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {};
-
-      if (params.page || params.page_size) {
-        body.page = {
-          number: params.page ?? 1,
-          size: params.page_size ?? 20,
-        };
-      }
-
-      const filter: Record<string, unknown> = {};
-      if (params.ids) filter.ids = params.ids;
-      if (params.term) filter.term = params.term;
-      if (params.invoice_number) filter.invoice_number = params.invoice_number;
-      if (params.customer_type && params.customer_id) {
-        filter.customer = { type: params.customer_type, id: params.customer_id };
-      }
-      if (params.department_id) filter.department_id = params.department_id;
-      if (params.status) filter.status = params.status;
-      if (params.updated_since) filter.updated_since = params.updated_since;
-      if (params.purchase_order_number) filter.purchase_order_number = params.purchase_order_number;
-      if (params.payment_reference) filter.payment_reference = params.payment_reference;
-      if (params.invoice_date_after)
-        filter.invoice_date_after = params.invoice_date_after;
-      if (params.invoice_date_before)
-        filter.invoice_date_before = params.invoice_date_before;
-      if (params.subscription_id) filter.subscription_id = params.subscription_id;
-      if (params.deal_id) filter.deal_id = params.deal_id;
-      if (params.project_id) filter.project_id = params.project_id;
-      if (Object.keys(filter).length > 0) body.filter = filter;
-
-      if (params.sort_field || params.sort_order) {
-        body.sort = [{ field: params.sort_field ?? "invoice_number", order: params.sort_order ?? "desc" }];
-      }
-      if (params.includes) body.includes = params.includes;
+      const body = buildListInvoicesBody(params);
 
       const result = await client.request<TeamleaderListResponse<Invoice>>({
         endpoint: "invoices.list",
@@ -485,12 +569,7 @@ export function registerInvoiceTools(
         .describe("Optional payment method ID (use teamleader_list_payment_methods to find)"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {
-        id: params.id,
-        payment: { amount: params.amount, currency: params.currency },
-        paid_at: params.paid_at,
-      };
-      if (params.payment_method_id) body.payment_method_id = params.payment_method_id;
+      const body = buildRegisterPaymentBody(params);
 
       await client.request<void>({ endpoint: "invoices.registerPayment", body });
       return respond(
@@ -583,25 +662,7 @@ export function registerInvoiceTools(
         .describe("Line items to include on the credit note"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {
-        id: params.id,
-        grouped_lines: [
-          {
-            line_items: params.line_items.map((item) => ({
-              quantity: item.quantity,
-              description: item.description,
-              unit_price: { amount: item.unit_price_amount, tax: "excluding" },
-              tax_rate_id: item.tax_rate_id,
-              ...(item.extended_description && { extended_description: item.extended_description }),
-              ...(item.product_id && { product_id: item.product_id }),
-              ...(item.discount_value !== undefined && {
-                discount: { value: item.discount_value, type: "percentage" },
-              }),
-            })),
-          },
-        ],
-      };
-      if (params.credit_note_date) body.credit_note_date = params.credit_note_date;
+      const body = buildCreditPartiallyBody(params);
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "invoices.creditPartially",

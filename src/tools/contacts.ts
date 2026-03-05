@@ -11,6 +11,80 @@ import type {
   TeamleaderInfoResponse,
 } from "../types/index.js";
 
+// ── Body Builders (exported for testing) ─────────────────────────────────────
+
+export interface ListContactsParams {
+  page?: number;
+  page_size?: number;
+  term?: string;
+  tags?: string[];
+  ids?: string[];
+  company_id?: string;
+  status?: "active" | "deactivated";
+  updated_since?: string;
+}
+
+export function buildListContactsBody(params: ListContactsParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+
+  if (params.page || params.page_size) {
+    body.page = {
+      number: params.page ?? 1,
+      size: params.page_size ?? 20,
+    };
+  }
+
+  const filter: Record<string, unknown> = {};
+  if (params.term) filter.term = params.term;
+  if (params.tags) filter.tags = params.tags;
+  if (params.ids) filter.ids = params.ids;
+  if (params.company_id) filter.company_id = params.company_id;
+  if (params.status) filter.status = params.status;
+  if (params.updated_since) filter.updated_since = params.updated_since;
+  if (Object.keys(filter).length > 0) body.filter = filter;
+
+  return body;
+}
+
+export interface CreateContactParams {
+  first_name?: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  language?: string;
+  gender?: string;
+  salutation?: string;
+  website?: string;
+  remarks?: string;
+  tags?: string[];
+}
+
+export function buildCreateContactBody(params: CreateContactParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    last_name: params.last_name,
+  };
+
+  if (params.first_name) body.first_name = params.first_name;
+  if (params.email) {
+    body.emails = [{ type: "primary", email: params.email }];
+  }
+
+  const telephones: { type: string; number: string }[] = [];
+  if (params.phone) telephones.push({ type: "phone", number: params.phone });
+  if (params.mobile) telephones.push({ type: "mobile", number: params.mobile });
+  if (telephones.length > 0) body.telephones = telephones;
+
+  if (params.language) body.language = params.language;
+  if (params.gender) body.gender = params.gender;
+  if (params.salutation) body.salutation = params.salutation;
+  if (params.website) body.website = params.website;
+  if (params.remarks) body.remarks = params.remarks;
+  if (params.tags) body.tags = params.tags;
+
+  return body;
+}
+
 export function registerContactTools(
   server: McpServer,
   client: TeamleaderClient
@@ -33,23 +107,7 @@ export function registerContactTools(
         .describe("ISO 8601 date - only contacts updated after this date"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {};
-
-      if (params.page || params.page_size) {
-        body.page = {
-          number: params.page ?? 1,
-          size: params.page_size ?? 20,
-        };
-      }
-
-      const filter: Record<string, unknown> = {};
-      if (params.term) filter.term = params.term;
-      if (params.tags) filter.tags = params.tags;
-      if (params.ids) filter.ids = params.ids;
-      if (params.company_id) filter.company_id = params.company_id;
-      if (params.status) filter.status = params.status;
-      if (params.updated_since) filter.updated_since = params.updated_since;
-      if (Object.keys(filter).length > 0) body.filter = filter;
+      const body = buildListContactsBody(params);
 
       const result = await client.request<TeamleaderListResponse<Contact>>({
         endpoint: "contacts.list",
@@ -109,27 +167,7 @@ export function registerContactTools(
       tags: z.array(z.string()).optional().describe("Tags to assign"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {
-        last_name: params.last_name,
-      };
-
-      if (params.first_name) body.first_name = params.first_name;
-
-      if (params.email) {
-        body.emails = [{ type: "primary", email: params.email }];
-      }
-
-      const telephones: { type: string; number: string }[] = [];
-      if (params.phone) telephones.push({ type: "phone", number: params.phone });
-      if (params.mobile) telephones.push({ type: "mobile", number: params.mobile });
-      if (telephones.length > 0) body.telephones = telephones;
-
-      if (params.language) body.language = params.language;
-      if (params.gender) body.gender = params.gender;
-      if (params.salutation) body.salutation = params.salutation;
-      if (params.website) body.website = params.website;
-      if (params.remarks) body.remarks = params.remarks;
-      if (params.tags) body.tags = params.tags;
+      const body = buildCreateContactBody(params);
 
       const result = await client.request<TeamleaderInfoResponse<{ id: string; type: string }>>({
         endpoint: "contacts.add",

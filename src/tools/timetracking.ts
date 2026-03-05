@@ -10,6 +10,85 @@ import type {
   TeamleaderListResponse,
 } from "../types/index.js";
 
+// ── Body Builders (exported for testing) ─────────────────────────────────────
+
+export interface ListTimetrackingParams {
+  page?: number;
+  page_size?: number;
+  user_id?: string;
+  started_after?: string;
+  started_before?: string;
+  ended_after?: string;
+  ended_before?: string;
+  subject_type?: "company" | "contact" | "event" | "todo" | "milestone" | "ticket";
+  subject_id?: string;
+}
+
+export function buildListTimetrackingBody(params: ListTimetrackingParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+
+  if (params.page || params.page_size) {
+    body.page = {
+      number: params.page ?? 1,
+      size: params.page_size ?? 20,
+    };
+  }
+
+  const toDate = (s: string, endOfDay = false) => {
+    const date = s.substring(0, 10);
+    return endOfDay ? `${date}T23:59:59+00:00` : `${date}T00:00:00+00:00`;
+  };
+
+  const filter: Record<string, unknown> = {};
+  if (params.user_id) filter.user_id = params.user_id;
+  if (params.started_after) filter.started_after = toDate(params.started_after);
+  if (params.started_before) filter.started_before = toDate(params.started_before, true);
+  if (params.ended_after) filter.ended_after = toDate(params.ended_after);
+  if (params.ended_before) filter.ended_before = toDate(params.ended_before, true);
+  if (params.subject_type && params.subject_id) {
+    filter.subject = {
+      type: params.subject_type,
+      id: params.subject_id,
+    };
+  }
+  if (Object.keys(filter).length > 0) body.filter = filter;
+
+  return body;
+}
+
+export interface AddTimetrackingParams {
+  started_on: string;
+  ended_on?: string;
+  duration?: number;
+  user_id?: string;
+  work_type_id?: string;
+  subject_type?: "company" | "contact" | "event" | "milestone" | "nextgenTask" | "ticket" | "todo";
+  subject_id?: string;
+  description?: string;
+  invoiceable?: boolean;
+}
+
+export function buildAddTimetrackingBody(params: AddTimetrackingParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    started_at: params.started_on,
+  };
+
+  if (params.user_id) body.user_id = params.user_id;
+  if (params.work_type_id) body.work_type_id = params.work_type_id;
+  if (params.subject_type && params.subject_id) {
+    body.subject = {
+      type: params.subject_type,
+      id: params.subject_id,
+    };
+  }
+  if (params.ended_on) body.ended_at = params.ended_on;
+  if (params.duration !== undefined) body.duration = params.duration;
+  if (params.description) body.description = params.description;
+  if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;
+
+  return body;
+}
+
 export function registerTimeTrackingTools(
   server: McpServer,
   client: TeamleaderClient
@@ -48,34 +127,7 @@ export function registerTimeTrackingTools(
         .describe("Filter by subject ID"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {};
-
-      if (params.page || params.page_size) {
-        body.page = {
-          number: params.page ?? 1,
-          size: params.page_size ?? 20,
-        };
-      }
-
-      // API requires ISO 8601 datetime with timezone — convert YYYY-MM-DD to start/end of day
-      const toDate = (s: string, endOfDay = false) => {
-        const date = s.substring(0, 10);
-        return endOfDay ? `${date}T23:59:59+00:00` : `${date}T00:00:00+00:00`;
-      };
-
-      const filter: Record<string, unknown> = {};
-      if (params.user_id) filter.user_id = params.user_id;
-      if (params.started_after) filter.started_after = toDate(params.started_after);
-      if (params.started_before) filter.started_before = toDate(params.started_before, true);
-      if (params.ended_after) filter.ended_after = toDate(params.ended_after);
-      if (params.ended_before) filter.ended_before = toDate(params.ended_before, true);
-      if (params.subject_type && params.subject_id) {
-        filter.subject = {
-          type: params.subject_type,
-          id: params.subject_id,
-        };
-      }
-      if (Object.keys(filter).length > 0) body.filter = filter;
+      const body = buildListTimetrackingBody(params);
 
       const result = await client.request<TeamleaderListResponse<TimeTracking>>({
         endpoint: "timeTracking.list",
@@ -156,22 +208,7 @@ export function registerTimeTrackingTools(
         .describe("Whether the tracked time is invoiceable"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {
-        started_at: params.started_on,
-      };
-
-      if (params.user_id) body.user_id = params.user_id;
-      if (params.work_type_id) body.work_type_id = params.work_type_id;
-      if (params.subject_type && params.subject_id) {
-        body.subject = {
-          type: params.subject_type,
-          id: params.subject_id,
-        };
-      }
-      if (params.ended_on) body.ended_at = params.ended_on;
-      if (params.duration !== undefined) body.duration = params.duration;
-      if (params.description) body.description = params.description;
-      if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;
+      const body = buildAddTimetrackingBody(params);
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "timeTracking.add",
