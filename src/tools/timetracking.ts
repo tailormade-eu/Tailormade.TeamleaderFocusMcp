@@ -501,6 +501,7 @@ export function registerTimeTrackingTools(
         duration?: number;
         description?: string;
         subject?: { type: string; id: string };
+        relates_to?: Array<{ type: string; id: string }>;
       }
 
       // Fetch all pages
@@ -520,6 +521,7 @@ export function registerTimeTrackingTools(
             filter,
             sort: [{ field: "starts_on", order: "asc" }],
             page: { size: pageSize, number: page },
+            includes: "relates_to",
           },
         });
         const data = result.data ?? [];
@@ -533,54 +535,62 @@ export function registerTimeTrackingTools(
       }
 
       // In-request caches for resolve
-      const todoCache = new Map<string, { title: string; group_id?: string }>();
-      const groupCache = new Map<string, { title: string; project_id?: string }>();
-      const projectCache = new Map<string, { title: string; customer?: { type: string; id: string } }>();
+      interface TodoInfo {
+        title: string;
+        customer?: { type: string; id: string };
+        project?: { type: string; id: string };
+      }
+      const todoCache = new Map<string, TodoInfo>(); // todo ID → info
+      const groupCache = new Map<string, string>(); // group ID → title
+      const projectCache = new Map<string, { title: string; customers?: Array<{ type: string; id: string }> }>();
       const customerCache = new Map<string, string>();
       const userCache = new Map<string, string>();
 
-      async function resolveTodo(id: string): Promise<{ title: string; group_id?: string }> {
+      async function resolveTodo(id: string): Promise<TodoInfo> {
         if (todoCache.has(id)) return todoCache.get(id)!;
         try {
-          const r = await client.request<{ data: { title?: string; group?: { id: string } } }>({
+          const r = await client.request<{ data: { title?: string; customer?: { type: string; id: string }; project?: { type: string; id: string } } }>({
             endpoint: "tasks.info",
             body: { id },
           });
-          const val = { title: r.data.title ?? "?", group_id: r.data.group?.id };
+          const val: TodoInfo = {
+            title: r.data.title ?? "?",
+            customer: r.data.customer ?? undefined,
+            project: r.data.project ?? undefined,
+          };
           todoCache.set(id, val);
           return val;
         } catch {
-          const val = { title: "?" };
+          const val: TodoInfo = { title: "?" };
           todoCache.set(id, val);
           return val;
         }
       }
 
-      async function resolveGroup(id: string): Promise<{ title: string; project_id?: string }> {
+      async function resolveGroupTitle(id: string): Promise<string> {
         if (groupCache.has(id)) return groupCache.get(id)!;
         try {
-          const r = await client.request<{ data: { title?: string; project?: { id: string } } }>({
-            endpoint: "projectGroups.info",
+          const r = await client.request<{ data: { title?: string } }>({
+            endpoint: "projects-v2/projectGroups.info",
             body: { id },
           });
-          const val = { title: r.data.title ?? "?", project_id: r.data.project?.id };
-          groupCache.set(id, val);
-          return val;
+          const title = r.data.title ?? "?";
+          groupCache.set(id, title);
+          return title;
         } catch {
-          const val = { title: "?" };
-          groupCache.set(id, val);
-          return val;
+          groupCache.set(id, "?");
+          return "?";
         }
       }
 
-      async function resolveProject(id: string): Promise<{ title: string; customer?: { type: string; id: string } }> {
+      async function resolveProject(id: string): Promise<{ title: string; customers?: Array<{ type: string; id: string }> }> {
         if (projectCache.has(id)) return projectCache.get(id)!;
         try {
-          const r = await client.request<{ data: { title?: string; customer?: { type: string; id: string } } }>({
-            endpoint: "projects.info",
+          const r = await client.request<{ data: { title?: string; customers?: Array<{ type: string; id: string }> } }>({
+            endpoint: "projects-v2/projects.info",
             body: { id },
           });
-          const val = { title: r.data.title ?? "?", customer: r.data.customer };
+          const val = { title: r.data.title ?? "?", customers: r.data.customers };
           projectCache.set(id, val);
           return val;
         } catch {
@@ -625,7 +635,7 @@ export function registerTimeTrackingTools(
         }
       }
 
-      // Resolve all entries in parallel (batched per unique ID)
+      // Resolve all entries in parallel using relates_to from includes
       interface ResolvedEntry {
         started_at: string;
         ended_at: string;
@@ -646,26 +656,65 @@ export function registerTimeTrackingTools(
           let client_name = "—";
 
           const subject = entry.subject;
+          const relates = entry.relates_to ?? [];
+
+          // Helper to find a relation by type
+          const findRelation = (type: string) => relates.find((r) => r.type === type);
+
+          // Resolve task title from subject + get standalone task info for fallback
+          let todoInfo: TodoInfo | undefined;
           if (subject?.type === "todo" && subject.id) {
-            const todo = await resolveTodo(subject.id);
-            task = todo.title;
-            if (todo.group_id) {
-              const grp = await resolveGroup(todo.group_id);
-              group = grp.title;
-              if (grp.project_id) {
-                const proj = await resolveProject(grp.project_id);
-                project = proj.title;
-                if (proj.customer) {
-                  client_name = await resolveCustomer(proj.customer.type, proj.customer.id);
-                }
-              }
-            }
+            todoInfo = await resolveTodo(subject.id);
+            task = todoInfo.title;
           } else if (subject?.type === "milestone" && subject.id) {
             task = `milestone:${subject.id.substring(0, 8)}`;
           } else if (subject?.type === "meeting" || subject?.type === "event") {
             task = `${subject.type}:${subject.id?.substring(0, 8) ?? "?"}`;
           } else if (subject?.type && subject?.id) {
             task = `${subject.type}:${subject.id.substring(0, 8)}`;
+          }
+
+          // Resolve group/project/customer from relates_to (nextgen projects)
+          const groupRef = findRelation("nextgenProjectGroup");
+          if (groupRef) {
+            group = await resolveGroupTitle(groupRef.id);
+          }
+
+          const projectRef = findRelation("nextgenProject");
+          if (projectRef) {
+            const proj = await resolveProject(projectRef.id);
+            project = proj.title;
+            const cust = proj.customers?.[0];
+            if (cust) {
+              client_name = await resolveCustomer(cust.type, cust.id);
+            }
+          }
+
+          // Fallback: check direct company/contact in relates_to
+          if (client_name === "—") {
+            const companyRef = findRelation("company");
+            const contactRef = findRelation("contact");
+            const custRef = companyRef ?? contactRef;
+            if (custRef) {
+              client_name = await resolveCustomer(custRef.type, custRef.id);
+            }
+          }
+
+          // Fallback: standalone task has direct customer/project fields
+          if (todoInfo) {
+            if (project === "—" && todoInfo.project) {
+              const proj = await resolveProject(todoInfo.project.id);
+              project = proj.title;
+              if (client_name === "—") {
+                const cust = proj.customers?.[0];
+                if (cust) {
+                  client_name = await resolveCustomer(cust.type, cust.id);
+                }
+              }
+            }
+            if (client_name === "—" && todoInfo.customer) {
+              client_name = await resolveCustomer(todoInfo.customer.type, todoInfo.customer.id);
+            }
           }
 
           const userName = entry.user?.id ? await resolveUser(entry.user.id) : "?";
