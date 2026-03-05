@@ -28,6 +28,7 @@ const TTL = {
   groups:          1 * 60 * 60 * 1000,
   tasks:           1 * 60 * 60 * 1000,
   task_trees:     30 * 60 * 1000,
+  resolve:        24 * 60 * 60 * 1000,
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -111,6 +112,13 @@ export interface CachedTask {
   cached_at: string;
 }
 
+// ── Resolve Cache Types ──────────────────────────────────────────────────────
+
+export interface ResolvedGroupEntry { title: string; cachedAt: number; }
+export interface ResolvedProjectEntry { title: string; customers: Array<{ type: string; id: string }>; cachedAt: number; }
+export interface ResolvedCustomerEntry { name: string; cachedAt: number; }
+export interface ResolvedUserEntry { name: string; cachedAt: number; }
+
 interface Cache {
   active_user?: CachedUser;
   default_work_type_id?: string;
@@ -120,6 +128,10 @@ interface Cache {
   groups?: CachedGroup[];
   tasks?: CachedTask[];
   task_trees?: TaskTree[];
+  resolvedGroups?: Record<string, ResolvedGroupEntry>;
+  resolvedProjects?: Record<string, ResolvedProjectEntry>;
+  resolvedCustomers?: Record<string, ResolvedCustomerEntry>;
+  resolvedUsers?: Record<string, ResolvedUserEntry>;
 }
 
 // ── Internal ──────────────────────────────────────────────────────────────────
@@ -141,6 +153,19 @@ function save(cache: Cache): void {
     if (cache.projects) cache.projects = cache.projects.filter(p => !isExpired(p.cached_at, TTL.projects));
     if (cache.companies) cache.companies = cache.companies.filter(c => !isExpired(c.cached_at, TTL.companies));
     if (cache.task_trees) cache.task_trees = cache.task_trees.filter(t => !isExpired(t.loaded_at, TTL.task_trees));
+    // Prune resolve caches
+    const pruneResolveMap = <T extends { cachedAt: number }>(map: Record<string, T> | undefined): Record<string, T> | undefined => {
+      if (!map) return undefined;
+      const pruned: Record<string, T> = {};
+      for (const [k, v] of Object.entries(map)) {
+        if (Date.now() - v.cachedAt <= TTL.resolve) pruned[k] = v;
+      }
+      return Object.keys(pruned).length ? pruned : undefined;
+    };
+    cache.resolvedGroups = pruneResolveMap(cache.resolvedGroups);
+    cache.resolvedProjects = pruneResolveMap(cache.resolvedProjects);
+    cache.resolvedCustomers = pruneResolveMap(cache.resolvedCustomers);
+    cache.resolvedUsers = pruneResolveMap(cache.resolvedUsers);
     writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
   } catch (e) {
     console.error("Warning: could not save cache", e);
@@ -414,6 +439,65 @@ export function scoreTasksInTree(company_id: string, description: string): Score
   return results.sort((a, b) => b.score - a.score);
 }
 
+// ── Resolve Cache CRUD ───────────────────────────────────────────────────────
+
+export function getResolvedGroup(id: string): ResolvedGroupEntry | undefined {
+  const cache = load();
+  const entry = cache.resolvedGroups?.[id];
+  if (!entry || Date.now() - entry.cachedAt > TTL.resolve) return undefined;
+  return entry;
+}
+
+export function setResolvedGroup(id: string, title: string): void {
+  const cache = load();
+  cache.resolvedGroups = cache.resolvedGroups ?? {};
+  cache.resolvedGroups[id] = { title, cachedAt: Date.now() };
+  save(cache);
+}
+
+export function getResolvedProject(id: string): ResolvedProjectEntry | undefined {
+  const cache = load();
+  const entry = cache.resolvedProjects?.[id];
+  if (!entry || Date.now() - entry.cachedAt > TTL.resolve) return undefined;
+  return entry;
+}
+
+export function setResolvedProject(id: string, title: string, customers: Array<{ type: string; id: string }>): void {
+  const cache = load();
+  cache.resolvedProjects = cache.resolvedProjects ?? {};
+  cache.resolvedProjects[id] = { title, customers, cachedAt: Date.now() };
+  save(cache);
+}
+
+export function getResolvedCustomer(type: string, id: string): ResolvedCustomerEntry | undefined {
+  const cache = load();
+  const key = `${type}:${id}`;
+  const entry = cache.resolvedCustomers?.[key];
+  if (!entry || Date.now() - entry.cachedAt > TTL.resolve) return undefined;
+  return entry;
+}
+
+export function setResolvedCustomer(type: string, id: string, name: string): void {
+  const cache = load();
+  cache.resolvedCustomers = cache.resolvedCustomers ?? {};
+  cache.resolvedCustomers[`${type}:${id}`] = { name, cachedAt: Date.now() };
+  save(cache);
+}
+
+export function getResolvedUser(id: string): ResolvedUserEntry | undefined {
+  const cache = load();
+  const entry = cache.resolvedUsers?.[id];
+  if (!entry || Date.now() - entry.cachedAt > TTL.resolve) return undefined;
+  return entry;
+}
+
+export function setResolvedUser(id: string, name: string): void {
+  const cache = load();
+  cache.resolvedUsers = cache.resolvedUsers ?? {};
+  cache.resolvedUsers[id] = { name, cachedAt: Date.now() };
+  save(cache);
+}
+
 export function clearCache(): void {
   save({});
 }
@@ -429,5 +513,9 @@ export function getCacheStats(): string {
     `projects          : ${cache.projects?.length ?? 0}`,
     `groups            : ${cache.groups?.length ?? 0}`,
     `tasks             : ${cache.tasks?.length ?? 0}`,
+    `resolved_groups   : ${Object.keys(cache.resolvedGroups ?? {}).length}`,
+    `resolved_projects : ${Object.keys(cache.resolvedProjects ?? {}).length}`,
+    `resolved_customers: ${Object.keys(cache.resolvedCustomers ?? {}).length}`,
+    `resolved_users    : ${Object.keys(cache.resolvedUsers ?? {}).length}`,
   ].join("\n");
 }

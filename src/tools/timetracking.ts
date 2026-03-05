@@ -9,6 +9,12 @@ import type {
   TimeTracking,
   TeamleaderListResponse,
 } from "../types/index.js";
+import {
+  getResolvedGroup, setResolvedGroup,
+  getResolvedProject, setResolvedProject,
+  getResolvedCustomer, setResolvedCustomer,
+  getResolvedUser, setResolvedUser,
+} from "../api/cache.js";
 
 function respond(text: string) {
   return { content: [{ type: "text" as const, text }] };
@@ -570,6 +576,8 @@ export function registerTimeTrackingTools(
 
       async function resolveGroupTitle(id: string): Promise<string> {
         if (groupCache.has(id)) return groupCache.get(id)!;
+        const cached = getResolvedGroup(id);
+        if (cached) { groupCache.set(id, cached.title); return cached.title; }
         try {
           const r = await client.request<{ data: { title?: string } }>({
             endpoint: "projects-v2/projectGroups.info",
@@ -577,6 +585,7 @@ export function registerTimeTrackingTools(
           });
           const title = r.data.title ?? "?";
           groupCache.set(id, title);
+          setResolvedGroup(id, title);
           return title;
         } catch {
           groupCache.set(id, "?");
@@ -586,6 +595,8 @@ export function registerTimeTrackingTools(
 
       async function resolveProject(id: string): Promise<{ title: string; customers?: Array<{ type: string; id: string }> }> {
         if (projectCache.has(id)) return projectCache.get(id)!;
+        const cached = getResolvedProject(id);
+        if (cached) { const val = { title: cached.title, customers: cached.customers }; projectCache.set(id, val); return val; }
         try {
           const r = await client.request<{ data: { title?: string; customers?: Array<{ type: string; id: string }> } }>({
             endpoint: "projects-v2/projects.info",
@@ -593,6 +604,7 @@ export function registerTimeTrackingTools(
           });
           const val = { title: r.data.title ?? "?", customers: r.data.customers };
           projectCache.set(id, val);
+          setResolvedProject(id, val.title, val.customers ?? []);
           return val;
         } catch {
           const val = { title: "?" };
@@ -604,6 +616,8 @@ export function registerTimeTrackingTools(
       async function resolveCustomer(type: string, id: string): Promise<string> {
         const key = `${type}:${id}`;
         if (customerCache.has(key)) return customerCache.get(key)!;
+        const cached = getResolvedCustomer(type, id);
+        if (cached) { customerCache.set(key, cached.name); return cached.name; }
         try {
           const endpoint = type === "contact" ? "contacts.info" : "companies.info";
           const r = await client.request<{ data: { first_name?: string; last_name?: string; name?: string } }>({
@@ -613,6 +627,7 @@ export function registerTimeTrackingTools(
           const d = r.data;
           const name = d.name ?? (`${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || "?");
           customerCache.set(key, name);
+          setResolvedCustomer(type, id, name);
           return name;
         } catch {
           customerCache.set(key, "?");
@@ -622,6 +637,8 @@ export function registerTimeTrackingTools(
 
       async function resolveUser(id: string): Promise<string> {
         if (userCache.has(id)) return userCache.get(id)!;
+        const cached = getResolvedUser(id);
+        if (cached) { userCache.set(id, cached.name); return cached.name; }
         try {
           const r = await client.request<{ data: { first_name?: string; last_name?: string } }>({
             endpoint: "users.info",
@@ -629,6 +646,7 @@ export function registerTimeTrackingTools(
           });
           const name = `${r.data.first_name ?? ""} ${r.data.last_name ?? ""}`.trim() || "?";
           userCache.set(id, name);
+          setResolvedUser(id, name);
           return name;
         } catch {
           userCache.set(id, "?");
