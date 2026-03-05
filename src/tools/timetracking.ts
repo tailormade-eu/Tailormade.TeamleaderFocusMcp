@@ -10,6 +10,10 @@ import type {
   TeamleaderListResponse,
 } from "../types/index.js";
 
+function respond(text: string) {
+  return { content: [{ type: "text" as const, text }] };
+}
+
 // ── Body Builders (exported for testing) ─────────────────────────────────────
 
 export interface ListTimetrackingParams {
@@ -469,6 +473,267 @@ export function registerTimeTrackingTools(
           },
         ],
       };
+    }
+  );
+
+  // ── Timesheet ──────────────────────────────────────────────────────────
+  server.tool(
+    "teamleader_timesheet",
+    "Day-by-day overview of time tracking entries with resolved task/group/project/client/user info. Use for daily or period reports. Resolves todo->group->project->client chain via API calls (cached per request). Parameters from_date/to_date are inclusive (YYYY-MM-DD). NOTE: Resolve chain makes multiple API calls per entry. Recommend max 2 weeks per call.",
+    {
+      from_date: z.string().describe("Start date inclusive (YYYY-MM-DD). Converted to T00:00:00+00:00."),
+      to_date: z.string().describe("End date inclusive (YYYY-MM-DD). Converted to T23:59:59+00:00."),
+      user_id: z.string().optional().describe("Filter by user ID. Omit for all users."),
+    },
+    async (params) => {
+      const toDate = (s: string, endOfDay = false) => {
+        const date = s.substring(0, 10);
+        return endOfDay ? `${date}T23:59:59+00:00` : `${date}T00:00:00+00:00`;
+      };
+
+      // Raw API entry type (looser than TimeTracking — API returns todo/event/meeting etc.)
+      interface RawEntry {
+        id: string;
+        user?: { id: string; type?: string };
+        started_on?: string;
+        started_at?: string;
+        ended_at?: string;
+        duration?: number;
+        description?: string;
+        subject?: { type: string; id: string };
+      }
+
+      // Fetch all pages
+      const allEntries: RawEntry[] = [];
+      let page = 1;
+      const pageSize = 100;
+      while (true) {
+        const filter: Record<string, unknown> = {
+          started_after: toDate(params.from_date),
+          started_before: toDate(params.to_date, true),
+        };
+        if (params.user_id) filter.user_id = params.user_id;
+
+        const result = await client.request<{ data: RawEntry[] }>({
+          endpoint: "timeTracking.list",
+          body: {
+            filter,
+            sort: [{ field: "starts_on", order: "asc" }],
+            page: { size: pageSize, number: page },
+          },
+        });
+        const data = result.data ?? [];
+        allEntries.push(...data);
+        if (data.length < pageSize) break;
+        page++;
+      }
+
+      if (allEntries.length === 0) {
+        return respond(`No time tracking entries found for ${params.from_date} to ${params.to_date}.`);
+      }
+
+      // In-request caches for resolve
+      const todoCache = new Map<string, { title: string; group_id?: string }>();
+      const groupCache = new Map<string, { title: string; project_id?: string }>();
+      const projectCache = new Map<string, { title: string; customer?: { type: string; id: string } }>();
+      const customerCache = new Map<string, string>();
+      const userCache = new Map<string, string>();
+
+      async function resolveTodo(id: string): Promise<{ title: string; group_id?: string }> {
+        if (todoCache.has(id)) return todoCache.get(id)!;
+        try {
+          const r = await client.request<{ data: { title?: string; group?: { id: string } } }>({
+            endpoint: "tasks.info",
+            body: { id },
+          });
+          const val = { title: r.data.title ?? "?", group_id: r.data.group?.id };
+          todoCache.set(id, val);
+          return val;
+        } catch {
+          const val = { title: "?" };
+          todoCache.set(id, val);
+          return val;
+        }
+      }
+
+      async function resolveGroup(id: string): Promise<{ title: string; project_id?: string }> {
+        if (groupCache.has(id)) return groupCache.get(id)!;
+        try {
+          const r = await client.request<{ data: { title?: string; project?: { id: string } } }>({
+            endpoint: "projectGroups.info",
+            body: { id },
+          });
+          const val = { title: r.data.title ?? "?", project_id: r.data.project?.id };
+          groupCache.set(id, val);
+          return val;
+        } catch {
+          const val = { title: "?" };
+          groupCache.set(id, val);
+          return val;
+        }
+      }
+
+      async function resolveProject(id: string): Promise<{ title: string; customer?: { type: string; id: string } }> {
+        if (projectCache.has(id)) return projectCache.get(id)!;
+        try {
+          const r = await client.request<{ data: { title?: string; customer?: { type: string; id: string } } }>({
+            endpoint: "projects.info",
+            body: { id },
+          });
+          const val = { title: r.data.title ?? "?", customer: r.data.customer };
+          projectCache.set(id, val);
+          return val;
+        } catch {
+          const val = { title: "?" };
+          projectCache.set(id, val);
+          return val;
+        }
+      }
+
+      async function resolveCustomer(type: string, id: string): Promise<string> {
+        const key = `${type}:${id}`;
+        if (customerCache.has(key)) return customerCache.get(key)!;
+        try {
+          const endpoint = type === "contact" ? "contacts.info" : "companies.info";
+          const r = await client.request<{ data: { first_name?: string; last_name?: string; name?: string } }>({
+            endpoint,
+            body: { id },
+          });
+          const d = r.data;
+          const name = d.name ?? (`${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || "?");
+          customerCache.set(key, name);
+          return name;
+        } catch {
+          customerCache.set(key, "?");
+          return "?";
+        }
+      }
+
+      async function resolveUser(id: string): Promise<string> {
+        if (userCache.has(id)) return userCache.get(id)!;
+        try {
+          const r = await client.request<{ data: { first_name?: string; last_name?: string } }>({
+            endpoint: "users.info",
+            body: { id },
+          });
+          const name = `${r.data.first_name ?? ""} ${r.data.last_name ?? ""}`.trim() || "?";
+          userCache.set(id, name);
+          return name;
+        } catch {
+          userCache.set(id, "?");
+          return "?";
+        }
+      }
+
+      // Resolve all entries in parallel (batched per unique ID)
+      interface ResolvedEntry {
+        started_at: string;
+        ended_at: string;
+        duration: number;
+        description: string;
+        task: string;
+        group: string;
+        project: string;
+        client_name: string;
+        user: string;
+      }
+
+      const resolved: ResolvedEntry[] = await Promise.all(
+        allEntries.map(async (entry) => {
+          let task = "—";
+          let group = "—";
+          let project = "—";
+          let client_name = "—";
+
+          const subject = entry.subject;
+          if (subject?.type === "todo" && subject.id) {
+            const todo = await resolveTodo(subject.id);
+            task = todo.title;
+            if (todo.group_id) {
+              const grp = await resolveGroup(todo.group_id);
+              group = grp.title;
+              if (grp.project_id) {
+                const proj = await resolveProject(grp.project_id);
+                project = proj.title;
+                if (proj.customer) {
+                  client_name = await resolveCustomer(proj.customer.type, proj.customer.id);
+                }
+              }
+            }
+          } else if (subject?.type === "milestone" && subject.id) {
+            task = `milestone:${subject.id.substring(0, 8)}`;
+          } else if (subject?.type === "meeting" || subject?.type === "event") {
+            task = `${subject.type}:${subject.id?.substring(0, 8) ?? "?"}`;
+          } else if (subject?.type && subject?.id) {
+            task = `${subject.type}:${subject.id.substring(0, 8)}`;
+          }
+
+          const userName = entry.user?.id ? await resolveUser(entry.user.id) : "?";
+
+          return {
+            started_at: entry.started_at ?? entry.started_on ?? "?",
+            ended_at: entry.ended_at ?? "",
+            duration: entry.duration ?? 0,
+            description: entry.description ?? "",
+            task,
+            group,
+            project,
+            client_name,
+            user: userName,
+          };
+        })
+      );
+
+      // Sort by started_at
+      resolved.sort((a, b) => a.started_at.localeCompare(b.started_at));
+
+      // Group by day
+      const byDay = new Map<string, ResolvedEntry[]>();
+      for (const r of resolved) {
+        const day = r.started_at.substring(0, 10);
+        if (!byDay.has(day)) byDay.set(day, []);
+        byDay.get(day)!.push(r);
+      }
+
+      function formatTime(iso: string): string {
+        if (!iso || iso === "?") return "?";
+        const m = iso.match(/T(\d{2}):(\d{2})/);
+        return m ? `${m[1]}:${m[2]}` : "?";
+      }
+
+      function formatDuration(seconds: number): string {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        return `${h}:${m.toString().padStart(2, "0")}`;
+      }
+
+      let totalSeconds = 0;
+      const sections: string[] = [];
+
+      for (const [day, entries] of byDay) {
+        let daySeconds = 0;
+        const rows = entries.map((e) => {
+          daySeconds += e.duration;
+          const start = formatTime(e.started_at);
+          const end = formatTime(e.ended_at);
+          const dur = formatDuration(e.duration);
+          const desc = e.description || "—";
+          return `| ${start} | ${end} | ${dur} | ${desc} | ${e.task} | ${e.group} | ${e.project} | ${e.client_name} | ${e.user} |`;
+        });
+        totalSeconds += daySeconds;
+
+        sections.push(
+          `## ${day}\n\n` +
+          `| Start | End | Dur | Description | Task | Group | Project | Client | User |\n` +
+          `|-------|-----|-----|-------------|------|-------|---------|--------|------|\n` +
+          rows.join("\n") + "\n\n" +
+          `**Totaal: ${formatDuration(daySeconds)}**`
+        );
+      }
+
+      const output = sections.join("\n\n---\n\n") + `\n\n---\n\n**Totaal periode: ${formatDuration(totalSeconds)}**`;
+
+      return respond(output);
     }
   );
 
