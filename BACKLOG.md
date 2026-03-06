@@ -8,7 +8,6 @@ Items hier wachten op een CM-run of manuele fix. Geef elk item een task-nummer b
 
 | # | Prioriteit | Wat | Reden |
 |---|-----------|-----|-------|
-| B2 | HIGH | `teamleader_log_time` / `timeTracking.add`: 400 "Invalid subject" onduidelijk → betere foutmelding: "Task ID ongeldig — gebruik load_tasks om het juiste ID te halen" | API geeft geen "not found", waardoor oorzaak moeilijk te achterhalen is |
 
 ---
 
@@ -33,6 +32,10 @@ Items hier wachten op een CM-run of manuele fix. Geef elk item een task-nummer b
 | Task | Wat |
 |------|-----|
 | 01-51 | Volledige TL MCP implementatie v3.0.0 (55 tasks) |
+| 52 | B2: Fix "Invalid subject" 400 → betere foutmelding in timetracking.ts + resolve.ts (3 locaties) |
+| 53 | Fix load_tasks — standalone tasks krijgen [S] marker + task_type in YAML + correct close endpoint |
+| 54 | Fix load_tasks — duplicate standalone tasks in [no group] verwijderd |
+| 55 | Fix load_tasks — task_selection verkeerd ID bij project_filter → leest nu uit YAML (65/65 tests) |
 | B1 | Fix timetracking update started_on — guard + llmTip al in src/, dist/ herbouwd 06-03 |
 | V3 | load_tasks project+group filter — al AND-gedrag, geen actie nodig |
 | N2 | calls date filter — al geïmplementeerd (scheduled_after/before) |

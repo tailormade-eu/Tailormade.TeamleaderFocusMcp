@@ -6,6 +6,7 @@ dist/
 !.env.example
 logs/
 .state.json
+tasks/
 coding-machine.json
 PROGRESS.md
 .current-prompt.md
