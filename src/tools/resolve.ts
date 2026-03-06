@@ -756,6 +756,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         const relevantProjects = projects.filter(p => p.status !== "cancelled");
 
         const treeProjects: TaskTreeProject[] = [];
+        const allProjectTaskIds = new Set<string>();
 
         for (const proj of relevantProjects) {
           let groups: { id: string; title: string }[];
@@ -789,6 +790,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             });
             for (const t of tasksResult.data ?? []) {
               tasksById.set(t.id, { id: t.id, title: t.title, status: t.status ?? "to_do", work_type_id: t.work_type?.id });
+              allProjectTaskIds.add(t.id);
             }
           }
 
@@ -828,11 +830,10 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           });
           const standaloneTasks = (standaloneResult.data ?? []).filter(t => t.project && projectIdSet.has(t.project.id));
           for (const st of standaloneTasks) {
+            // Skip if this task is already in the project task tree (avoid duplicates)
+            if (allProjectTaskIds.has(st.id)) continue;
             const proj = treeProjects.find(p => p.id === st.project!.id);
             if (!proj) continue;
-            // Skip if a project task with the same title already exists (avoid duplicates)
-            const alreadyExists = [...proj.ungrouped, ...proj.groups.flatMap(g => g.tasks)].some(t => t.id === st.id);
-            if (alreadyExists) continue;
             proj.ungrouped.push({
               id: st.id,
               title: st.title,
