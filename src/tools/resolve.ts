@@ -35,6 +35,107 @@ function respond(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
+export type YamlTaskEntry = { id: string; title: string; task_type: string; project_id: string; project_title: string; group_id?: string; group_title?: string };
+
+/** Parse task entries from YAML content string. Returns map of n → task info. */
+export function parseTasksYaml(content: string): Map<number, YamlTaskEntry> {
+  const result = new Map<number, YamlTaskEntry>();
+  let currentProjectId = "";
+  let currentProjectTitle = "";
+  let currentGroupId: string | undefined;
+  let currentGroupTitle: string | undefined;
+  let inGroups = false;
+  let inUngrouped = false;
+  let inTasks = false;
+  let currentEntry: Record<string, string> = {};
+
+  function flushEntry() {
+    const n = parseInt(currentEntry.n, 10);
+    if (!isNaN(n) && currentEntry.id) {
+      result.set(n, {
+        id: currentEntry.id,
+        title: currentEntry.title ?? "",
+        task_type: currentEntry.task_type ?? "project_task",
+        project_id: currentProjectId,
+        project_title: currentProjectTitle,
+        group_id: currentGroupId,
+        group_title: currentGroupTitle,
+      });
+    }
+    currentEntry = {};
+  }
+
+  for (const line of content.split("\n")) {
+    const trimmed = line.trimStart();
+    const indent = line.length - trimmed.length;
+
+    // Project level: "  - id: ..." (indent 2)
+    if (indent === 2 && trimmed.startsWith("- id: ")) {
+      if (currentEntry.n) flushEntry();
+      currentProjectId = trimmed.slice(6).trim();
+      currentGroupId = undefined;
+      currentGroupTitle = undefined;
+      inGroups = false;
+      inUngrouped = false;
+      inTasks = false;
+    } else if (indent === 4 && trimmed.startsWith("title: ") && !inGroups && !inUngrouped) {
+      currentProjectTitle = trimmed.slice(7).trim().replace(/^"|"$/g, "");
+    } else if (indent === 4 && trimmed === "groups:") {
+      if (currentEntry.n) flushEntry();
+      inGroups = true;
+      inUngrouped = false;
+      inTasks = false;
+    } else if (indent === 4 && trimmed === "ungrouped:") {
+      if (currentEntry.n) flushEntry();
+      inGroups = false;
+      inUngrouped = true;
+      inTasks = false;
+      currentGroupId = undefined;
+      currentGroupTitle = undefined;
+    }
+    // Group level: "      - id: ..." (indent 6)
+    else if (inGroups && indent === 6 && trimmed.startsWith("- id: ")) {
+      if (currentEntry.n) flushEntry();
+      currentGroupId = trimmed.slice(6).trim();
+      inTasks = false;
+    } else if (inGroups && indent === 8 && trimmed.startsWith("title: ")) {
+      currentGroupTitle = trimmed.slice(7).trim().replace(/^"|"$/g, "");
+    } else if (inGroups && indent === 8 && trimmed === "tasks:") {
+      inTasks = true;
+    }
+    // Task in group: "          - n: ..." (indent 10), props at indent 12
+    else if (inGroups && inTasks && indent === 10 && trimmed.startsWith("- n: ")) {
+      if (currentEntry.n) flushEntry();
+      currentEntry = { n: trimmed.slice(5).trim() };
+    } else if (inGroups && inTasks && indent === 12) {
+      const [key, ...rest] = trimmed.split(": ");
+      if (key && rest.length) currentEntry[key] = rest.join(": ").replace(/^"|"$/g, "");
+    }
+    // Ungrouped task: "      - n: ..." (indent 6), props at indent 8
+    else if (inUngrouped && indent === 6 && trimmed.startsWith("- n: ")) {
+      if (currentEntry.n) flushEntry();
+      currentEntry = { n: trimmed.slice(5).trim() };
+    } else if (inUngrouped && indent === 8) {
+      const [key, ...rest] = trimmed.split(": ");
+      if (key && rest.length) currentEntry[key] = rest.join(": ").replace(/^"|"$/g, "");
+    }
+  }
+  if (currentEntry.n) flushEntry();
+
+  return result;
+}
+
+/** Read task entries from YAML file on disk. Wrapper around parseTasksYaml. */
+function readTasksFromYaml(companyName: string): Map<number, YamlTaskEntry> {
+  const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const filePath = join(homedir(), `.teamleader-tasks-${slug}.yaml`);
+  try {
+    return parseTasksYaml(readFileSync(filePath, "utf-8"));
+  } catch {
+    return new Map();
+  }
+}
+
 function toDatetime(s: string): string {
   // "YYYY-MM-DD HH:MM" → ISO
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(s)) return `${s.replace(" ", "T")}:00+01:00`;
@@ -872,33 +973,52 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       if (!filteredProjects.length) return respond(`No tasks found for ${companyName}.`);
 
-      // ── Build flat list (for task_selection) ──────────────────────────────
-      const allTasksFlat: Array<{ project: TaskTreeProject; group?: TaskTreeGroup; task: TaskTreeTask }> = [];
-      for (const proj of filteredProjects) {
-        for (const group of proj.groups)
-          for (const task of group.tasks) allTasksFlat.push({ project: proj, group, task });
-        for (const task of proj.ungrouped) allTasksFlat.push({ project: proj, task });
-      }
-
-      // ── task_selection: cache chosen task ─────────────────────────────────
+      // ── task_selection: read from YAML file (matches numbering from last visual/write) ──
       if (params.task_selection) {
-        const sel = allTasksFlat[params.task_selection - 1];
-        if (!sel) return respond(`Invalid selection. Choose between 1 and ${allTasksFlat.length}.`);
+        const yamlTasks = readTasksFromYaml(companyName);
+        const sel = yamlTasks.get(params.task_selection);
+        if (!sel) {
+          // Fallback: build flat list from current filtered projects
+          const flat: Array<{ task: TaskTreeTask; project: TaskTreeProject; group?: TaskTreeGroup }> = [];
+          for (const proj of filteredProjects) {
+            for (const group of proj.groups)
+              for (const task of group.tasks) flat.push({ project: proj, group, task });
+            for (const task of proj.ungrouped) flat.push({ project: proj, task });
+          }
+          const fallback = flat[params.task_selection - 1];
+          if (!fallback) return respond(`Invalid selection ${params.task_selection}. YAML file has ${yamlTasks.size} tasks. Re-run load_tasks with visual=true first.`);
+          // Use fallback
+          upsertTask({
+            task_id: fallback.task.id,
+            task_title: fallback.task.title,
+            subject_type: fallback.task.task_type === "standalone_task" ? "todo" : "nextgenTask",
+            project_id: fallback.project.id,
+            project_title: fallback.project.title,
+            group_id: fallback.group?.id,
+            group_title: fallback.group?.title,
+            company_id: companyId!,
+            company_name: companyName,
+            work_type_id: fallback.task.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+            last_used: new Date().toISOString(),
+          });
+          const path = [companyName, fallback.project.title, fallback.group?.title, fallback.task.title].filter(Boolean).join(" > ");
+          return respond(`Task cached (fallback):\n${path}\nID: ${fallback.task.id}`);
+        }
         upsertTask({
-          task_id: sel.task.id,
-          task_title: sel.task.title,
-          subject_type: sel.task.task_type === "standalone_task" ? "todo" : "nextgenTask",
-          project_id: sel.project.id,
-          project_title: sel.project.title,
-          group_id: sel.group?.id,
-          group_title: sel.group?.title,
+          task_id: sel.id,
+          task_title: sel.title,
+          subject_type: sel.task_type === "standalone_task" ? "todo" : "nextgenTask",
+          project_id: sel.project_id,
+          project_title: sel.project_title,
+          group_id: sel.group_id,
+          group_title: sel.group_title,
           company_id: companyId!,
           company_name: companyName,
-          work_type_id: sel.task.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
+          work_type_id: getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id,
           last_used: new Date().toISOString(),
         });
-        const path = [companyName, sel.project.title, sel.group?.title, sel.task.title].filter(Boolean).join(" > ");
-        return respond(`Task cached:\n${path}\nID: ${sel.task.id}`);
+        const path = [companyName, sel.project_title, sel.group_title, sel.title].filter(Boolean).join(" > ");
+        return respond(`Task cached:\n${path}\nID: ${sel.id}`);
       }
 
       // ── Write YAML to file ────────────────────────────────────────────────
@@ -1062,8 +1182,18 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         }
       }
 
-      // Helper: resolve task from tree by number (matches visual numbering: open tasks only)
-      const resolveTaskFromTree = (n: number) => {
+      // Helper: resolve task from YAML file by number (matches numbering from last load_tasks output)
+      const resolveTaskByNumber = (n: number) => {
+        const yamlTasks = readTasksFromYaml(companyName);
+        const sel = yamlTasks.get(n);
+        if (sel) {
+          return {
+            project: { id: sel.project_id, title: sel.project_title } as TaskTreeProject,
+            group: sel.group_id ? { id: sel.group_id, title: sel.group_title ?? "" } as TaskTreeGroup : undefined,
+            task: { id: sel.id, title: sel.title, status: "to_do", task_type: sel.task_type } as TaskTreeTask,
+          };
+        }
+        // Fallback: read from tree cache (backwards compat if no YAML file)
         const tree = getTaskTree(companyId!);
         if (!tree) return null;
         const open = new Set(["to_do", "in_progress", "on_hold"]);
@@ -1080,7 +1210,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       // ── close ─────────────────────────────────────────────────────────────
       if (params.action === "close") {
-        const resolved = params.task_number ? resolveTaskFromTree(params.task_number) : undefined;
+        const resolved = params.task_number ? resolveTaskByNumber(params.task_number) : undefined;
         const taskId = params.task_id ?? resolved?.task.id;
         if (!taskId) return respond(`Provide task_id or task_number.`);
 
@@ -1116,7 +1246,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       // ── update ────────────────────────────────────────────────────────────
       if (params.action === "update") {
-        const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
+        const taskId = params.task_id ?? (params.task_number ? resolveTaskByNumber(params.task_number)?.task.id : undefined);
         if (!taskId) return respond(`Provide task_id or task_number for update.`);
         const body: Record<string, unknown> = { id: taskId };
         if (params.task_title) body.title = params.task_title;
@@ -1153,7 +1283,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       // ── move_time ─────────────────────────────────────────────────────────
       if (params.action === "move_time") {
         if (!params.time_entry_id) return respond(`time_entry_id required for move_time.`);
-        const newTaskId = params.new_task_id ?? (params.new_task_number ? resolveTaskFromTree(params.new_task_number)?.task.id : undefined);
+        const newTaskId = params.new_task_id ?? (params.new_task_number ? resolveTaskByNumber(params.new_task_number)?.task.id : undefined);
         if (!newTaskId) return respond(`Provide new_task_id or new_task_number.`);
 
         // Fetch existing entry
@@ -1210,7 +1340,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       // ── move_to_group ────────────────────────────────────────────────────
       if (params.action === "move_to_group") {
-        const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
+        const taskId = params.task_id ?? (params.task_number ? resolveTaskByNumber(params.task_number)?.task.id : undefined);
         if (!taskId) return respond(`Provide task_id or task_number for move_to_group.`);
         if (!params.group_id) return respond(`group_id required for move_to_group.`);
         // Step 1: remove from current group (no-op if ungrouped)
