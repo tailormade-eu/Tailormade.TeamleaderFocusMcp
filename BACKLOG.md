@@ -17,7 +17,6 @@ Items hier wachten op een CM-run of manuele fix. Geef elk item een task-nummer b
 
 | # | Prioriteit | Wat | Reden |
 |---|-----------|-----|-------|
-| N1 | LOW | `teamleader_list_orders` uitbreiden met `get` | Enkel list aanwezig — valideer of create/update zinvol is |
 
 ---
 
@@ -29,3 +28,4 @@ Items hier wachten op een CM-run of manuele fix. Geef elk item een task-nummer b
 | B1 | Fix timetracking update started_on — guard + llmTip al in src/, dist/ herbouwd 06-03 |
 | V3 | load_tasks project+group filter — al AND-gedrag, geen actie nodig |
 | N2 | calls date filter — al geïmplementeerd (scheduled_after/before) |
+| N1 | orders get — teamleader_get_order bestaat al (orders.info). Fout in backlog. |
