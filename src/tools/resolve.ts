@@ -612,10 +612,24 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       console.error("[log_time] timeTracking.add body:", JSON.stringify(body));
 
-      const result = await client.request<{ data: { id: string } }>({
-        endpoint: "timeTracking.add",
-        body,
-      });
+      let result;
+      try {
+        result = await client.request<{ data: { id: string } }>({
+          endpoint: "timeTracking.add",
+          body,
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Invalid subject")) {
+          return respond(
+            "Error: Invalid task ID — the subject could not be found in Teamleader.\n" +
+            `Task ID used: ${cached.task_id}\n` +
+            "Use teamleader_load_tasks to get the correct task_id from the project tree.\n" +
+            "Never guess or reuse a task_id from a previous session — IDs may differ per company."
+          );
+        }
+        throw err;
+      }
 
       console.error("[log_time] timeTracking.add response:", JSON.stringify(result));
 
@@ -1105,17 +1119,31 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         await client.request({ endpoint: "timeTracking.delete", body: { id: params.time_entry_id } });
 
         // Create new entry on new task
-        const newEntry = await client.request<{ data: { id: string } }>({
-          endpoint: "timeTracking.add",
-          body: {
-            user_id: userId,
-            work_type_id: workTypeId,
-            started_at: entry.started_at,
-            ended_at: entry.ended_at,
-            subject: { type: "nextgenTask", id: newTaskId },
-            ...(entry.description ? { description: entry.description } : {}),
-          },
-        });
+        let newEntry;
+        try {
+          newEntry = await client.request<{ data: { id: string } }>({
+            endpoint: "timeTracking.add",
+            body: {
+              user_id: userId,
+              work_type_id: workTypeId,
+              started_at: entry.started_at,
+              ended_at: entry.ended_at,
+              subject: { type: "nextgenTask", id: newTaskId },
+              ...(entry.description ? { description: entry.description } : {}),
+            },
+          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes("Invalid subject")) {
+            return respond(
+              "Error: Invalid task ID — the subject could not be found in Teamleader.\n" +
+              `Task ID used: ${newTaskId}\n` +
+              "WARNING: The original entry was already deleted. Re-create it manually.\n" +
+              "Use teamleader_load_tasks to get the correct task_id."
+            );
+          }
+          throw err;
+        }
 
         return respond(
           `✅ Time moved:\nFrom entry : ${params.time_entry_id}\nTo task    : ${newTaskId}\nNew entry  : ${newEntry.data.id}`

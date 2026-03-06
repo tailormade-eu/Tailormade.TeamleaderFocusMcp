@@ -4,6 +4,14 @@ Items hier wachten op een CM-run of manuele fix. Geef elk item een task-nummer b
 
 ---
 
+## Bugs
+
+| # | Prioriteit | Wat | Reden |
+|---|-----------|-----|-------|
+| B2 | HIGH | `teamleader_log_time` / `timeTracking.add`: 400 "Invalid subject" onduidelijk → betere foutmelding: "Task ID ongeldig — gebruik load_tasks om het juiste ID te halen" | API geeft geen "not found", waardoor oorzaak moeilijk te achterhalen is |
+
+---
+
 ## Verbeteringen
 
 | # | Prioriteit | Wat | Reden |

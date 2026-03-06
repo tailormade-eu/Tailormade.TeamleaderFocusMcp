@@ -227,10 +227,23 @@ export function registerTimeTrackingTools(
     async (params) => {
       const body = buildAddTimetrackingBody(params);
 
-      const result = await client.request<{ data: { id: string; type: string } }>({
-        endpoint: "timeTracking.add",
-        body,
-      });
+      let result;
+      try {
+        result = await client.request<{ data: { id: string; type: string } }>({
+          endpoint: "timeTracking.add",
+          body,
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Invalid subject")) {
+          return respond(
+            "Error: Invalid task ID — the subject could not be found in Teamleader.\n" +
+            "Use teamleader_load_tasks to get the correct task_id from the project tree.\n" +
+            "Never guess or reuse a task_id from a previous session — IDs may differ per company."
+          );
+        }
+        throw err;
+      }
 
       return {
         content: [
