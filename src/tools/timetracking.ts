@@ -246,7 +246,7 @@ export function registerTimeTrackingTools(
   // ── Update Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timetracking",
-    "Update an existing time tracking entry. You can send only the fields you want to change. CRITICAL: API uses started_at + duration (seconds), NOT ended_at. Duration is in seconds. Returns {id, type}.",
+    "Update an existing time tracking entry. CRITICAL: When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds). Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed.",
     {
       id: z.string().describe("Time tracking entry ID"),
       work_type_id: z
@@ -256,11 +256,11 @@ export function registerTimeTrackingTools(
       started_on: z
         .string()
         .optional()
-        .describe("Start datetime in ISO 8601 format"),
+        .describe("Required when updating duration. ISO 8601 with timezone (e.g. 2026-03-06T10:30:00+01:00). Use teamleader_get_timetracking to retrieve the current value."),
       duration: z
         .number()
         .optional()
-        .describe("Duration in seconds"),
+        .describe("Duration in seconds. Must be sent together with started_on — sending duration alone returns 400."),
       description: z
         .string()
         .optional()
@@ -279,12 +279,16 @@ export function registerTimeTrackingTools(
         .describe("Whether the tracked time is invoiceable"),
     },
     async (params) => {
+      if (params.duration !== undefined && !params.started_on) {
+        return respond("Error: started_on is required when updating duration. Use teamleader_get_timetracking to retrieve the current start time, then pass it as started_on together with the new duration.");
+      }
+
       const body: Record<string, unknown> = {
         id: params.id,
       };
 
       if (params.work_type_id) body.work_type_id = params.work_type_id;
-      if (params.description) body.description = params.description;
+      if (params.description !== undefined) body.description = params.description;
       if (params.started_on) body.started_at = params.started_on;
       if (params.duration !== undefined) body.duration = params.duration;
       if (params.invoiceable !== undefined) body.invoiceable = params.invoiceable;

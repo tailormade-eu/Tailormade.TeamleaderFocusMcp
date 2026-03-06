@@ -188,8 +188,9 @@ Used by humans and AI to get IDs for direct calls.
 
 ### `timeTracking.update`
 
-- No partial updates for time fields — always send `started_at` + `ended_at` together
-- Sending only `ended_at` causes 400 Bad Request (`started_at must be present`)
+- `started_at` (or `started_on`) and `duration` are both **required** in the API body
+- Sending `duration` alone causes 400 Bad Request (`started_on must be present`)
+- The tool has a client-side guard: returns helpful error if `duration` provided without `started_on`
 
 ### `invoices.registerPayment`
 
