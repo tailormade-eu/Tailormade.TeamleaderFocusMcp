@@ -72,6 +72,8 @@ export interface TaskTreeTask {
   title: string;
   status: "to_do" | "in_progress" | "on_hold" | "done" | string;
   work_type_id?: string;
+  /** "project_task" = projects-v2 task, "standalone_task" = tasks.* linked to project */
+  task_type?: "project_task" | "standalone_task";
 }
 
 export interface TaskTreeGroup {

@@ -465,7 +465,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         cached = {
           task_id: params.task_id,
           task_title: found?.task.title ?? params.task_id,
-          subject_type: "nextgenTask",
+          subject_type: found?.task.task_type === "standalone_task" ? "todo" : "nextgenTask",
           project_id: found?.project.id ?? "",
           project_title: found?.project.title ?? "",
           group_id: found?.group?.id,
@@ -492,7 +492,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
               upsertTask({
                 task_id: sel.task.id,
                 task_title: sel.task.title,
-                subject_type: "nextgenTask",
+                subject_type: sel.task.task_type === "standalone_task" ? "todo" : "nextgenTask",
                 project_id: sel.project.id,
                 project_title: sel.project.title,
                 group_id: sel.group?.id,
@@ -681,7 +681,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       "AFTER LOADING:",
       "  - Use task_id from YAML directly in log_time(task_id=...) — no extra find_task needed",
       "  - Use task_selection=N to cache a specific task",
-      "  - Use task_action(action=close, task_number=N) to close a task",
+      "  - Use task_action(action=close, task_number=N) to close a task (handles both project and standalone tasks)",
       "  - Use task_action(action=delete_group, group_id=N) to delete a group (ID from YAML)",
       "PARAMETERS:",
       "  only_open=false  → include done/cancelled tasks too",
@@ -798,7 +798,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           for (const { lineId, groupId } of allLineIds) {
             const task = tasksById.get(lineId);
             if (!task) continue;
-            const treeTask: TaskTreeTask = { id: task.id, title: task.title, status: task.status, ...(task.work_type_id ? { work_type_id: task.work_type_id } : {}) };
+            const treeTask: TaskTreeTask = { id: task.id, title: task.title, status: task.status, task_type: "project_task", ...(task.work_type_id ? { work_type_id: task.work_type_id } : {}) };
             if (groupId) {
               if (!groupTasksMap.has(groupId)) groupTasksMap.set(groupId, []);
               groupTasksMap.get(groupId)!.push(treeTask);
@@ -814,6 +814,35 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           if (treeGroups.length || ungrouped.length) {
             treeProjects.push({ id: proj.id, title: proj.title, groups: treeGroups, ungrouped });
           }
+        }
+
+        // ── Fetch standalone tasks linked to these projects ──────────────
+        try {
+          const projectIdSet = new Set(treeProjects.map(p => p.id));
+          const standaloneResult = await client.request<{ data: { id: string; title: string; completed: boolean; project?: { id: string }; work_type?: { id: string } }[] }>({
+            endpoint: "tasks.list",
+            body: {
+              filter: { customer: { type: "company", id: companyId }, completed: false },
+              page: { size: 100, number: 1 },
+            },
+          });
+          const standaloneTasks = (standaloneResult.data ?? []).filter(t => t.project && projectIdSet.has(t.project.id));
+          for (const st of standaloneTasks) {
+            const proj = treeProjects.find(p => p.id === st.project!.id);
+            if (!proj) continue;
+            // Skip if a project task with the same title already exists (avoid duplicates)
+            const alreadyExists = [...proj.ungrouped, ...proj.groups.flatMap(g => g.tasks)].some(t => t.id === st.id);
+            if (alreadyExists) continue;
+            proj.ungrouped.push({
+              id: st.id,
+              title: st.title,
+              status: st.completed ? "done" : "to_do",
+              task_type: "standalone_task",
+              ...(st.work_type?.id ? { work_type_id: st.work_type.id } : {}),
+            });
+          }
+        } catch (e) {
+          console.error("Warning: could not fetch standalone tasks for project linking:", e);
         }
 
         tree = { company_id: companyId, company_name: companyName, loaded_at: new Date().toISOString(), projects: treeProjects };
@@ -857,7 +886,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         upsertTask({
           task_id: sel.task.id,
           task_title: sel.task.title,
-          subject_type: "nextgenTask",
+          subject_type: sel.task.task_type === "standalone_task" ? "todo" : "nextgenTask",
           project_id: sel.project.id,
           project_title: sel.project.title,
           group_id: sel.group?.id,
@@ -901,6 +930,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
                 yamlLines.push(`            id: ${task.id}`);
                 yamlLines.push(`            title: ${yamlStr(task.title)}`);
                 yamlLines.push(`            status: ${task.status}`);
+                yamlLines.push(`            task_type: ${task.task_type ?? "project_task"}`);
               }
             }
           }
@@ -914,6 +944,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             yamlLines.push(`        id: ${task.id}`);
             yamlLines.push(`        title: ${yamlStr(task.title)}`);
             yamlLines.push(`        status: ${task.status}`);
+            yamlLines.push(`        task_type: ${task.task_type ?? "project_task"}`);
           }
         }
       }
@@ -939,7 +970,8 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
               const task = group.tasks[ti];
               idx++;
               const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : task.status === "done" ? "x" : task.status === "cancelled" ? "-" : "o";
-              treeLines.push(`    │    ${idx}. [${icon}] ${task.title}`);
+              const standalone = task.task_type === "standalone_task" ? " [S]" : "";
+              treeLines.push(`    │    ${idx}. [${icon}] ${task.title}${standalone}`);
             }
           }
           if (proj.ungrouped.length) {
@@ -947,11 +979,12 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             for (const task of proj.ungrouped) {
               idx++;
               const icon = task.status === "in_progress" ? ">" : task.status === "on_hold" ? "||" : task.status === "done" ? "x" : task.status === "cancelled" ? "-" : "o";
-              treeLines.push(`         ${idx}. [${icon}] ${task.title}`);
+              const standalone = task.task_type === "standalone_task" ? " [S]" : "";
+              treeLines.push(`         ${idx}. [${icon}] ${task.title}${standalone}`);
             }
           }
         }
-        treeLines.push(`\nLegend: > in_progress  || on_hold  o to_do  x done  - cancelled`);
+        treeLines.push(`\nLegend: > in_progress  || on_hold  o to_do  x done  - cancelled  [S] standalone task`);
         treeLines.push(`Select: task_selection=N  (_company_id="${companyId}")`);
         return respond(treeLines.join("\n"));
       }
@@ -981,7 +1014,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
     [
       "Maintenance actions on tasks. Requires teamleader_load_tasks to have been called first (for task_number resolution).",
       "Actions and required params:",
-      "  close         : mark task as done. Requires: task_id or task_number.",
+      "  close         : mark task as done (handles both project tasks and standalone tasks). Requires: task_id or task_number.",
       "  create        : create new task. Requires: project_id, group_id, task_title. Optional: description.",
       "  update        : update task title/description/status. Requires: task_id or task_number. Optional: task_title, description.",
       "  move_time     : move time entry to different task. Requires: time_entry_id + (new_task_id or new_task_number).",
@@ -1046,12 +1079,28 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       // ── close ─────────────────────────────────────────────────────────────
       if (params.action === "close") {
-        const taskId = params.task_id ?? (params.task_number ? resolveTaskFromTree(params.task_number)?.task.id : undefined);
+        const resolved = params.task_number ? resolveTaskFromTree(params.task_number) : undefined;
+        const taskId = params.task_id ?? resolved?.task.id;
         if (!taskId) return respond(`Provide task_id or task_number.`);
-        await client.request({
-          endpoint: "projects-v2/tasks.update",
-          body: { id: taskId, status: "done" },
-        });
+
+        // Determine task type: from tree resolution, or look up in tree by ID
+        let taskType = resolved?.task.task_type;
+        if (!taskType && params.task_id) {
+          const tree = getTaskTree(companyId);
+          if (tree) {
+            for (const proj of tree.projects) {
+              const found = [...proj.ungrouped, ...proj.groups.flatMap(g => g.tasks)].find(t => t.id === params.task_id);
+              if (found) { taskType = found.task_type; break; }
+            }
+          }
+        }
+
+        if (taskType === "standalone_task") {
+          await client.request({ endpoint: "tasks.complete", body: { id: taskId } });
+        } else {
+          await client.request({ endpoint: "projects-v2/tasks.update", body: { id: taskId, status: "done" } });
+        }
+
         // Remove from tree cache
         const tree = getTaskTree(companyId);
         if (tree) {
@@ -1061,7 +1110,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           }
           setTaskTree(tree);
         }
-        return respond(`✅ Task ${taskId} closed (status: done).`);
+        return respond(`✅ Task ${taskId} closed (${taskType === "standalone_task" ? "standalone" : "project"} task, status: done).`);
       }
 
       // ── update ────────────────────────────────────────────────────────────
