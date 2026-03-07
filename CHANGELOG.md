@@ -4,6 +4,65 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.0.0] - 2026-03-05
+
+### Added
+
+- **`teamleader_timesheet`**: New tool — daily timesheet from Teamleader. Returns all time entries for a date (default: today) grouped by project/task. Supports `format` param: `md` (markdown table) or `beauty` (rich formatted). `desc_length` param controls description truncation.
+- **`teamleader_task_action` — `move_to_group`**: Move an existing task to a different group/phase using `projectLines.addToGroup`.
+- **Business Logic docs** (`docs/`): CRM, Billing, Time & Projects — complete reference for AI agents.
+
+### Improvements
+
+- **`teamleader_timesheet`** — cross-request cache: group, project, user, and customer lookups are cached per session to eliminate redundant API calls.
+- **`load_tasks`** — standalone tasks get `[S]` marker + `task_type` in YAML to distinguish from project tasks.
+
+### Bug Fixes
+
+- **`load_tasks` — standalone task IDs**: Standalone tasks used wrong endpoint IDs → 404 on close. Now uses correct standalone task endpoint automatically.
+- **`load_tasks` — duplicate tasks**: Project tasks were appearing twice in `[no group]`. Fixed deduplication.
+- **`load_tasks` — `task_selection` wrong ID**: When multiple projects loaded, task_selection picked wrong ID. Now reads from YAML directly.
+- **`teamleader_update_timetracking` — `started_on` required**: Added guard + llmTip. Clear error when field missing.
+- **`teamleader_log_time` — "Invalid subject" 400**: Better error message with body sent + `force_refresh` suggestion.
+- **Coverage script** (`npm run check-coverage`): Verifies all tools in INDEX.md are implemented. INDEX.md = source of truth.
+
+---
+
+## [2.1.0] - 2026-03-05
+
+### Added — Subscriptions Module
+
+- **`teamleader_list_subscriptions`** — List recurring invoices with filtering
+- **`teamleader_get_subscription`** — Get subscription details
+- **`teamleader_create_subscription`** — Create new recurring invoice
+- **`teamleader_update_subscription`** — Update subscription settings
+- **`teamleader_deactivate_subscription`** — Deactivate a subscription
+
+---
+
+## [2.0.0] - 2026-03-04
+
+### Major Release — Complete API Coverage
+
+Complete implementation of all Teamleader Focus API endpoints. 56 tools covering the full CRM, billing, projects, time tracking, and support surface.
+
+### Added
+
+- **CRM**: companies.delete, companies.tag/untag, events.update/cancel, contacts full CRUD
+- **Billing**: quotations (full workflow), credit notes, products CRUD, materials, orders
+- **Lookups**: businessTypes, callOutcomes, currencies, unitsOfMeasure, withholdingTaxRates, documentTemplates, paymentMethods, paymentTerms, taxRates, commercialDiscounts, lostReasons, dealSources, priceList
+- **Calls module**: list, get, add, complete, update calls
+- **Deal pipelines + phases**: full CRUD
+- **Unit tests**: full suite via Vitest
+
+### Infrastructure
+
+- **`npm run check-coverage`**: Automated coverage script — reads INDEX.md, scans src/, reports gaps
+- **TESTING.md**: Complete testing guide with all 56 tools documented
+- All gap audits completed (tasks 16-23 + 33)
+
+---
+
 ## [1.3.5] - 2026-03-03
 
 ### Bug Fixes
@@ -201,6 +260,9 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.0.0 | 2026-03-05 | Timesheet tool, load_tasks fixes, move_to_group, BL docs |
+| 2.1.0 | 2026-03-05 | Subscriptions module (5 tools) |
+| 2.0.0 | 2026-03-04 | Complete API coverage — 56 tools, unit tests, coverage script |
 | 1.3.3 | 2026-03-03 | New: task_action move_to_group (projectLines.addToGroup) |
 | 1.3.2 | 2026-03-03 | Fix wrong API endpoints (projectGroups.create/delete, tasks.create) + crash fix |
 | 1.3.1 | 2026-03-03 | Bug fixes (BUG-01, task numbering, icons) + delete_group action |
