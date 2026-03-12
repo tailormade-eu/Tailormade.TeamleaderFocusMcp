@@ -792,7 +792,7 @@ export function registerProjectTools(
   // ── Add Project Line to Group ───────────────────────────────────────────
   server.tool(
     "teamleader_add_project_line_to_group",
-    "Add an existing task or material to a group. The line must not be a group itself.",
+    "Add an existing task or material to a group. The line must not be a group itself. USE THIS to move a task from one group to another (e.g. reassign task to different phase/category). Get group_id from teamleader_load_tasks (visual=true shows group IDs in YAML cache).",
     {
       line_id: z.string().describe("Task or material ID to add to the group"),
       group_id: z.string().describe("Target group ID"),
