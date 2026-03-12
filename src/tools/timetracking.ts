@@ -259,7 +259,7 @@ export function registerTimeTrackingTools(
   // ── Update Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timetracking",
-    "Update an existing time tracking entry. CRITICAL: When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds). Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed.",
+    "Update an existing time tracking entry. CRITICAL: When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds). Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed. WARNING: Changing subject type (e.g. todo → nextgenTask) silently fails — returns {} but subject is unchanged. To move a time entry to a different task type: delete + re-log on the correct task.",
     {
       id: z.string().describe("Time tracking entry ID"),
       work_type_id: z

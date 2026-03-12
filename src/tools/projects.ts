@@ -189,7 +189,7 @@ export function registerProjectTools(
   // ── List Project Groups (Phases) ─────────────────────────────────────────
   server.tool(
     "teamleader_list_project_groups",
-    "List project groups (phases) for a specific project. Returns array with id, title, start_date, end_date for each group. NOTE: internally uses projectLines.list with project_id at top level (NOT inside filter — API quirk). Next steps: teamleader_list_project_tasks_v2 with project_group_id to see tasks in a phase.",
+    "List project groups (phases) for a specific project. WARNING: Returns IDs only — titles are NOT included in the response. To find a group ID by name, call teamleader_get_project_group per ID until you find the right title. NOTE: internally uses projectLines.list with project_id at top level (NOT inside filter — API quirk). Next steps: teamleader_list_project_tasks_v2 with project_group_id to see tasks in a phase.",
     {
       project_id: z.string().describe("Project ID to list groups for"),
       page: z.number().optional().describe("Page number (default: 1)"),
@@ -792,7 +792,7 @@ export function registerProjectTools(
   // ── Add Project Line to Group ───────────────────────────────────────────
   server.tool(
     "teamleader_add_project_line_to_group",
-    "Add an existing task or material to a group. The line must not be a group itself. USE THIS to: (1) move a task from one group to another, (2) add a standalone todo/task to a project group (e.g. when a timetracking entry is linked to a todo that should be under a project group). Get group_id from teamleader_load_tasks YAML cache. line_id = task/todo ID.",
+    "Move a task or material to a different project group. CRITICAL: line_id MUST be a nextgenTask ID from teamleader_load_tasks (task_selection=N). Do NOT use IDs from get_task — those are todo IDs and will return 404. Group IDs not in YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find group ID by name.",
     {
       line_id: z.string().describe("Task or material ID to add to the group"),
       group_id: z.string().describe("Target group ID"),

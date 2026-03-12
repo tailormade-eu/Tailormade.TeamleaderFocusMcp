@@ -773,7 +773,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
     "teamleader_load_tasks",
     [
       "Load and display the full Project > Group > Task tree for a company.",
-      "Cache-first (30 min TTL). Writes YAML with all IDs to ~/.teamleader-tasks-{slug}.yaml.",
+      "Cache-first (30 min TTL). Writes YAML with task IDs to ~/.teamleader-tasks-{slug}.yaml. NOTE: Group IDs are NOT in the YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find a group ID by name.",
       "Returns a summary by default (small context footprint). Use visual=true for ASCII tree.",
       "WHEN TO USE:",
       "  - First time working with a company in a session",
