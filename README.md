@@ -90,7 +90,7 @@ Add to your Claude config:
 |----------|----------|-------------|
 | `TEAMLEADER_CLIENT_ID` | Yes | OAuth2 Client ID |
 | `TEAMLEADER_CLIENT_SECRET` | Yes | OAuth2 Client Secret |
-| `TEAMLEADER_REFRESH_TOKEN` | Yes | OAuth2 Refresh Token (auto-rotated, persisted to `~/.teamleader-tokens.json`) |
+| `TEAMLEADER_REFRESH_TOKEN` | No | OAuth2 Refresh Token (auto-rotated, persisted to `~/.teamleader-tokens.json`). If omitted, only `teamleader_login` is available — use it to obtain tokens via browser. |
 
 ### Cache Files
 
@@ -317,6 +317,12 @@ These tools implement the recommended workflow for time logging. They maintain a
 | `teamleader_task_action` | Maintenance actions on tasks: close, create, move a time entry, or delete a project group. |
 | `teamleader_cache_stats` | Show cache statistics and all cached tasks. |
 | `teamleader_clear_cache` | Clear the entire local cache (forces fresh API lookups on next call). |
+
+### Authentication
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_login` | Start OAuth login flow — opens browser for Teamleader authorization, captures callback on localhost:19836, exchanges code for tokens, persists to `~/.teamleader-tokens.json`. Use for initial setup or expired refresh token recovery. |
 
 ---
 
