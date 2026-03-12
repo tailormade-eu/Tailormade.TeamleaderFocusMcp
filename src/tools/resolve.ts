@@ -772,7 +772,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
   server.tool(
     "teamleader_load_tasks",
     [
-      "Load and display the full Project > Group > Task tree for a company.",
+      "Load and display the full Project > Group > Task tree for a company. Returns nextgenTask IDs (projects-v2). IMPORTANT: v1 todo IDs (from get_task/list_tasks) are NOT the same as v2 nextgenTask IDs — they are incompatible. Always use IDs from this tool for projects-v2 operations (add_project_line_to_group, log_time, task_action, etc.).",
       "Cache-first (30 min TTL). Writes YAML with task IDs to ~/.teamleader-tasks-{slug}.yaml. NOTE: Group IDs are NOT in the YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find a group ID by name.",
       "Returns a summary by default (small context footprint). Use visual=true for ASCII tree.",
       "WHEN TO USE:",

@@ -17,7 +17,7 @@ export function registerTaskTools(
   // ── List Tasks ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tasks",
-    "List standalone tasks (NOT project tasks — use teamleader_list_project_tasks_v2 for those). Returns array with id, title, due_on, status, assignee, customer. Next steps: teamleader_get_task for details, teamleader_complete_task to mark done. NOTE: Useful filters exist: completed (true/false), scheduled, due_by/due_from date range, user_id.",
+    "List standalone tasks — v1 API (type: todo). NOT for project tasks — use teamleader_list_project_tasks_v2 or teamleader_load_tasks for those. IDs returned here are todo IDs and cannot be used in projects-v2 endpoints. Returns array with id, title, due_on, status, assignee, customer.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -158,7 +158,7 @@ export function registerTaskTools(
   // ── Get Task ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_task",
-    "Get full details of a standalone task including title, description, due_on, status, assignee, customer, work_type, and estimated_duration.",
+    "Get full details of a standalone task (v1 API — type: todo). IMPORTANT: Returns a todo ID — this is NOT the same as a nextgenTask ID from projects-v2. Todo IDs cannot be used in projects-v2 endpoints (add_project_line_to_group, etc.) — use teamleader_load_tasks to get the correct nextgenTask ID instead.",
     {
       id: z.string().describe("Task ID"),
     },
