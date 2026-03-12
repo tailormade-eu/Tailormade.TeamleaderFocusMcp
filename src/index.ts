@@ -39,6 +39,7 @@ import { registerProductTools } from "./tools/products.js";
 import { registerMaterialTools } from "./tools/materials.js";
 import { registerOrderTools } from "./tools/orders.js";
 import { registerCallTools } from "./tools/calls.js";
+import { registerLoginTools } from "./tools/login.js";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -52,54 +53,59 @@ function getRequiredEnv(name: string): string {
 }
 
 async function main(): Promise<void> {
-  // Validate environment
+  // Validate environment (client_id + secret always required, refresh_token optional for login flow)
   const clientId = getRequiredEnv("TEAMLEADER_CLIENT_ID");
   const clientSecret = getRequiredEnv("TEAMLEADER_CLIENT_SECRET");
-  const refreshToken = loadRefreshToken(getRequiredEnv("TEAMLEADER_REFRESH_TOKEN"));
-
-  // Initialize auth and API client
-  const auth = new TeamleaderAuth({
-    clientId,
-    clientSecret,
-    refreshToken,
-  });
-  const client = new TeamleaderClient(auth);
+  const refreshToken = loadRefreshToken(process.env.TEAMLEADER_REFRESH_TOKEN || "");
 
   // Create MCP server
   const server = new McpServer({
     name: "teamleader-focus",
-    version: "1.2.0",
+    version: "3.1.0",
     description:
       "Tailormade Teamleader Focus MCP — manage contacts, companies, deals, tasks, events, invoices, time tracking, and projects with phases. Based on globodai-mcp-teamleader.",
   });
 
-  // Register all tools
-  registerContactTools(server, client);
-  registerCompanyTools(server, client);
-  registerDealTools(server, client);
-  registerTaskTools(server, client);
-  registerEventTools(server, client);
-  registerInvoiceTools(server, client);
-  registerTimeTrackingTools(server, client);
-  registerProjectTools(server, client);
-  registerResolveTools(server, client);
-  registerUserTools(server, client);
-  registerTicketTools(server, client);
-  registerMeetingTools(server, client);
-  registerDepartmentTools(server, client);
-  registerLookupTools(server, client);
-  registerFileTools(server, client);
-  registerNoteTools(server, client);
-  registerSubscriptionTools(server, client);
-  registerQuotationTools(server, client);
-  registerCreditNoteTools(server, client);
-  registerProductTools(server, client);
-  registerMaterialTools(server, client);
-  registerOrderTools(server, client);
-  registerCallTools(server, client);
+  // Login tool is always available (works without existing tokens)
+  registerLoginTools(server);
 
-  // Initialize cache (active user + work types)
-  await initializeCache(client);
+  // Only register API tools if we have a refresh token
+  if (refreshToken) {
+    const auth = new TeamleaderAuth({
+      clientId,
+      clientSecret,
+      refreshToken,
+    });
+    const client = new TeamleaderClient(auth);
+
+    // Register all tools
+    registerContactTools(server, client);
+    registerCompanyTools(server, client);
+    registerDealTools(server, client);
+    registerTaskTools(server, client);
+    registerEventTools(server, client);
+    registerInvoiceTools(server, client);
+    registerTimeTrackingTools(server, client);
+    registerProjectTools(server, client);
+    registerResolveTools(server, client);
+    registerUserTools(server, client);
+    registerTicketTools(server, client);
+    registerMeetingTools(server, client);
+    registerDepartmentTools(server, client);
+    registerLookupTools(server, client);
+    registerFileTools(server, client);
+    registerNoteTools(server, client);
+    registerSubscriptionTools(server, client);
+    registerQuotationTools(server, client);
+    registerCreditNoteTools(server, client);
+    registerProductTools(server, client);
+    registerMaterialTools(server, client);
+    registerOrderTools(server, client);
+    registerCallTools(server, client);
+
+    // Initialize cache (active user + work types)
+    await initializeCache(client);
+  }
 
   // Start server
   const transport = new StdioServerTransport();

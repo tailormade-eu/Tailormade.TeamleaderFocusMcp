@@ -4,6 +4,19 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.1.0] - 2026-03-12
+
+### Added
+
+- **`teamleader_login`**: New OAuth login tool — starts Authorization Code flow via browser + local callback server on port 19836. Exchanges code for tokens and persists to `~/.teamleader-tokens.json`. Use for initial setup or expired refresh token recovery.
+
+### Changed
+
+- **`TEAMLEADER_REFRESH_TOKEN` no longer required** — server starts without it, exposing only the `teamleader_login` tool. All other API tools become available once a refresh token is obtained.
+- **`open` package** added as dependency for browser-based OAuth flow (fallback to URL text if browser open fails).
+
+---
+
 ## [3.0.0] - 2026-03-05
 
 ### Added
@@ -260,6 +273,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.1.0 | 2026-03-12 | OAuth login tool, refresh token no longer required at startup |
 | 3.0.0 | 2026-03-05 | Timesheet tool, load_tasks fixes, move_to_group, BL docs |
 | 2.1.0 | 2026-03-05 | Subscriptions module (5 tools) |
 | 2.0.0 | 2026-03-04 | Complete API coverage — 56 tools, unit tests, coverage script |
@@ -270,3 +284,4 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 | 1.2.0 | 2026-02-28 | Projects v2 module (8 tools) |
 | 1.1.0 | 2026-02-28 | Time tracking module (7 tools) |
 | 1.0.0 | — | Original Globodai release |
+
