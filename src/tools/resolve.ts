@@ -712,7 +712,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           const timerStartIso = timerRes.data?.started_at;
           if (timerStartIso) {
             const timerStart = new Date(timerStartIso).getTime();
-            if (timerStart >= newStart && timerStart < newEnd) {
+            if (timerStart < newEnd) {
               const timerHHMM = timerStartIso.replace(/.*T(\d{2}:\d{2}).*/, "$1");
               const startHHMM = new Date(newStart).toISOString().replace(/.*T(\d{2}:\d{2}).*/, "$1");
               const endHHMM = new Date(newEnd).toISOString().replace(/.*T(\d{2}:\d{2}).*/, "$1");
