@@ -702,6 +702,31 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           console.error("Dedup check failed:", e);
           // Proceed anyway
         }
+
+        // ── Active timer overlap check ──────────────────────────────────────
+        try {
+          const timerRes = await client.request<{
+            data?: { started_at?: string }
+          }>({ endpoint: "timers.current", body: {} });
+
+          const timerStartIso = timerRes.data?.started_at;
+          if (timerStartIso) {
+            const timerStart = new Date(timerStartIso).getTime();
+            if (timerStart >= newStart && timerStart < newEnd) {
+              const timerHHMM = timerStartIso.replace(/.*T(\d{2}:\d{2}).*/, "$1");
+              const startHHMM = new Date(newStart).toISOString().replace(/.*T(\d{2}:\d{2}).*/, "$1");
+              const endHHMM = new Date(newEnd).toISOString().replace(/.*T(\d{2}:\d{2}).*/, "$1");
+              return respond(
+                `⚠️ Active timer running since ${timerHHMM} overlaps with log period ${startHHMM} → ${endHHMM}.\n` +
+                `Logging now may cause a duplicate when the timer is stopped later.\n\n` +
+                `Options:\nA. Stop the timer first: teamleader_stop_timer\nB. Log anyway: force=true`
+              );
+            }
+          }
+        } catch (e) {
+          console.error("Timer overlap check failed:", e);
+          // Proceed anyway
+        }
       }
 
       const body: Record<string, unknown> = {

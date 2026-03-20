@@ -47,6 +47,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_log_time` | date param (past date with HH:MM times) | ✅ | Entry created on 2026-03-01 via date="2026-03-01" + HH:MM |
 | `teamleader_log_time` | work_type_id from task cache | ✅ | Verified: task tree + flat cache both propagate work_type_id |
 | `teamleader_log_time` | description stored | ✅ | Verified via list |
+| `teamleader_log_time` | Active timer overlap warning | ❌ | Timer running within log period → warning with stop/force options; timer outside period → no warning |
 
 ## Task Maintenance
 
