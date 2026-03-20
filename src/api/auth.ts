@@ -6,7 +6,7 @@
  * Refresh token is persisted to TOKEN_FILE to survive MCP restarts.
  */
 
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, unlinkSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { TeamleaderAuthConfig, TokenResponse } from "../types/index.js";
@@ -73,6 +73,20 @@ export class TeamleaderAuth {
 
     if (!response.ok) {
       const errorText = await response.text();
+      const isRevoked = response.status === 400 && errorText.includes("invalid_grant");
+      if (isRevoked) {
+        // Try reloading from file — a newer rotated token may have been written by another instance
+        const fileToken = loadRefreshToken("");
+        if (fileToken && fileToken !== this.config.refreshToken) {
+          this.config.refreshToken = fileToken;
+          return this.refreshAccessToken();
+        }
+        // File token is same or missing — truly revoked, clean up and surface clear error
+        try { unlinkSync(TOKEN_FILE); } catch (_) {}
+        throw new Error(
+          "Teamleader refresh token revoked. Re-authenticate via /mcp reconnect or run teamleader_login."
+        );
+      }
       throw new Error(
         `Failed to refresh Teamleader token: ${response.status} ${response.statusText} - ${errorText}`
       );
