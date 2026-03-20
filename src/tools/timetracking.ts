@@ -22,6 +22,20 @@ function respond(text: string) {
 
 // ── Helpers (exported for testing) ────────────────────────────────────────────
 
+export function dateToDDMMYYYY(iso: string): string {
+  const [y, m, d] = iso.substring(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export function buildManicTimeMemo(entry: { client_name: string; group: string; task: string; project: string }): string {
+  const parts: string[] = [];
+  const client = entry.client_name === "—" ? (entry.project !== "—" ? entry.project : undefined) : entry.client_name;
+  if (client) parts.push(client);
+  if (entry.group !== "—") parts.push(entry.group);
+  if (entry.task !== "—") parts.push(entry.task);
+  return parts.join(", ");
+}
+
 export function formatDesc(raw: string, maxLen: number): string {
   const flat = raw.replace(/\r\n|\r|\n/g, " ").trim();
   return maxLen > 0 && flat.length > maxLen ? flat.slice(0, maxLen) + "…" : flat;
@@ -521,7 +535,7 @@ export function registerTimeTrackingTools(
       to_date: z.string().describe("End date inclusive (YYYY-MM-DD). Converted to T23:59:59+00:00."),
       user_id: z.string().optional().describe("Filter by user ID. Omit for all users."),
       desc_length: z.number().optional().default(50).describe("Max description length (chars). 0 = full. Default: 50. Newlines replaced with spaces."),
-      format: z.enum(["md", "beauty"]).optional().default("beauty").describe("Output format: 'beauty' = compact display (no User col, truncated task titles), 'md' = full markdown table for file export."),
+      format: z.enum(["md", "beauty", "manictime"]).optional().default("beauty").describe("Output format: 'beauty' = compact display (no User col, truncated task titles), 'md' = full markdown table for file export, 'manictime' = TSV for ManicTime memos (DD/MM/YYYY\\tclient, group, task)."),
     },
     async (params) => {
       const toDate = (s: string, endOfDay = false) => {
@@ -804,6 +818,14 @@ export function registerTimeTrackingTools(
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         return `${h}:${m.toString().padStart(2, "0")}`;
+      }
+
+      // ManicTime format: early return with TSV output
+      if (params.format === "manictime") {
+        const lines = resolved.map((e) =>
+          `${dateToDDMMYYYY(e.started_at)}\t${buildManicTimeMemo(e)}`
+        );
+        return respond(lines.join("\n"));
       }
 
       const isBeauty = params.format !== "md";

@@ -105,6 +105,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_timesheet` | `desc_length=20` | ❌ | Descriptions truncated to 20 chars with `…` |
 | `teamleader_timesheet` | `format=md` | ❌ | Full table incl. User column |
 | `teamleader_timesheet` | `format=beauty` (default) | ❌ | No User column, task titles truncated to 40 chars, day header |
+| `teamleader_timesheet` | `format=manictime` | ❌ | TSV output: `DD/MM/YYYY\tclient, group, task` — no headers, one line per entry |
 
 ## Timers
 
