@@ -8,6 +8,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
+| `teamleader_login` | OAuth browser flow + token write | ⚠️ | Manueel — browser + local callback port 19836 → ~/.teamleader-tokens.json |
 | `teamleader_find_task` | Company resolve (cache miss) | ✅ | |
 | `teamleader_find_task` | Company resolve (cache hit) | ✅ | |
 | `teamleader_find_task` | Group found in 1 project → auto-pick | ✅ | Ontwikkeling → auto-picked Access Application |
