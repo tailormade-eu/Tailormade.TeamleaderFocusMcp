@@ -114,7 +114,7 @@
     "products.update": "teamleader_update_product",
     "projectGroups.assign": "teamleader_assign_project_group",
     "projectGroups.create": "teamleader_create_project_group",
-    "projectGroups.delete": "teamleader_delete_project_group",
+    "projectGroups.delete": "teamleader_task_action",
     "projectGroups.duplicate": "teamleader_duplicate_project_group",
     "projectGroups.info": "teamleader_get_project_group",
     "projectGroups.list": "teamleader_list_project_groups",

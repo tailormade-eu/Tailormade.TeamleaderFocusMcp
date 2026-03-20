@@ -8,16 +8,25 @@ Inspired by [globodai-group/mcp-teamleader](https://github.com/globodai-group/mc
 
 ## Features
 
-- **Contacts** — List, get, create, update
-- **Companies** — List, get, create
-- **Deals** — List, get, create, update
-- **Tasks** — List, create (legacy task API)
-- **Events** — List, get, create calendar events
-- **Invoices** — List, get, create draft invoices
-- **Time Tracking** — List, add, update, delete, start/stop timers
-- **Projects v2** — List, get, create, update projects, groups (phases), and tasks
-- **Smart Resolution** — Cache-first Company > Project > Group > Task navigation
-- **OAuth2** — Automatic token refresh with rotation support
+- **112 tools** covering the full Teamleader Focus API
+- **Contacts** — Full CRUD + tag/untag + company link management
+- **Companies** — Full CRUD + tag/untag
+- **Deals** — Full CRUD + win/lose/move + pipelines/phases/sources management
+- **Tasks** — Standalone tasks: full CRUD + complete/reopen/schedule
+- **Events** — List, get, create, update, cancel
+- **Meetings** — Full CRUD + complete + reports
+- **Invoices** — Full lifecycle: draft → book → send → payment → credit
+- **Tickets** — Full CRUD + messages + reply/internal
+- **Time Tracking** — List, add, update, delete + start/stop/resume timers + timesheet
+- **Projects v2** — Full CRUD + groups + tasks + relationships + lifecycle
+- **Subscriptions** — Full CRUD + deactivate
+- **Quotations** — Full CRUD + accept/send/download
+- **Materials** — Full CRUD + assign/unassign/duplicate
+- **Files** — List, get, download, delete, upload
+- **Notes** — List, create, update
+- **Calls** — List, get, add, update, complete
+- **Smart Resolution** — Cache-first Company > Project > Group > Task navigation + time logging
+- **OAuth2** — Browser-based login flow + automatic token refresh with rotation
 
 ---
 
@@ -127,6 +136,9 @@ Add to your Claude config:
 | `teamleader_get_company` | Get full details of a specific company by ID |
 | `teamleader_create_company` | Create a new company (name, email, phone, VAT, website, tags) |
 | `teamleader_update_company` | Update an existing company |
+| `teamleader_delete_company` | Delete a company |
+| `teamleader_tag_company` | Add tags to a company |
+| `teamleader_untag_company` | Remove tags from a company |
 
 ### Deals
 
@@ -144,6 +156,16 @@ Add to your Claude config:
 | `teamleader_list_deal_phases` | List deal phases (for deals.move/create) |
 | `teamleader_list_deal_sources` | List deal sources (for deals.create) |
 | `teamleader_list_deal_pipelines` | List deal pipelines |
+| `teamleader_create_deal_pipeline` | Create a deal pipeline |
+| `teamleader_update_deal_pipeline` | Update a deal pipeline |
+| `teamleader_delete_deal_pipeline` | Delete a deal pipeline |
+| `teamleader_duplicate_deal_pipeline` | Duplicate a deal pipeline |
+| `teamleader_mark_deal_pipeline_default` | Mark a pipeline as default |
+| `teamleader_create_deal_phase` | Create a deal phase |
+| `teamleader_update_deal_phase` | Update a deal phase |
+| `teamleader_delete_deal_phase` | Delete a deal phase |
+| `teamleader_duplicate_deal_phase` | Duplicate a deal phase |
+| `teamleader_move_deal_phase` | Reorder a deal phase |
 
 ### Tasks (standalone)
 
@@ -165,6 +187,8 @@ Add to your Claude config:
 | `teamleader_list_events` | List calendar events with optional date range filter |
 | `teamleader_get_event` | Get full details of a specific event by ID |
 | `teamleader_create_event` | Create a new calendar event (title, activity type, start/end, attendees) |
+| `teamleader_update_event` | Update an existing event |
+| `teamleader_cancel_event` | Cancel a calendar event |
 
 ### Meetings
 
@@ -212,6 +236,69 @@ Add to your Claude config:
 | `teamleader_get_ticket_message` | Get a single message by ID |
 | `teamleader_reply_ticket` | Add a customer-visible reply to a ticket |
 | `teamleader_internal_message_ticket` | Add an internal/private message to a ticket |
+| `teamleader_import_ticket_message` | Import a raw message into a ticket |
+
+### Subscriptions
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_subscriptions` | List recurring invoices with filtering |
+| `teamleader_get_subscription` | Get subscription details |
+| `teamleader_create_subscription` | Create a new recurring invoice |
+| `teamleader_update_subscription` | Update subscription settings |
+| `teamleader_deactivate_subscription` | Deactivate a subscription |
+
+### Quotations
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_quotations` | List quotations with filtering |
+| `teamleader_get_quotation` | Get quotation details |
+| `teamleader_create_quotation` | Create a new quotation |
+| `teamleader_update_quotation` | Update an existing quotation |
+| `teamleader_delete_quotation` | Delete a quotation |
+| `teamleader_accept_quotation` | Accept a quotation |
+| `teamleader_send_quotation` | Send quotation via email |
+| `teamleader_download_quotation` | Get a temporary download URL |
+
+### Credit Notes
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_credit_notes` | List credit notes with filtering |
+| `teamleader_get_credit_note` | Get credit note details |
+| `teamleader_download_credit_note` | Get a temporary download URL |
+| `teamleader_send_credit_note_peppol` | Send credit note via Peppol |
+
+### Materials
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_materials` | List materials with filtering |
+| `teamleader_get_material` | Get material details |
+| `teamleader_create_material` | Create a new material |
+| `teamleader_update_material` | Update a material |
+| `teamleader_delete_material` | Delete a material |
+| `teamleader_assign_material` | Assign material to a project task |
+| `teamleader_unassign_material` | Unassign material from a task |
+| `teamleader_duplicate_material` | Duplicate a material |
+
+### Calls
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_calls` | List calls with filtering |
+| `teamleader_get_call` | Get call details |
+| `teamleader_add_call` | Add a new call |
+| `teamleader_update_call` | Update a call |
+| `teamleader_complete_call` | Mark a call as complete |
+
+### Orders
+
+| Tool | Description |
+|------|-------------|
+| `teamleader_list_orders` | List orders with filtering |
+| `teamleader_get_order` | Get order details |
 
 ### Time Tracking
 
@@ -227,6 +314,7 @@ Add to your Claude config:
 | `teamleader_get_current_timer` | Get the currently running timer |
 | `teamleader_update_timer` | Update a running timer (work type, subject, description) |
 | `teamleader_resume_timetracking` | Start a new timer from an existing time entry |
+| `teamleader_timesheet` | Daily timesheet — all entries for a date, grouped by project/task. Formats: md, beauty, manictime |
 
 ### Projects v2
 
@@ -257,6 +345,19 @@ Add to your Claude config:
 | `teamleader_reopen_project_task` | Reopen a completed project task |
 | `teamleader_delete_project_task` | Delete a project task |
 | `teamleader_remove_task_from_group` | Remove a task from its group |
+| `teamleader_add_project_line_to_group` | Add/move a task or material to a group |
+| `teamleader_list_project_lines` | List all lines (tasks + materials) in a project |
+| `teamleader_get_project_group` | Get project group details |
+| `teamleader_duplicate_project_group` | Duplicate a project group |
+| `teamleader_assign_project_group` | Assign a user/team to a project group |
+| `teamleader_unassign_project_group` | Unassign from a project group |
+| `teamleader_update_project_task` | Update a project task |
+| `teamleader_get_project_task` | Get project task details |
+| `teamleader_assign_project_task` | Assign a user to a project task |
+| `teamleader_unassign_project_task` | Unassign from a project task |
+| `teamleader_duplicate_project_task` | Duplicate a project task |
+| `teamleader_add_project_quotation` | Link a quotation to a project |
+| `teamleader_remove_project_quotation` | Unlink a quotation from a project |
 
 ### Users
 
@@ -304,6 +405,20 @@ Add to your Claude config:
 | `teamleader_list_teams` | List teams (needed for tickets) |
 | `teamleader_list_tags` | List all tags used in the account |
 | `teamleader_list_expenses` | List expense entries with optional filters |
+| `teamleader_list_business_types` | List business types |
+| `teamleader_list_call_outcomes` | List call outcomes |
+| `teamleader_list_currencies` | List currencies and exchange rates |
+| `teamleader_list_document_templates` | List document templates |
+| `teamleader_list_commercial_discounts` | List commercial discounts |
+| `teamleader_list_lost_reasons` | List lost reasons |
+| `teamleader_list_price_lists` | List price lists |
+| `teamleader_list_units_of_measure` | List units of measure |
+| `teamleader_list_withholding_tax_rates` | List withholding tax rates |
+| `teamleader_list_bookkeeping_submissions` | List bookkeeping submissions |
+| `teamleader_add_product` | Add a product |
+| `teamleader_get_product` | Get product details |
+| `teamleader_update_product` | Update a product |
+| `teamleader_delete_product` | Delete a product |
 
 ### Smart Resolution (Cache-first)
 
@@ -517,24 +632,37 @@ These are critical for any future development or debugging.
 ```
 src/
   api/
-    auth.ts         — OAuth2 token management (auto-rotate, persist to ~/.teamleader-tokens.json)
-    client.ts       — HTTP client (all POST requests)
-    cache.ts        — Cache types, TTL constants, CRUD functions, task tree operations
+    auth.ts           — OAuth2 token management (auto-rotate, persist to ~/.teamleader-tokens.json)
+    client.ts         — HTTP client (all POST requests)
+    cache.ts          — Cache types, TTL constants, CRUD functions, task tree operations
   tools/
-    resolve.ts      — Smart tools: find_task, log_time, load_tasks, task_action, cache_stats, clear_cache
-    contacts.ts     — Contact tools
-    companies.ts    — Company tools
-    deals.ts        — Deal tools
-    tasks.ts        — Legacy task tools
-    events.ts       — Event tools
-    invoices.ts     — Invoice tools
-    timetracking.ts — Time tracking + timers tools
-    projects.ts     — Projects v2 tools
-  index.ts          — MCP server entry point, tool registration
+    resolve.ts        — Smart tools: find_task, log_time, load_tasks, task_action, cache_stats, clear_cache
+    contacts.ts       — Contact CRUD + tag/link
+    companies.ts      — Company CRUD + tag
+    deals.ts          — Deal CRUD + pipelines/phases/sources
+    tasks.ts          — Standalone tasks
+    events.ts         — Events
+    meetings.ts       — Meetings + reports
+    invoices.ts       — Invoices + payment + credit
+    timetracking.ts   — Time tracking + timers + timesheet
+    projects.ts       — Projects v2 + groups + lines + project tasks
+    tickets.ts        — Tickets + messages
+    subscriptions.ts  — Subscriptions
+    quotations.ts     — Quotations
+    creditnotes.ts    — Credit notes
+    materials.ts      — Materials
+    calls.ts          — CRM calls
+    orders.ts         — Orders
+    files.ts          — Files
+    notes.ts          — Notes
+    users.ts          — Users
+    departments.ts    — Departments
+    lookups.ts        — All reference data lists
+    login.ts          — OAuth login flow
+  index.ts            — MCP server entry point, tool registration
 docs/
-  api/              — Full Teamleader Focus API docs (187 pages, scraped from developer.focus.teamleader.eu)
-  find-task-business-logic.md — Detailed business logic for smart resolution tools
-tasks/              — CodingMachine task queue (planned tool additions)
+  api/                — Full Teamleader Focus API docs (360 pages, scraped 2026-03-05)
+  BusinessLogica/     — Business logic docs per domain
 ```
 
 ---
@@ -567,27 +695,6 @@ npx @modelcontextprotocol/inspector node dist/index.js
 - Base URL: `https://api.focus.teamleader.eu`
 - All endpoints use POST with JSON body
 - Authentication: OAuth2 with automatic token refresh
-
----
-
-## Roadmap (CodingMachine tasks in `tasks/`)
-
-| # | Task | New tools |
-|---|------|-----------|
-| 01 | Users list + info | `users.list`, `users.info` |
-| 02 | Tickets full CRUD | list, info, create, update, messages, reply, internal, getMessage |
-| 03 | Invoices workflow | book, send, peppol, delete, update, payment, credit, creditPartially, copy + mail/payment lookups |
-| 04 | Meetings full CRUD | list, info, schedule, complete, delete, update, report |
-| 05 | Standalone tasks complete | info, update, delete, complete, reopen, schedule |
-| 06 | Deals workflow | delete, lose, win, move + lostReasons/dealPhases/dealSources/dealPipelines lookups |
-| 07 | Departments | list, info |
-| 08 | Companies + contacts CRUD | companies.update, contacts.delete/link/unlink/updateLink/tag/untag |
-| 09 | Lookup lists | activityTypes, taxRates, paymentTerms, ticketStatuses, products, productCategories, users |
-| 10 | Projects lifecycle | close/reopen/delete/duplicate + relationships (addCustomer/Deal/Owner) + task complete/reopen/delete + group update + removeFromGroup |
-| 11 | Timers complete | timers.current, timers.update, timeTracking.resume |
-| 12 | Files | list, info, download, delete, upload |
-| 13 | Misc lookups | teams.list, tags.list, expenses.list |
-| 14 | Notes | notes.list, notes.create (contacts/companies/deals/projects) |
 
 ---
 

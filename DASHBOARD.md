@@ -4,7 +4,7 @@
 |-----|-------|
 | Versie | 3.2.0 |
 | Datum | 2026-03-20 |
-| Tasks done | 4/4 |
-| Backlog open | 1 (V4: verify absolute path) |
+| Tasks done | 5/5 |
+| Backlog open | 0 |
 | Blocker | Geen |
 | Status | ✅ Done |
