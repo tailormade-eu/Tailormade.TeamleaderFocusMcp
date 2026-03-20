@@ -84,6 +84,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_list_timetracking` | Basic list (no filter) | ✅ | Returns oldest-first |
+| `teamleader_list_timetracking` | subject.id NOT reusable in log_time | ✅ | subject.id = todo/standalone ref, not nextgenTask ID — llmTip added |
 | `teamleader_list_timetracking` | Filter by user_id | ✅ | |
 | `teamleader_list_timetracking` | Filter by started_after | ✅ | |
 | `teamleader_list_timetracking` | Filter by started_before | ❌ | |
