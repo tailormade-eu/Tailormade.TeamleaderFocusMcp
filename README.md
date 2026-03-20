@@ -563,7 +563,7 @@ npx @modelcontextprotocol/inspector node dist/index.js
 ## API Reference
 
 - Teamleader Focus API docs: [developer.focus.teamleader.eu](https://developer.focus.teamleader.eu/)
-- Local scraped docs: `docs/api/` (187 pages, updated 2026-03-03)
+- Local scraped docs: `docs/api/` (360 pages, updated 2026-03-05)
 - Base URL: `https://api.focus.teamleader.eu`
 - All endpoints use POST with JSON body
 - Authentication: OAuth2 with automatic token refresh

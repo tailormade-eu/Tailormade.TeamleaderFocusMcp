@@ -2,9 +2,9 @@
 
 | Key | Value |
 |-----|-------|
-| Versie | 3.1.0 |
-| Datum | 2026-03-12 |
-| Tasks done | 2/2 |
-| Backlog open | 3 (2 verbeteringen + 1 bug/improvement) |
+| Versie | 3.2.0 |
+| Datum | 2026-03-20 |
+| Tasks done | 4/4 |
+| Backlog open | 1 (V4: verify absolute path) |
 | Blocker | Geen |
-| Status | Done |
+| Status | ✅ Done |

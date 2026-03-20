@@ -4,6 +4,21 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.0] - 2026-03-20
+
+### Added
+
+- **`teamleader_timesheet` — `format=manictime`**: TSV output for ManicTime memos (`DD/MM/YYYY\tclient, group, task`). Helpers `dateToDDMMYYYY()` and `buildManicTimeMemo()` exported for testing.
+- **`teamleader_log_time` — active timer overlap check**: Calls `timers.current` after dedup check; warns if active timer overlaps with the logged period. Options: stop timer or `force=true` to skip.
+
+### Bug Fixes
+
+- **`auto-retry on invalid_grant`**: Reload token file from disk before failing — handles cases where another process refreshed the token.
+- **`add_project_line_to_group`**: Now also handles standalone `todo` → project group moves. Improved description for better discoverability.
+- **llmTips improved**: Documented v1 `todo` vs v2 `nextgenTask` ID incompatibility across tools. Better guidance for group IDs, `add_project_line_to_group`, and `update_timetracking` subject type.
+
+---
+
 ## [3.1.0] - 2026-03-12
 
 ### Added
@@ -273,6 +288,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.2.0 | 2026-03-20 | ManicTime format, active timer overlap check, llmTip improvements |
 | 3.1.0 | 2026-03-12 | OAuth login tool, refresh token no longer required at startup |
 | 3.0.0 | 2026-03-05 | Timesheet tool, load_tasks fixes, move_to_group, BL docs |
 | 2.1.0 | 2026-03-05 | Subscriptions module (5 tools) |
