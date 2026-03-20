@@ -301,3 +301,8 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 | 1.1.0 | 2026-02-28 | Time tracking module (7 tools) |
 | 1.0.0 | — | Original Globodai release |
 
+
+## [3.2.1] - 2026-03-20
+
+---
+
