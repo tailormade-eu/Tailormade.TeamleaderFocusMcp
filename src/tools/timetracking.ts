@@ -23,17 +23,20 @@ function respond(text: string) {
 // ── Helpers (exported for testing) ────────────────────────────────────────────
 
 export function dateToDDMMYYYY(iso: string): string {
+  if (!iso || !iso.includes("-")) return iso || "?";
   const [y, m, d] = iso.substring(0, 10).split("-");
   return `${d}/${m}/${y}`;
 }
 
 export function buildManicTimeMemo(entry: { client_name: string; group: string; task: string; project: string }): string {
   const parts: string[] = [];
-  const client = entry.client_name === "—" ? (entry.project !== "—" ? entry.project : undefined) : entry.client_name;
+  const client = entry.client_name && entry.client_name !== "—"
+    ? entry.client_name
+    : (entry.project && entry.project !== "—" ? entry.project : undefined);
   if (client) parts.push(client);
-  if (entry.group !== "—") parts.push(entry.group);
-  if (entry.task !== "—") parts.push(entry.task);
-  return parts.join(", ");
+  if (entry.group && entry.group !== "—") parts.push(entry.group);
+  if (entry.task && entry.task !== "—") parts.push(entry.task);
+  return parts.length ? parts.join(", ") : "(no context)";
 }
 
 export function formatDesc(raw: string, maxLen: number): string {

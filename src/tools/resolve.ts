@@ -713,9 +713,10 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           if (timerStartIso) {
             const timerStart = new Date(timerStartIso).getTime();
             if (timerStart < newEnd) {
-              const timerHHMM = timerStartIso.replace(/.*T(\d{2}:\d{2}).*/, "$1");
-              const startHHMM = new Date(newStart).toISOString().replace(/.*T(\d{2}:\d{2}).*/, "$1");
-              const endHHMM = new Date(newEnd).toISOString().replace(/.*T(\d{2}:\d{2}).*/, "$1");
+              const fmtHHMM = (d: Date) => d.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+              const timerHHMM = fmtHHMM(new Date(timerStartIso));
+              const startHHMM = fmtHHMM(new Date(newStart));
+              const endHHMM = fmtHHMM(new Date(newEnd));
               return respond(
                 `⚠️ Active timer running since ${timerHHMM} overlaps with log period ${startHHMM} → ${endHHMM}.\n` +
                 `Logging now may cause a duplicate when the timer is stopped later.\n\n` +

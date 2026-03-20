@@ -3,6 +3,8 @@ import {
   buildListTimetrackingBody,
   buildAddTimetrackingBody,
   formatDesc,
+  dateToDDMMYYYY,
+  buildManicTimeMemo,
 } from "../src/tools/timetracking.js";
 
 describe("buildListTimetrackingBody", () => {
@@ -87,6 +89,41 @@ describe("formatDesc", () => {
   });
   it("handles empty string", () => {
     expect(formatDesc("", 50)).toBe("");
+  });
+});
+
+describe("dateToDDMMYYYY", () => {
+  it("converts ISO date to DD/MM/YYYY", () => {
+    expect(dateToDDMMYYYY("2024-06-15")).toBe("15/06/2024");
+  });
+  it("returns '?' for empty string", () => {
+    expect(dateToDDMMYYYY("")).toBe("?");
+  });
+  it("returns input as-is for invalid string without dash", () => {
+    expect(dateToDDMMYYYY("invalid")).toBe("invalid");
+  });
+});
+
+describe("buildManicTimeMemo", () => {
+  it("returns memo with client, group, task", () => {
+    expect(buildManicTimeMemo({ client_name: "Acme", group: "Dev", task: "Fix bug", project: "P1" }))
+      .toBe("Acme, Dev, Fix bug");
+  });
+  it("returns '(no context)' when all fields are em-dash", () => {
+    expect(buildManicTimeMemo({ client_name: "—", group: "—", task: "—", project: "—" }))
+      .toBe("(no context)");
+  });
+  it("returns '(no context)' when fields are empty strings", () => {
+    expect(buildManicTimeMemo({ client_name: "", group: "", task: "", project: "" }))
+      .toBe("(no context)");
+  });
+  it("filters out empty group between valid fields", () => {
+    expect(buildManicTimeMemo({ client_name: "Acme", group: "", task: "Fix", project: "—" }))
+      .toBe("Acme, Fix");
+  });
+  it("falls back to project when client_name is em-dash", () => {
+    expect(buildManicTimeMemo({ client_name: "—", group: "Dev", task: "Fix", project: "MyProject" }))
+      .toBe("MyProject, Dev, Fix");
   });
 });
 
