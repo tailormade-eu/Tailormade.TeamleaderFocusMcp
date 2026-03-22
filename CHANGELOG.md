@@ -4,6 +4,24 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.3] - 2026-03-22
+
+### Security
+
+- **Test fixtures sanitized**: Replaced real client names with generic equivalents (AcmeCorp, AlphaProject, etc.)
+- **Hardcoded fallback UUIDs removed**: `log_time` now returns clear error if user/work type not loaded (no silent defaults)
+- **PII debug logging removed**: Two `console.error` lines that leaked user_id + task description to stderr
+
+### Bug Fixes
+
+- **`timeTracking.list` date format**: Fixed GUIDELINES doc contradiction — API requires full ISO 8601 datetime with timezone, not bare `YYYY-MM-DD`
+- **Timezone hardcoding removed**: Replaced `+01:00` with dynamic `getLocalOffset()` — correct for CET/CEST/any timezone
+- **Locale-neutral output**: Replaced `nl-BE` locale formatting with ISO 8601 slicing in timer overlap messages
+- **Dutch comment translated**: "Overlap met andere entry" → "Overlap with other entry"
+- **`data: any[]` eliminated**: Replaced with `ProjectLineEntry[]` type in resolve.ts (2 locations)
+
+---
+
 ## [3.2.2] - 2026-03-22
 
 ### Improvements
@@ -304,6 +322,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.2.3 | 2026-03-22 | Security fixes, timezone/locale fixes, type safety improvements |
 | 3.2.2 | 2026-03-22 | Tool description/llmTip improvements, stop_timer fix, Dutch output fix |
 | 3.2.0 | 2026-03-20 | ManicTime format, active timer overlap check, llmTip improvements |
 | 3.1.0 | 2026-03-12 | OAuth login tool, refresh token no longer required at startup |
@@ -317,4 +336,9 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 | 1.2.0 | 2026-02-28 | Projects v2 module (8 tools) |
 | 1.1.0 | 2026-02-28 | Time tracking module (7 tools) |
 | 1.0.0 | — | Original Globodai release |
+
+
+## [3.2.3] - 2026-03-22
+
+---
 
