@@ -29,7 +29,7 @@ import {
   getTaskTree, setTaskTree, invalidateTaskTree,
   scoreTasksInTree,
   clearCache, getCacheStats,
-  type CachedTask, type TaskTreeProject, type TaskTreeGroup, type TaskTreeTask, type ScoredTaskMatch,
+  type TaskTreeProject, type TaskTreeGroup, type TaskTreeTask,
 } from "../api/cache.js";
 
 function respond(text: string) {

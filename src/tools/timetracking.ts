@@ -448,7 +448,7 @@ export function registerTimeTrackingTools(
     {
       id: z.string().optional().describe("IGNORED — timers.stop takes no parameters. Stops the current user's active timer regardless of this value."),
     },
-    async (params) => {
+    async (_params) => {
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "timers.stop",
         body: {},
