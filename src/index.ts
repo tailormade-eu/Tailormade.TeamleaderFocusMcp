@@ -12,6 +12,8 @@
  *   TEAMLEADER_REFRESH_TOKEN - OAuth2 refresh token
  */
 
+import { readFileSync } from "fs";
+import { join } from "path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { TeamleaderAuth, loadRefreshToken } from "./api/auth.js";
@@ -52,6 +54,8 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
+const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
+
 async function main(): Promise<void> {
   // Validate environment (client_id + secret always required, refresh_token optional for login flow)
   const clientId = getRequiredEnv("TEAMLEADER_CLIENT_ID");
@@ -61,7 +65,7 @@ async function main(): Promise<void> {
   // Create MCP server
   const server = new McpServer({
     name: "teamleader-focus",
-    version: "3.1.0",
+    version: pkg.version,
     description:
       "Tailormade Teamleader Focus MCP — manage contacts, companies, deals, tasks, events, invoices, time tracking, and projects with phases. Based on globodai-mcp-teamleader.",
   });

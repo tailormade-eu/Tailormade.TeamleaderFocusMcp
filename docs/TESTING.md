@@ -4,6 +4,12 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 ---
 
+## MCP Server
+
+| Item | Test | Status | Notes |
+|------|------|--------|-------|
+| Version | Matches package.json dynamically | ✅ | task-17 |
+
 ## Core Resolution Tools
 
 | Tool | Test | Status | Notes |
@@ -126,6 +132,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_cache_stats` | Shows correct counts | ✅ | |
+| `teamleader_cache_stats` | Output is English (no Dutch) | ✅ | task-17 |
 | `teamleader_cache_stats` | company_filter works | ❌ | |
 | `teamleader_clear_cache` | Clears all data | ✅ | |
 | Auto-prune on save | Expired entries removed | ❌ | |

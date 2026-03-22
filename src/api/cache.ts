@@ -508,8 +508,8 @@ export function getCacheStats(): string {
   const cache = load();
   const defaultWt = cache.work_types?.find(w => w.id === cache.default_work_type_id);
   return [
-    `active_user       : ${cache.active_user?.name ?? "niet ingesteld"}`,
-    `default_work_type : ${defaultWt?.name ?? cache.default_work_type_id ?? "niet ingesteld"}`,
+    `active_user       : ${cache.active_user?.name ?? "not configured"}`,
+    `default_work_type : ${defaultWt?.name ?? cache.default_work_type_id ?? "not configured"}`,
     `work_types        : ${cache.work_types?.length ?? 0}`,
     `companies         : ${cache.companies?.length ?? 0}`,
     `projects          : ${cache.projects?.length ?? 0}`,
