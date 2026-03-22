@@ -223,7 +223,7 @@ Date: 2026-03-05
 
 | Known quirk | Where expected | Present? | Notes |
 |---|---|---|---|
-| `started_after`/`started_before` accept date-only (`YYYY-MM-DD`), NOT datetime | `list_timetracking` description | Yes | "CRITICAL: started_after/started_before accept date-only format (YYYY-MM-DD) — datetime strings cause 400 Bad Request" |
+| `started_after`/`started_before`: pass `YYYY-MM-DD` to MCP filter params — API requires ISO 8601 datetime, `toDate()` converts internally | `list_timetracking` description | Yes | "NOTE: Pass `YYYY-MM-DD` to filter params — auto-converted to ISO 8601 (`T00:00:00+00:00`). API requires ISO 8601 with timezone." |
 | `timeTracking.update` requires both `started_at` + `ended_at` — no partial updates | `update_timetracking` description | Yes (but wrong) | Description says "started_at + ended_at together" — **but API actually uses `started_at` + `duration`, NOT `ended_at`**. The CLAUDE.md quirk itself may be wrong. |
 | Dedup must match on start time, not subject ID | `add_timetracking` description | Partial | Description warns "do not include milliseconds — causes dedup mismatches" but does NOT explicitly state to match on start time instead of subject ID |
 | Use `toFilterDate()` helper (strips ms) — NOT `.toISOString()` | Any time tracking tool | No | Not mentioned in any tool description. Code does use `toDate()` locally for date stripping, but `toFilterDate()` is not referenced |

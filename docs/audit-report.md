@@ -144,7 +144,7 @@ Known errors that should be documented:
 
 | Error | Cause | Fix | Affected Tool |
 |-------|-------|-----|---------------|
-| 400 Bad Request on `timeTracking.list` | datetime string in `started_after`/`started_before` | Use date-only format `YYYY-MM-DD` | `list_timetracking` |
+| 400 Bad Request on `timeTracking.list` | ISO datetime without timezone sent directly to API | Pass `YYYY-MM-DD` to MCP filter params — `toDate()` converts to ISO 8601 (`T00:00:00+00:00`) automatically | `list_timetracking` |
 | 400 `started_at must be present` | Sending only `ended_at` in `timeTracking.update` | Always send both `started_at` + `ended_at` | `update_timetracking` |
 | Empty/wrong results on `tickets.list` | Using `customer_id` instead of `relates_to: {type, id}` | Use `relates_to` structure | `list_tickets` |
 | Silent ignore on `tasks.create` | Using `assignee_id` instead of `assignees: [{type,id}]` | Use array format | `create_project_task_v2` |
@@ -231,7 +231,7 @@ Adequate for their complexity. Lookups generally explain what returned IDs are f
 | # | Priority | File | Issue | Impact |
 |---|:--------:|------|-------|--------|
 | 1 | 🔴 Critical | timetracking.ts | `stop_timer` has unused `id` param — `timers.stop` takes no params | LLM passes ID thinking it matters; misleading |
-| 2 | 🔴 Critical | resolve.ts:90 | `initializeCache` sends datetime to `started_after` filter (should be date-only) | Causes 400 on init, silently caught |
+| 2 | ✅ Fixed | resolve.ts | `initializeCache` date filter — `toDate()` converts to ISO 8601 (`T00:00:00+00:00`). API requires ISO 8601 datetime, not date-only. | Fixed — old audit was wrong about date-only |
 | 3 | 🔴 Critical | resolve.ts:556 | `log_time` dedup sends datetime to `started_after`/`started_before` (should be date-only) | Dedup check fails silently → duplicate entries |
 | 4 | 🟠 High | ALL files | No `llmTip` mechanism — 14 known API quirks undocumented in tool descriptions | LLM has no way to know quirks without CLAUDE.md |
 | 5 | 🟠 High | ALL CRUD files | ~91 tools missing output format + next steps in description | LLM must trial-and-error to understand responses |
