@@ -136,11 +136,20 @@ function readTasksFromYaml(companyName: string): Map<number, YamlTaskEntry> {
   }
 }
 
+function getLocalOffset(): string {
+  const offset = -new Date().getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const h = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+  const m = String(Math.abs(offset) % 60).padStart(2, "0");
+  return `${sign}${h}:${m}`;
+}
+
 function toDatetime(s: string): string {
+  const tz = getLocalOffset();
   // "YYYY-MM-DD HH:MM" → ISO
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(s)) return `${s.replace(" ", "T")}:00+01:00`;
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(s)) return `${s.replace(" ", "T")}:00${tz}`;
   // "YYYY-MM-DD" → ISO
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00+01:00`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00${tz}`;
   return s;
 }
 
@@ -667,7 +676,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           });
 
           const allEntries = existing.data ?? [];
-          const fmt = (iso: string) => new Date(iso).toLocaleString("nl-BE");
+          const fmt = (iso: string) => new Date(iso).toISOString().replace("T", " ").slice(0, 19);
 
           function overlaps(exStart: number, exEnd: number): boolean {
             return newStart < exEnd && newEnd > exStart;
@@ -686,7 +695,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             }
           }
 
-          // ── Overlap met andere entry ──────────────────────────────────────
+          // ── Overlap with other entry ──────────────────────────────────────
           if (!params.confirm_overlap) {
             const conflicts = allEntries.filter(e =>
               overlaps(new Date(e.started_at).getTime(), new Date(e.ended_at).getTime())
@@ -715,7 +724,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
           if (timerStartIso) {
             const timerStart = new Date(timerStartIso).getTime();
             if (timerStart < newEnd) {
-              const fmtHHMM = (d: Date) => d.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+              const fmtHHMM = (d: Date) => d.toISOString().slice(11, 16);
               const timerHHMM = fmtHHMM(new Date(timerStartIso));
               const startHHMM = fmtHHMM(new Date(newStart));
               const endHHMM = fmtHHMM(new Date(newEnd));

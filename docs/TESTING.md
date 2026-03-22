@@ -109,7 +109,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_timesheet` | `format=manictime` | ❌ | TSV output: `DD/MM/YYYY\tclient, group, task` — no headers, one line per entry |
 | `teamleader_timesheet` | `format=manictime` — entry with all "—" fields | ❌ | Memo = `(no context)`, not empty |
 | `teamleader_timesheet` | `format=manictime` — entry with empty/null group | ❌ | Empty group filtered out, no trailing comma |
-| `teamleader_log_time` | Active timer overlap warning | ❌ | Times shown in nl-BE local format (e.g. `09:30`), not UTC |
+| `teamleader_log_time` | Active timer overlap warning | ❌ | Times shown in ISO UTC format (e.g. `09:30`), locale-neutral |
 
 ## Timers
 
