@@ -12,6 +12,7 @@ import type {
   Project,
   ProjectGroup,
   ProjectLine,
+  ProjectLineEntry,
   TeamleaderListResponse,
 } from "../types/index.js";
 
@@ -189,7 +190,7 @@ export function registerProjectTools(
   // ── List Project Groups (Phases) ─────────────────────────────────────────
   server.tool(
     "teamleader_list_project_groups",
-    "List project groups (phases) for a specific project. WARNING: Returns IDs only — titles are NOT included in the response. To find a group ID by name, call teamleader_get_project_group per ID until you find the right title. NOTE: internally uses projectLines.list with project_id at top level (NOT inside filter — API quirk). Next steps: teamleader_list_project_tasks_v2 with project_group_id to see tasks in a phase.",
+    "List project groups (phases) for a specific project. Returns IDs only — titles are NOT included. Internally uses projectLines.list with project_id at top level (NOT inside filter — API quirk). ERROR→CAUSE→FIX: If you need group titles, call teamleader_get_project_group per ID. For a full project tree with names and IDs, prefer teamleader_load_tasks. Next steps: teamleader_list_project_tasks_v2 with project_group_id to see tasks in a phase.",
     {
       project_id: z.string().describe("Project ID to list groups for"),
       page: z.number().optional().describe("Page number (default: 1)"),
@@ -210,18 +211,23 @@ export function registerProjectTools(
         };
       }
 
-      const result = await client.request<TeamleaderListResponse<ProjectGroup>>({
+      const result = await client.request<TeamleaderListResponse<ProjectLineEntry>>({
         endpoint: "projects-v2/projectLines.list",
         body,
       });
 
+      // Extract just the group IDs for a cleaner response
+      const groups = result.data.map((entry) => ({
+        id: entry.line.id,
+        type: entry.line.type,
+      }));
+
+      const text =
+        `Found ${groups.length} project group(s) (IDs only — call teamleader_get_project_group per ID for titles):\n` +
+        groups.map((g, i) => `${i + 1}. ${g.id}`).join("\n");
+
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
+        content: [{ type: "text" as const, text }],
       };
     }
   );

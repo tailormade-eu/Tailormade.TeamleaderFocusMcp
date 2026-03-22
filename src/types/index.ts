@@ -323,6 +323,12 @@ export interface ProjectLine {
   updated_at?: string;
 }
 
+/** Response item from projectLines.list — contains only type+id references, no titles */
+export interface ProjectLineEntry {
+  line: { type: string; id: string };
+  group: { type: string; id: string } | null;
+}
+
 export interface ProjectListFilter {
   term?: string;
   status?: "active" | "on_hold" | "done" | "cancelled";
