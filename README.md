@@ -688,10 +688,15 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 ---
 
+## References
+
+- [Teamleader Focus API](https://developer.focus.teamleader.eu/) — OAuth2 REST API (all POST, JSON body)
+- [Model Context Protocol](https://modelcontextprotocol.io/) — MCP specification
+- [globodai-group/mcp-teamleader](https://github.com/globodai-group/mcp-teamleader) — Original inspiration
+- Local scraped API docs: `docs/api/` (360 pages, updated 2026-03-05)
+
 ## API Reference
 
-- Teamleader Focus API docs: [developer.focus.teamleader.eu](https://developer.focus.teamleader.eu/)
-- Local scraped docs: `docs/api/` (360 pages, updated 2026-03-05)
 - Base URL: `https://api.focus.teamleader.eu`
 - All endpoints use POST with JSON body
 - Authentication: OAuth2 with automatic token refresh
