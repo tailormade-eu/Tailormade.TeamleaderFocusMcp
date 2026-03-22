@@ -17,6 +17,7 @@ import { writeFileSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { TeamleaderClient } from "../api/client.js";
+import type { ProjectLineEntry } from "../types/index.js";
 import {
   getActiveUser, setActiveUser,
   getDefaultWorkTypeId, setDefaultWorkTypeId,
@@ -434,7 +435,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
 
       // Step 1: get line IDs for this group
       // NOTE: project_id is top-level, project_group_id must be filtered client-side
-      const linesResult = await client.request<{ data: any[] }>({
+      const linesResult = await client.request<{ data: ProjectLineEntry[] }>({
         endpoint: "projects-v2/projectLines.list",
         body: { project_id: projectId, filter: { types: ["nextgenTask"] }, page: { size: 500, number: 1 } },
       });
@@ -908,7 +909,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             if (groups.length) upsertGroups(groups.map(g => ({ ...g, project_id: proj.id })));
           }
 
-          const linesResult = await client.request<{ data: any[] }>({
+          const linesResult = await client.request<{ data: ProjectLineEntry[] }>({
             endpoint: "projects-v2/projectLines.list",
             body: { project_id: proj.id, filter: { types: ["nextgenTask"] }, page: { size: 500, number: 1 } },
           });

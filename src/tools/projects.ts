@@ -275,14 +275,14 @@ export function registerProjectTools(
 
       if (params.project_group_id) {
         filtered = filtered.filter(
-          (item: any) => item.project_group?.id === params.project_group_id
+          (item) => item.project_group?.id === params.project_group_id
         );
       }
 
       if (params.only_open) {
         const openStatuses = new Set(["to_do", "in_progress", "on_hold"]);
         filtered = filtered.filter(
-          (item: any) => item.status && openStatuses.has(item.status)
+          (item) => item.status && openStatuses.has(item.status)
         );
       }
 
