@@ -216,17 +216,17 @@ export function registerTimeTrackingTools(
       "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}.",
       "NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.",
       "NOTE: You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().",
-      "NOTE: Milliseconds in started_on (e.g. 2024-01-15T09:00:00.000+01:00) → CAUSE: dedup logic treats ms-precision as unique → FIX: always use second-precision (2024-01-15T09:00:00+01:00).",
+      "NOTE: Milliseconds in started_on (e.g. 2024-01-15T09:00:00.000+00:00) → CAUSE: dedup logic treats ms-precision as unique → FIX: always use second-precision (2024-01-15T09:00:00+00:00).",
       "ERROR: Invalid subject 400 → CAUSE: subject.id does not match subject.type (e.g. passing a v1 todo ID as a nextgenTask) → FIX: verify subject.type matches the ID source — use load_tasks to get correct IDs.",
     ].join("\n"),
     {
       started_on: z
         .string()
-        .describe("Start datetime in ISO 8601 format with timezone (e.g., 2024-01-15T09:00:00+01:00). Use second-precision, no milliseconds."),
+        .describe("Start datetime in ISO 8601 format with timezone (e.g., 2024-01-15T09:00:00+00:00). Use second-precision, no milliseconds."),
       ended_on: z
         .string()
         .optional()
-        .describe("End datetime in ISO 8601 format (e.g., 2024-01-15T10:00:00+01:00). Alternative to duration."),
+        .describe("End datetime in ISO 8601 format (e.g., 2024-01-15T10:00:00+00:00). Alternative to duration."),
       duration: z
         .number()
         .optional()
@@ -298,7 +298,7 @@ export function registerTimeTrackingTools(
       started_on: z
         .string()
         .optional()
-        .describe("Required when updating duration. ISO 8601 with timezone (e.g. 2026-03-06T10:30:00+01:00). Use teamleader_get_timetracking to retrieve the current value."),
+        .describe("Required when updating duration. ISO 8601 with timezone (e.g. 2026-03-06T10:30:00+00:00). Use teamleader_get_timetracking to retrieve the current value."),
       duration: z
         .number()
         .optional()
@@ -496,7 +496,7 @@ export function registerTimeTrackingTools(
       started_at: z
         .string()
         .optional()
-        .describe("New start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+01:00)"),
+        .describe("New start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+00:00)"),
       description: z.string().optional().describe("New description for the timer"),
       subject_type: z
         .enum(["company", "contact", "event", "todo", "milestone", "ticket"])
