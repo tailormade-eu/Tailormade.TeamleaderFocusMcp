@@ -212,11 +212,16 @@ export function registerTimeTrackingTools(
   // ── Add Time Tracking ────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_timetracking",
-    "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}. NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically. NOTE: You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().",
+    [
+      "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}.",
+      "NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.",
+      "NOTE: You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().",
+      "NOTE: Milliseconds in started_on (e.g. 2024-01-15T09:00:00.000+01:00) → CAUSE: dedup logic treats ms-precision as unique → FIX: always use second-precision (2024-01-15T09:00:00+01:00).",
+    ].join("\n"),
     {
       started_on: z
         .string()
-        .describe("Start datetime in ISO 8601 format (e.g., 2024-01-15T09:00:00+01:00). WARNING: do not include milliseconds — causes dedup mismatches."),
+        .describe("Start datetime in ISO 8601 format with timezone (e.g., 2024-01-15T09:00:00+01:00). Use second-precision, no milliseconds."),
       ended_on: z
         .string()
         .optional()
