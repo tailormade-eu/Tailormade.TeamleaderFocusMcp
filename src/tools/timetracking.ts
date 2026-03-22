@@ -857,7 +857,7 @@ export function registerTimeTrackingTools(
             `| Start | End | Dur | Description | Task | Group | Project | Client |\n` +
             `|-------|-----|-----|-------------|------|-------|---------|--------|\n` +
             rows.join("\n") + "\n\n" +
-            `**Totaal: ${formatDuration(daySeconds)}**`
+            `**Total: ${formatDuration(daySeconds)}**`
           );
         } else {
           sections.push(
@@ -865,12 +865,12 @@ export function registerTimeTrackingTools(
             `| Start | End | Dur | Description | Task | Group | Project | Client | User |\n` +
             `|-------|-----|-----|-------------|------|-------|---------|--------|------|\n` +
             rows.join("\n") + "\n\n" +
-            `**Totaal: ${formatDuration(daySeconds)}**`
+            `**Total: ${formatDuration(daySeconds)}**`
           );
         }
       }
 
-      const output = sections.join("\n\n---\n\n") + `\n\n---\n\n**Totaal periode: ${formatDuration(totalSeconds)}**`;
+      const output = sections.join("\n\n---\n\n") + `\n\n---\n\n**Total period: ${formatDuration(totalSeconds)}**`;
 
       return respond(output);
     }
