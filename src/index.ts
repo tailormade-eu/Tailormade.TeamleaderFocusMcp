@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     name: "teamleader-focus",
     version: pkg.version,
     description:
-      "Tailormade Teamleader Focus MCP — manage contacts, companies, deals, tasks, events, invoices, time tracking, and projects with phases. Based on globodai-mcp-teamleader.",
+      "Tailormade Teamleader Focus MCP — manage contacts, companies, deals, tasks, events, invoices, time tracking, and projects with phases.",
   });
 
   // Login tool is always available (works without existing tokens)
