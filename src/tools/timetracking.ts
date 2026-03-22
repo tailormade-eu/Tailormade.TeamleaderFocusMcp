@@ -217,6 +217,7 @@ export function registerTimeTrackingTools(
       "NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.",
       "NOTE: You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().",
       "NOTE: Milliseconds in started_on (e.g. 2024-01-15T09:00:00.000+01:00) → CAUSE: dedup logic treats ms-precision as unique → FIX: always use second-precision (2024-01-15T09:00:00+01:00).",
+      "ERROR: Invalid subject 400 → CAUSE: subject.id does not match subject.type (e.g. passing a v1 todo ID as a nextgenTask) → FIX: verify subject.type matches the ID source — use load_tasks to get correct IDs.",
     ].join("\n"),
     {
       started_on: z
