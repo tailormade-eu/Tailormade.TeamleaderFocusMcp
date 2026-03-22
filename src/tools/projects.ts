@@ -241,11 +241,11 @@ export function registerProjectTools(
       project_group_id: z
         .string()
         .optional()
-        .describe("Optional: filter tasks by group (phase) ID. NOTE: filtered client-side after API fetch, not server-side."),
+        .describe("Optional: filter tasks by group (phase) ID"),
       only_open: z
         .boolean()
         .default(false)
-        .describe("Only return open tasks (to_do, in_progress, on_hold). NOTE: filtered client-side."),
+        .describe("Only return open tasks (to_do, in_progress, on_hold)"),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
     },
