@@ -511,6 +511,11 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 ## Known Bugs
 
+### ✅ SEC-01: Hardcoded fallback UUIDs + PII debug logging in log_time — FIXED (task 13)
+**Status:** Fixed (2026-03-22)
+**Issues:** (1) Real client names in test fixtures (public repo). (2) Hardcoded user/work_type UUIDs as fallback — any npm user with empty cache would log time on wrong account. (3) Debug `console.error` leaked user_id + task description to stderr.
+**Fix:** (1) Replaced with generic names (AcmeCorp, AlphaProject, BetaProject). (2) Removed fallback UUIDs, return clear error if user/work_type not loaded. (3) Removed both debug log lines.
+
 ### ✅ BUG-01: log_time task_id after tree invalidation — FIXED (v1.3.1)
 **Status:** Fixed (03/03/2026)
 **Symptom (old):** After `task_action` invalidates tree → `log_time` with `task_id` returned success but entry was 404.

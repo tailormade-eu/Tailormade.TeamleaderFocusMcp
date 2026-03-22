@@ -642,8 +642,10 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       const newEnd = new Date(endedAt).getTime();
 
       const user = getActiveUser();
-      const userId = user?.id ?? "29448f30-b7e7-033c-b24d-d78c973c3e8f";
-      const workTypeId = params.work_type_id ?? cached.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id ?? "6b2c6563-aded-0eb0-a041-87e3cc2b3dca";
+      if (!user) return respond("Error: active user not loaded. Run teamleader_load_tasks first.");
+      const userId = user.id;
+      const workTypeId = params.work_type_id ?? cached.work_type_id ?? getDefaultWorkTypeId() ?? getWorkTypes()?.[0]?.id;
+      if (!workTypeId) return respond("Error: no work type available. Run teamleader_load_tasks first to populate work types.");
 
       // ── Deduplication check ────────────────────────────────────────────────
       const toFilterDate = (ms: number) => new Date(ms).toISOString().replace(/\.\d+Z$/, "+00:00");
@@ -739,8 +741,6 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       };
       if (params.description) body.description = params.description;
 
-      console.error("[log_time] timeTracking.add body:", JSON.stringify(body));
-
       let result;
       try {
         result = await client.request<{ data: { id: string } }>({
@@ -759,8 +759,6 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
         }
         throw err;
       }
-
-      console.error("[log_time] timeTracking.add response:", JSON.stringify(result));
 
       const entryId = result.data?.id;
       if (!entryId) {

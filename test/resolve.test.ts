@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { parseTasksYaml } from "../src/tools/resolve.js";
 
-const SAMPLE_YAML = `company: "I.deeds"
+const SAMPLE_YAML = `company: "AcmeCorp"
 company_id: co-001
 loaded_at: 2026-03-06T10:00:00.000Z
 only_open: true
 projects:
-  - id: proj-storm
-    title: Storm
+  - id: proj-alpha
+    title: AlphaProject
     groups:
       - id: grp-dev
         title: Development
@@ -36,15 +36,15 @@ projects:
         title: General admin
         status: to_do
         task_type: standalone_task
-  - id: proj-cetec
-    title: Cetec
+  - id: proj-beta
+    title: BetaProject
     groups:
       - id: grp-billing
         title: Billing
         tasks:
           - n: 5
             id: task-c1
-            title: Hoe werkt Billit
+            title: Setup billing system
             status: to_do
             task_type: project_task
           - n: 6
@@ -54,13 +54,13 @@ projects:
             task_type: project_task
 `;
 
-const STORM_ONLY_YAML = `company: "I.deeds"
+const ALPHA_ONLY_YAML = `company: "AcmeCorp"
 company_id: co-001
 loaded_at: 2026-03-06T10:00:00.000Z
 only_open: true
 projects:
-  - id: proj-storm
-    title: Storm
+  - id: proj-alpha
+    title: AlphaProject
     groups:
       - id: grp-dev
         title: Development
@@ -101,7 +101,7 @@ describe("parseTasksYaml", () => {
   });
 
   it("parses filtered YAML with correct numbering", () => {
-    const tasks = parseTasksYaml(STORM_ONLY_YAML);
+    const tasks = parseTasksYaml(ALPHA_ONLY_YAML);
     expect(tasks.size).toBe(4);
     expect(tasks.get(1)?.id).toBe("task-s1");
     expect(tasks.get(4)?.id).toBe("task-s4");
@@ -112,14 +112,14 @@ describe("parseTasksYaml", () => {
   it("preserves project and group context", () => {
     const tasks = parseTasksYaml(SAMPLE_YAML);
     const t1 = tasks.get(1)!;
-    expect(t1.project_id).toBe("proj-storm");
-    expect(t1.project_title).toBe("Storm");
+    expect(t1.project_id).toBe("proj-alpha");
+    expect(t1.project_title).toBe("AlphaProject");
     expect(t1.group_id).toBe("grp-dev");
     expect(t1.group_title).toBe("Development");
 
     const t5 = tasks.get(5)!;
-    expect(t5.project_id).toBe("proj-cetec");
-    expect(t5.project_title).toBe("Cetec");
+    expect(t5.project_id).toBe("proj-beta");
+    expect(t5.project_title).toBe("BetaProject");
     expect(t5.group_id).toBe("grp-billing");
     expect(t5.group_title).toBe("Billing");
   });
@@ -140,18 +140,18 @@ describe("parseTasksYaml", () => {
 
   it("task 6 in full vs filtered YAML demonstrates the bug fix", () => {
     const fullTasks = parseTasksYaml(SAMPLE_YAML);
-    const filteredTasks = parseTasksYaml(STORM_ONLY_YAML);
+    const filteredTasks = parseTasksYaml(ALPHA_ONLY_YAML);
 
-    // In full YAML, task 6 = Cetec's "Invoice flow"
+    // In full YAML, task 6 = BetaProject's "Invoice flow"
     expect(fullTasks.get(6)?.title).toBe("Invoice flow");
-    expect(fullTasks.get(6)?.project_title).toBe("Cetec");
+    expect(fullTasks.get(6)?.project_title).toBe("BetaProject");
 
-    // In filtered YAML, task 6 doesn't exist (only 4 Storm tasks)
+    // In filtered YAML, task 6 doesn't exist (only 4 AlphaProject tasks)
     expect(filteredTasks.get(6)).toBeUndefined();
 
-    // task_selection=4 in filtered = Storm's "General admin", not Cetec task
+    // task_selection=4 in filtered = AlphaProject's "General admin", not BetaProject task
     expect(filteredTasks.get(4)?.title).toBe("General admin");
-    expect(filteredTasks.get(4)?.project_title).toBe("Storm");
+    expect(filteredTasks.get(4)?.project_title).toBe("AlphaProject");
   });
 
   it("returns empty map for invalid content", () => {
