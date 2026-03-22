@@ -658,6 +658,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       if (!workTypeId) return respond("Error: no work type available. Run teamleader_load_tasks first to populate work types.");
 
       // ── Deduplication check ────────────────────────────────────────────────
+      // UTC intentional: dedup window uses ±24h range — timezone offset is irrelevant at this granularity
       const toFilterDate = (ms: number) => new Date(ms).toISOString().replace(/\.\d+Z$/, "+00:00");
 
       if (!params.force) {
