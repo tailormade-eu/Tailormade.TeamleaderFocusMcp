@@ -4,6 +4,23 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.4] - 2026-03-22
+
+### Improvements
+
+- **Dynamic version string**: Server version now read from `package.json` at runtime instead of hardcoded `"3.1.0"`
+- **`noUnusedLocals` + `noUnusedParameters`**: Enabled in `tsconfig.json`, all violations fixed
+- **Consistent logging**: 10 non-fatal `console.error` calls changed to `console.warn` (auth.ts, cache.ts, resolve.ts)
+
+### Chores
+
+- **Dutch text removed**: `"niet ingesteld"` → `"not configured"` in cache output (2 occurrences)
+- **Fork attribution removed**: Removed upstream reference from runtime MCP server description
+- **`toFilterDate` comment**: Added explanatory comment on intentional UTC usage
+- **Audit doc updated**: Marked 6 resolved BUGs in `docs/audit-timetracking.md`
+
+---
+
 ## [3.2.3] - 2026-03-22
 
 ### Security
@@ -322,6 +339,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.2.4 | 2026-03-22 | Dynamic version, strict TS, consistent logging, Dutch text cleanup |
 | 3.2.3 | 2026-03-22 | Security fixes, timezone/locale fixes, type safety improvements |
 | 3.2.2 | 2026-03-22 | Tool description/llmTip improvements, stop_timer fix, Dutch output fix |
 | 3.2.0 | 2026-03-20 | ManicTime format, active timer overlap check, llmTip improvements |
@@ -338,7 +356,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 | 1.0.0 | — | Original Globodai release |
 
 
-## [3.2.3] - 2026-03-22
+## [3.2.4] - 2026-03-22
 
 ---
 
