@@ -478,7 +478,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `tasks.create` | use `group_id` not `project_group_id` |
 | `timeTracking.list` | returns `subject.type: "todo"` — ID differs from `nextgenTask` ID |
 | `timeTracking.add` | strip milliseconds: `.replace(/\.\d+Z$/, "+00:00")` |
-| `timeTracking.list` | `filter.started_after` / `filter.started_before` accept **date only** (`YYYY-MM-DD`) — datetime strings cause 400 |
+| `timeTracking.list` | `filter.started_after` / `filter.started_before` require full ISO 8601 datetime — bare `YYYY-MM-DD` causes 400. `toDate()` helper converts automatically |
 | `timeTracking.update` | No partial updates for time fields — always send `started_at` + `ended_at` together |
 | `projects-v2/projects.create` | Created project has status `"open"` (not `"active"`) |
 | `projects-v2/projectLines.create` | Does NOT exist — was wrong endpoint. Use `projectGroups.create` for groups and `tasks.create` for tasks |
