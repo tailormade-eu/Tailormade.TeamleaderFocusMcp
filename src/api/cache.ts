@@ -142,7 +142,7 @@ function load(): Cache {
   try {
     return JSON.parse(readFileSync(CACHE_FILE, "utf-8"));
   } catch (e) {
-    console.debug("Cache file not found or invalid, starting fresh:", e);
+    console.warn("Cache file not found or invalid, starting fresh:", e);
     return {};
   }
 }
