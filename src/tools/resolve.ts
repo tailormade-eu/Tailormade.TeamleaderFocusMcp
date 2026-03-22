@@ -171,7 +171,7 @@ export async function initializeCache(client: TeamleaderClient): Promise<void> {
       const u = result.data;
       setActiveUser({ id: u.id, name: `${u.first_name} ${u.last_name}` });
     } catch (e) {
-      console.error("Warning: could not load active user", e);
+      console.warn("Warning: could not load active user", e);
     }
   }
 
@@ -184,7 +184,7 @@ export async function initializeCache(client: TeamleaderClient): Promise<void> {
       });
       setWorkTypes(result.data.map((wt) => ({ id: wt.id, name: wt.name })));
     } catch (e) {
-      console.error("Warning: could not load work types", e);
+      console.warn("Warning: could not load work types", e);
     }
   }
 
@@ -213,7 +213,7 @@ export async function initializeCache(client: TeamleaderClient): Promise<void> {
       if (topId) setDefaultWorkTypeId(topId);
       else if (getWorkTypes()?.[0]) setDefaultWorkTypeId(getWorkTypes()![0].id);
     } catch (e) {
-      console.error("Warning: could not detect default work type", e);
+      console.warn("Warning: could not detect default work type", e);
       if (getWorkTypes()?.[0]) setDefaultWorkTypeId(getWorkTypes()![0].id);
     }
   }
@@ -712,7 +712,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             }
           }
         } catch (e) {
-          console.error("Dedup check failed:", e);
+          console.warn("Dedup check failed:", e);
           // Proceed anyway
         }
 
@@ -738,7 +738,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             }
           }
         } catch (e) {
-          console.error("Timer overlap check failed:", e);
+          console.warn("Timer overlap check failed:", e);
           // Proceed anyway
         }
       }
@@ -780,7 +780,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       try {
         await client.request({ endpoint: "timeTracking.info", body: { id: entryId } });
       } catch (e) {
-        console.error("Time entry verification failed:", e);
+        console.warn("Time entry verification failed:", e);
         return respond(
           `❌ Time registration returned ID ${entryId} but entry not found.\n` +
           `Possible cause: invalid subject type/ID or work_type_id for this account.\n` +
@@ -981,7 +981,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
             });
           }
         } catch (e) {
-          console.error("Warning: could not fetch standalone tasks for project linking:", e);
+          console.warn("Warning: could not fetch standalone tasks for project linking:", e);
         }
 
         tree = { company_id: companyId, company_name: companyName, loaded_at: new Date().toISOString(), projects: treeProjects };
@@ -1110,7 +1110,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       try {
         writeFileSync(filePath, yamlLines.join("\n") + "\n");
       } catch (e) {
-        console.error("Warning: could not write task file", e);
+        console.warn("Warning: could not write task file", e);
       }
 
       // ── visual=true: ASCII tree ───────────────────────────────────────────

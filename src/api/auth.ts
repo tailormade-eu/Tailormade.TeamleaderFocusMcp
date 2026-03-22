@@ -103,7 +103,7 @@ export class TeamleaderAuth {
       try {
         writeFileSync(TOKEN_FILE, JSON.stringify({ refresh_token: data.refresh_token }, null, 2));
       } catch (e) {
-        console.error("Warning: could not persist refresh token to", TOKEN_FILE, e);
+        console.warn("Warning: could not persist refresh token to", TOKEN_FILE, e);
       }
     }
   }

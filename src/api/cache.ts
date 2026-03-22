@@ -170,7 +170,7 @@ function save(cache: Cache): void {
     cache.resolvedUsers = pruneResolveMap(cache.resolvedUsers);
     writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
   } catch (e) {
-    console.error("Warning: could not save cache", e);
+    console.warn("Warning: could not save cache", e);
   }
 }
 
