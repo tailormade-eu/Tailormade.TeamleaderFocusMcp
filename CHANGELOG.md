@@ -4,6 +4,15 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.5] - 2026-03-22
+
+### Bug Fixes
+
+- **Timezone in describe() examples**: Replaced 5 hardcoded `+01:00` offsets with `+00:00` (UTC) in timetracking parameter examples
+- **Logging level**: `console.debug` → `console.warn` in auth.ts + cache.ts for consistency
+
+---
+
 ## [3.2.4] - 2026-03-22
 
 ### Improvements
@@ -339,6 +348,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.2.5 | 2026-03-22 | Timezone fix in describe() examples, logging consistency |
 | 3.2.4 | 2026-03-22 | Dynamic version, strict TS, consistent logging, Dutch text cleanup |
 | 3.2.3 | 2026-03-22 | Security fixes, timezone/locale fixes, type safety improvements |
 | 3.2.2 | 2026-03-22 | Tool description/llmTip improvements, stop_timer fix, Dutch output fix |
@@ -356,7 +366,4 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 | 1.0.0 | — | Original Globodai release |
 
 
-## [3.2.4] - 2026-03-22
-
----
 
