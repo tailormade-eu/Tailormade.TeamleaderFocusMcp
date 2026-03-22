@@ -474,7 +474,7 @@ export function registerProjectTools(
   // ── Add Deal to Project ────────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_deal",
-    "Link a deal to a project.",
+    "Link a deal to a project. Use when a deal should be associated with project work. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify, teamleader_remove_project_deal to unlink.",
     {
       id: z.string().describe("Project ID"),
       deal_id: z.string().describe("Deal ID to link"),
@@ -512,7 +512,7 @@ export function registerProjectTools(
   // ── Add Owner to Project ───────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_owner",
-    "Add an owner (user) to a project.",
+    "Add an owner (user) to a project. Use to grant ownership responsibility. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify owners, teamleader_remove_project_owner to remove.",
     {
       id: z.string().describe("Project ID"),
       user_id: z.string().describe("User ID to add as owner"),
@@ -590,7 +590,7 @@ export function registerProjectTools(
   // ── Update Project Group (Phase) ───────────────────────────────────────
   server.tool(
     "teamleader_update_project_group",
-    "Update a project group (phase). All fields except id are optional. Providing null clears nullable fields.",
+    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. Returns success confirmation. Next steps: teamleader_get_project_group to verify changes, teamleader_list_project_groups to see all phases.",
     {
       id: z.string().describe("Project group ID"),
       title: z.string().optional().describe("New group title"),
@@ -835,7 +835,7 @@ export function registerProjectTools(
   // ── Assign User/Team to Project Group ───────────────────────────────────
   server.tool(
     "teamleader_assign_project_group",
-    "Assign a user or team to a project group (phase).",
+    "Assign a user or team to a project group (phase). Use to set responsibility for a phase. Returns success confirmation. Next steps: teamleader_get_project_group to verify assignees, teamleader_unassign_project_group to remove.",
     {
       id: z.string().describe("Project group ID"),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
