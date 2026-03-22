@@ -4,6 +4,22 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.2] - 2026-03-22
+
+### Improvements
+
+- **`teamleader_stop_timer`**: `id` param now optional (API takes no parameters)
+- **`teamleader_list_project_groups`**: Added `ProjectLineEntry` type matching actual API response; output is clean numbered ID list instead of raw JSON; llmTip with ERROR→CAUSE→FIX pattern
+- **`teamleader_add_timetracking`**: Moved milliseconds WARNING from `started_on` describe() to llmTip (ERROR→CAUSE→FIX); added "Invalid subject" preventive llmTip
+- **`teamleader_list_project_tasks_v2`**: Removed duplicate "client-side filtering" from param describes
+- **4 project tool descriptions extended**: `update_project_group`, `assign_project_group`, `add_project_deal`, `add_project_owner` — added What/When/Output/Next steps
+
+### Bug Fixes
+
+- **Dutch output fixed**: `Totaal:` → `Total:` in timesheet formatter (3 occurrences)
+
+---
+
 ## [3.2.0] - 2026-03-20
 
 ### Added
@@ -288,6 +304,7 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.2.2 | 2026-03-22 | Tool description/llmTip improvements, stop_timer fix, Dutch output fix |
 | 3.2.0 | 2026-03-20 | ManicTime format, active timer overlap check, llmTip improvements |
 | 3.1.0 | 2026-03-12 | OAuth login tool, refresh token no longer required at startup |
 | 3.0.0 | 2026-03-05 | Timesheet tool, load_tasks fixes, move_to_group, BL docs |
@@ -300,9 +317,4 @@ Base implementation from [globodai-group/mcp-teamleader](https://github.com/glob
 | 1.2.0 | 2026-02-28 | Projects v2 module (8 tools) |
 | 1.1.0 | 2026-02-28 | Time tracking module (7 tools) |
 | 1.0.0 | — | Original Globodai release |
-
-
-## [3.2.1] - 2026-03-20
-
----
 
