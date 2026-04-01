@@ -4,6 +4,15 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.9] - 2026-04-01
+
+### Improved
+
+- **Tool descriptions**: Added 8 ERROR→CAUSE→FIX patterns for common API errors (`list_timetracking`, `update_timetracking`, `list_tickets`, `create_project_task_v2`, `task_action`, `register_payment`, `credit_invoice_partially`)
+- **ID param references**: Added lookup tool references to ~20 ID params (`tax_rate_id`, `department_id`, `work_type_id`, `unit_of_measure_id`, `price_list_id`, `source_id`) across 8 tool files
+
+---
+
 ## [3.2.8] - 2026-04-01
 
 ### Improved
