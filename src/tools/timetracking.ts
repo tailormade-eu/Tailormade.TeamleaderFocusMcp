@@ -444,11 +444,9 @@ export function registerTimeTrackingTools(
   // ── Stop Timer ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_stop_timer",
-    "Stop the currently running timer for the authenticated user. CRITICAL: this API takes NO parameters — it always stops the current user's active timer. The id parameter below is ignored. Converts the running timer into a completed time tracking entry. Returns {id, type} of the created entry.",
-    {
-      id: z.string().optional().describe("IGNORED — timers.stop takes no parameters. Stops the current user's active timer regardless of this value."),
-    },
-    async (_params) => {
+    "Stops the current user's active timer. No parameters needed — always stops the currently running timer. Converts the running timer into a completed time tracking entry. Returns {id, type} of the created entry.",
+    {},
+    async () => {
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "timers.stop",
         body: {},

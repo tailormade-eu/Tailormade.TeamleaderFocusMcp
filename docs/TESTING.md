@@ -122,7 +122,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
 | `teamleader_start_timer` | Start running timer | ❌ | |
-| `teamleader_stop_timer` | Stop running timer | ❌ | |
+| `teamleader_stop_timer` | Stop running timer (no params — stops current user's active timer) | ❌ | |
 | `teamleader_get_current_timer` | Get currently running timer | ❌ | |
 | `teamleader_update_timer` | Update running timer description | ❌ | |
 | `teamleader_resume_timetracking` | Resume a past time entry | ❌ | |
@@ -191,7 +191,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 
 | Tool | Test | Status | Notes |
 |------|------|--------|-------|
-| `teamleader_list_project_tasks_v2` | List tasks for project | ❌ | |
+| `teamleader_list_project_tasks_v2` | List tasks for project (only_open defaults to true) | ❌ | |
 | `teamleader_get_project_task` | Get task details | ❌ | |
 | `teamleader_create_project_task_v2` | Create task (group_id, assignees) | ❌ | |
 | `teamleader_update_project_task` | Update task details | ❌ | |

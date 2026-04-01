@@ -244,8 +244,8 @@ export function registerProjectTools(
         .describe("Optional: filter tasks by group (phase) ID"),
       only_open: z
         .boolean()
-        .default(false)
-        .describe("Only return open tasks (to_do, in_progress, on_hold)"),
+        .default(true)
+        .describe("Only return open tasks (to_do, in_progress, on_hold). Default: true"),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
     },
