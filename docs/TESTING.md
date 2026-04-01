@@ -296,7 +296,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | `teamleader_list_invoices` | Filter by status | ❌ | |
 | `teamleader_get_invoice` | Get by ID | ❌ | |
 | `teamleader_create_invoice` | Create draft | ❌ | |
-| `teamleader_update_invoice` | Update line items / dates / discount_value (percentage) | ❌ | |
+| `teamleader_update_invoice` | Update line items / dates / discount_value (percentage) | ✅ | |
 | `teamleader_update_booked_invoice` | Update booked invoice / discount_value (percentage) | ❌ | |
 | `teamleader_book_invoice` | Book draft invoice | ❌ | |
 | `teamleader_send_invoice` | Send via email | ❌ | |
