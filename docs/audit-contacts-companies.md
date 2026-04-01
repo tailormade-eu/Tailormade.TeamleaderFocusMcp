@@ -1,397 +1,318 @@
-# Audit: contacts.ts + companies.ts vs API docs
+# Audit: Contacts + Companies Tools vs API Docs
 
-Date: 2026-03-05
-
----
-
-## CONTACTS
-
-### 1. Endpoint coverage
-
-| API endpoint | MCP tool | Status |
-|---|---|---|
-| contacts.add | teamleader_create_contact | ✅ |
-| contacts.delete | teamleader_delete_contact | ✅ |
-| contacts.info | teamleader_get_contact | ✅ |
-| contacts.linkToCompany | teamleader_link_contact_to_company | ✅ |
-| contacts.list | teamleader_list_contacts | ✅ |
-| contacts.tag | teamleader_tag_contact | ✅ |
-| contacts.unlinkFromCompany | teamleader_unlink_contact_from_company | ✅ |
-| contacts.untag | teamleader_untag_contact | ✅ |
-| contacts.update | teamleader_update_contact | ✅ |
-| contacts.updateCompanyLink | teamleader_update_contact_company_link | ✅ |
-
-**Result: 10/10 endpoints covered.**
-
-### 2. Param coverage
-
-#### teamleader_list_contacts
-
-| API param | In tool? | Notes |
-|---|---|---|
-| filter.term | ✅ | |
-| filter.tags | ✅ | |
-| filter.updated_since | ✅ | |
-| filter.ids | ❌ | Array of contact IDs |
-| filter.email | ❌ | Object `{type: "primary", email}` |
-| filter.company_id | ❌ | Filter by linked company |
-| filter.status | ❌ | `"active"` / `"deactivated"` |
-| filter.marketing_mails_consent | ❌ | Boolean filter |
-| sort | ❌ | `[{field, order}]` — field: added_at/name/updated_at |
-| includes | ❌ | `"custom_fields,price_list"` |
-| page | ✅ | |
-
-#### teamleader_create_contact (contacts.add)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| first_name | ✅ | |
-| last_name | ✅ | |
-| emails | ✅ | Via `email` shortcut param |
-| telephones | ✅ | Via `phone` + `mobile` params |
-| language | ✅ | |
-| gender | ⚠️ | Enum only `male`/`female` — missing `non_binary`, `prefers_not_to_say`, `unknown` |
-| tags | ✅ | |
-| salutation | ❌ | e.g. "Mr" |
-| website | ❌ | |
-| addresses | ❌ | Full address object array |
-| birthdate | ❌ | YYYY-MM-DD |
-| iban | ❌ | |
-| bic | ❌ | |
-| national_identification_number | ❌ | |
-| remarks | ❌ | Markdown |
-| custom_fields | ❌ | `[{id, value}]` |
-| marketing_mails_consent | ❌ | Boolean |
-
-#### teamleader_update_contact (contacts.update)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-| first_name | ✅ | |
-| last_name | ✅ | |
-| emails | ✅ | Via `email` shortcut |
-| telephones | ✅ | Via `phone` + `mobile` |
-| language | ✅ | |
-| gender | ⚠️ | Enum incomplete (same as create) |
-| tags | ✅ | |
-| salutation | ❌ | Nullable |
-| website | ❌ | Nullable |
-| addresses | ❌ | |
-| birthdate | ❌ | Nullable |
-| iban | ❌ | Nullable |
-| bic | ❌ | Nullable |
-| national_identification_number | ❌ | |
-| remarks | ❌ | Nullable, Markdown |
-| custom_fields | ❌ | |
-| marketing_mails_consent | ❌ | |
-
-#### teamleader_get_contact (contacts.info)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-
-No missing params — only takes `id`.
-
-#### teamleader_delete_contact (contacts.delete)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-
-No missing params.
-
-#### teamleader_link_contact_to_company (contacts.linkToCompany)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-| company_id | ✅ | |
-| position | ✅ | |
-| decision_maker | ✅ | |
-
-**All params covered.**
-
-#### teamleader_unlink_contact_from_company (contacts.unlinkFromCompany)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-| company_id | ✅ | |
-
-**All params covered.**
-
-#### teamleader_tag_contact / teamleader_untag_contact
-
-All params covered (id + tags).
-
-#### teamleader_update_contact_company_link (contacts.updateCompanyLink)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-| company_id | ✅ | |
-| position | ✅ | |
-| decision_maker | ✅ | |
-
-**All params covered.**
-
-### 3. describe() coverage
-
-#### teamleader_list_contacts
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| page | ✅ | OK |
-| page_size | ✅ | OK |
-| term | ✅ | OK — could mention it filters on first_name, last_name, email, telephone |
-| tags | ✅ | OK |
-| updated_since | ✅ | OK |
-
-#### teamleader_create_contact
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| first_name | ✅ | OK |
-| last_name | ✅ | OK |
-| email | ✅ | OK |
-| phone | ✅ | OK |
-| mobile | ✅ | OK |
-| language | ✅ | OK — includes examples |
-| gender | ✅ | OK |
-| tags | ✅ | OK |
-
-#### teamleader_update_contact
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-| first_name | ✅ | OK |
-| last_name | ✅ | OK |
-| email | ✅ | OK |
-| phone | ✅ | OK |
-| mobile | ✅ | OK |
-| language | ✅ | OK |
-| gender | ✅ | OK |
-| tags | ✅ | POOR — should warn that tags OVERWRITE existing tags |
-
-#### teamleader_get_contact
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-
-#### teamleader_delete_contact
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-
-#### teamleader_link_contact_to_company
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-| company_id | ✅ | OK |
-| position | ✅ | OK — includes example |
-| decision_maker | ✅ | OK |
-
-#### teamleader_unlink_contact_from_company
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-| company_id | ✅ | OK |
-
-#### teamleader_update_contact_company_link
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-| company_id | ✅ | OK |
-| position | ✅ | OK |
-| decision_maker | ✅ | OK |
-
-#### teamleader_tag_contact / teamleader_untag_contact
-
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-| tags | ✅ | OK — includes examples |
-
-### 4. llmTip coverage
-
-| Tool | Known quirk | llmTip present? |
-|---|---|---|
-| teamleader_list_contacts | filter.email is object `{type,email}` not flat string | ❌ N/A (param not implemented) |
-| teamleader_list_contacts | filter.tags matches contacts with ALL given tags (AND logic) | ❌ |
-| teamleader_list_contacts | list response has `primary_address` (flat), NOT `addresses[]` like info | ❌ |
-| teamleader_list_contacts | list does NOT return `companies[]`, `vat_number`, or `remarks` | ❌ |
-| teamleader_update_contact | `tags` param OVERWRITES all existing tags (not additive) | ❌ |
-| teamleader_update_contact | Use tag/untag for incremental tag changes | ❌ |
-| teamleader_create_contact | `first_name` is optional in API (only `last_name` required) | ❌ — tool marks both as required |
-| teamleader_create_contact | gender has 5 values, tool only exposes 2 | ❌ |
+> Generated: 2026-04-01
+> Method: API doc → tool implementation comparison
 
 ---
 
-## COMPANIES
+## Contacts
 
-### 1. Endpoint coverage
-
-| API endpoint | MCP tool | Status |
-|---|---|---|
-| companies.add | teamleader_create_company | ✅ |
-| companies.delete | — | ❌ MISSING |
-| companies.info | teamleader_get_company | ✅ |
-| companies.list | teamleader_list_companies | ✅ |
-| companies.tag | — | ❌ MISSING |
-| companies.untag | — | ❌ MISSING |
-| companies.update | teamleader_update_company | ✅ |
-
-**Result: 4/7 endpoints covered. 3 MISSING: delete, tag, untag.**
-
-> Note: CLAUDE.md architecture section claims companies.ts has "delete, tag, untag" but the actual code does not implement them.
-
-### 2. Param coverage
-
-#### teamleader_list_companies
+### teamleader_create_contact (contacts.add — doc 038)
 
 | API param | In tool? | Notes |
-|---|---|---|
-| filter.term | ✅ | |
-| filter.tags | ✅ | |
-| filter.vat_number | ✅ | |
-| filter.updated_since | ✅ | |
-| filter.ids | ❌ | Array of company IDs |
-| filter.email | ❌ | Object `{type: "primary", email}` |
-| filter.national_identification_number | ❌ | |
-| filter.status | ❌ | `"active"` / `"deactivated"` |
-| filter.marketing_mails_consent | ❌ | Boolean |
-| sort | ❌ | `[{field, order}]` — field: name/added_at/updated_at |
-| includes | ❌ | `"custom_fields,price_list"` |
-| page | ✅ | |
+|-----------|----------|-------|
+| first_name | YES | |
+| last_name | YES | required |
+| emails[] | PARTIAL | Tool exposes single `email` string, auto-wraps as `[{type:"primary", email}]`. API supports array with type. |
+| salutation | YES | |
+| telephones[] | PARTIAL | Tool exposes `phone` + `mobile` as separate strings. API supports full array with type (phone/mobile/fax). No fax support. |
+| website | YES | |
+| addresses[] | **NO** | Complex nested object: type (primary/invoicing/delivery/visiting) + address (line_1, postal_code, city, country, area_level_two_id, addressee) |
+| language | YES | |
+| gender | YES | |
+| birthdate | **NO** | string, e.g. "1989-08-19" |
+| iban | **NO** | string |
+| bic | **NO** | string |
+| national_identification_number | **NO** | string |
+| remarks | YES | |
+| tags | YES | |
+| custom_fields[] | **NO** | Array of {id, value} objects |
+| marketing_mails_consent | **NO** | boolean |
 
-#### teamleader_create_company (companies.add)
+**Missing: 7 params** (addresses, birthdate, iban, bic, national_identification_number, custom_fields, marketing_mails_consent)
 
-| API param | In tool? | Notes |
-|---|---|---|
-| name | ✅ | |
-| emails | ✅ | Via `email` shortcut |
-| telephones | ✅ | Via `phone` shortcut (only phone, no fax) |
-| vat_number | ✅ | |
-| website | ✅ | |
-| language | ✅ | |
-| tags | ✅ | |
-| business_type_id | ❌ | |
-| national_identification_number | ❌ | |
-| addresses | ❌ | Full address object array |
-| iban | ❌ | |
-| bic | ❌ | |
-| responsible_user_id | ❌ | |
-| remarks | ❌ | Markdown |
-| custom_fields | ❌ | `[{id, value}]` |
-| marketing_mails_consent | ❌ | |
-| preferred_currency | ❌ | |
+---
 
-#### teamleader_update_company (companies.update)
+### teamleader_list_contacts (contacts.list — doc 042)
 
 | API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-| name | ✅ | |
-| emails | ✅ | Via `email` shortcut |
-| telephones | ✅ | Via `phone` shortcut |
-| vat_number | ✅ | |
-| website | ✅ | |
-| language | ✅ | |
-| tags | ✅ | |
-| business_type_id | ❌ | Nullable |
-| national_identification_number | ❌ | Nullable |
-| addresses | ❌ | |
-| iban | ❌ | Nullable |
-| bic | ❌ | Nullable |
-| responsible_user_id | ❌ | Nullable |
-| remarks | ❌ | Nullable, Markdown |
-| custom_fields | ❌ | |
-| marketing_mails_consent | ❌ | |
-| preferred_currency | ❌ | Nullable |
+|-----------|----------|-------|
+| filter.email | **NO** | Object filter: {type, email} — different from `term` search |
+| filter.ids | YES | |
+| filter.company_id | YES | |
+| filter.term | YES | |
+| filter.updated_since | YES | |
+| filter.tags | YES | |
+| filter.status | YES | |
+| filter.marketing_mails_consent | **NO** | boolean filter |
+| page.size | YES | as `page_size` |
+| page.number | YES | as `page` |
+| sort[] | **NO** | Array of {field, order}. Fields: added_at, name, updated_at |
+| includes | **NO** | Comma-separated: "custom_fields,price_list" |
 
-#### teamleader_get_company (companies.info)
+**Missing: 4 params** (filter.email, filter.marketing_mails_consent, sort, includes)
+
+---
+
+### teamleader_get_contact (contacts.info — doc 040)
 
 | API param | In tool? | Notes |
-|---|---|---|
-| id | ✅ | |
-| includes | ❌ | `"related_companies,related_contacts"` |
+|-----------|----------|-------|
+| id | YES | required |
 
-### 3. describe() coverage
+**Missing: 0 params** — complete
 
-#### teamleader_list_companies
+---
 
-| Param | Has describe()? | Quality |
-|---|---|---|
-| page | ✅ | OK |
-| page_size | ✅ | OK |
-| term | ✅ | OK — could mention it filters on name, vat_number, emails, telephones |
-| tags | ✅ | OK |
-| vat_number | ✅ | OK |
-| updated_since | ✅ | OK |
+### teamleader_update_contact (contacts.update — doc 046)
 
-#### teamleader_create_company
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| first_name | YES | nullable |
+| last_name | YES | |
+| salutation | YES | nullable |
+| emails[] | PARTIAL | Single `email` string, same limitation as create |
+| telephones[] | PARTIAL | `phone` + `mobile` strings, no fax |
+| website | YES | nullable |
+| addresses[] | **NO** | Same complex structure as create |
+| language | YES | |
+| gender | YES | |
+| birthdate | **NO** | nullable string |
+| iban | **NO** | nullable string |
+| bic | **NO** | nullable string |
+| national_identification_number | **NO** | string |
+| remarks | YES | nullable |
+| tags | YES | |
+| custom_fields[] | **NO** | Array of {id, value} |
+| marketing_mails_consent | **NO** | boolean |
 
-| Param | Has describe()? | Quality |
-|---|---|---|
-| name | ✅ | OK |
-| email | ✅ | OK |
-| phone | ✅ | OK |
-| vat_number | ✅ | OK |
-| website | ✅ | OK |
-| language | ✅ | OK — includes examples |
-| tags | ✅ | OK |
+**Missing: 7 params** (addresses, birthdate, iban, bic, national_identification_number, custom_fields, marketing_mails_consent)
 
-#### teamleader_update_company
+---
 
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
-| name | ✅ | OK |
-| email | ✅ | OK |
-| phone | ✅ | OK |
-| vat_number | ✅ | OK |
-| website | ✅ | OK |
-| language | ✅ | OK |
-| tags | ✅ | POOR — should warn that tags OVERWRITE existing tags |
+### teamleader_delete_contact (contacts.delete — doc 039)
 
-#### teamleader_get_company
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
 
-| Param | Has describe()? | Quality |
-|---|---|---|
-| id | ✅ | OK |
+**Missing: 0 params** — complete
 
-### 4. llmTip coverage
+---
 
-| Tool | Known quirk | llmTip present? |
-|---|---|---|
-| teamleader_list_companies | filter.email is object `{type,email}` not flat string | ❌ N/A (param not implemented) |
-| teamleader_list_companies | list returns `primary_address` (flat), NOT `addresses[]` like info | ❌ |
-| teamleader_list_companies | `custom_fields` only returned when `includes=custom_fields` | ❌ N/A (includes not implemented) |
-| teamleader_update_company | `tags` param OVERWRITES all existing tags (not additive) | ❌ |
-| teamleader_update_company | Use tag/untag for incremental tag changes | ❌ — tag/untag tools don't exist yet |
-| teamleader_get_company | `includes` param available for related_companies/related_contacts | ❌ N/A (param not implemented) |
-| teamleader_create_company | Company telephones only support `phone`/`fax` (no `mobile`) | ❌ |
+### teamleader_link_contact_to_company (contacts.linkToCompany — doc 041)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| company_id | YES | required |
+| position | YES | |
+| decision_maker | YES | |
+
+**Missing: 0 params** — complete
+
+---
+
+### teamleader_unlink_contact_from_company (contacts.unlinkFromCompany — doc 044)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| company_id | YES | required |
+
+**Missing: 0 params** — complete
+
+---
+
+### teamleader_update_contact_company_link (contacts.updateCompanyLink — doc 047)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| company_id | YES | required |
+| position | YES | |
+| decision_maker | YES | |
+
+**Missing: 0 params** — complete
+
+---
+
+### teamleader_tag_contact (contacts.tag — doc 043)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| tags | YES | required |
+
+**Missing: 0 params** — complete
+
+---
+
+### teamleader_untag_contact (contacts.untag — doc 045)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| tags | YES | required |
+
+**Missing: 0 params** — complete
+
+---
+
+## Companies
+
+### teamleader_create_company (companies.add — doc 029)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| name | YES | required |
+| business_type_id | **NO** | string UUID |
+| vat_number | YES | |
+| national_identification_number | **NO** | string |
+| emails[] | PARTIAL | Single `email` string. API supports array with type (primary/invoicing). |
+| telephones[] | PARTIAL | Single `phone` string. API supports array with type (phone/fax). |
+| website | YES | |
+| addresses[] | **NO** | Same complex nested structure as contacts |
+| iban | **NO** | string |
+| bic | **NO** | string |
+| language | YES | |
+| responsible_user_id | YES | |
+| remarks | YES | |
+| tags | YES | |
+| custom_fields[] | **NO** | Array of {id, value} |
+| marketing_mails_consent | **NO** | boolean |
+| preferred_currency | **NO** | CurrencyCode enum (EUR, USD, GBP, etc.) |
+
+**Missing: 8 params** (business_type_id, national_identification_number, addresses, iban, bic, custom_fields, marketing_mails_consent, preferred_currency)
+
+---
+
+### teamleader_list_companies (companies.list — doc 032)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| filter.email | **NO** | Object filter: {type, email} |
+| filter.ids | YES | |
+| filter.term | YES | |
+| filter.updated_since | YES | |
+| filter.tags | YES | |
+| filter.vat_number | YES | |
+| filter.national_identification_number | **NO** | string filter |
+| filter.status | YES | |
+| filter.marketing_mails_consent | **NO** | boolean filter |
+| page.size | YES | as `page_size` |
+| page.number | YES | as `page` |
+| sort[] | **NO** | Array of {field, order}. Fields: name, added_at, updated_at |
+| includes | **NO** | Comma-separated: "custom_fields,price_list" |
+
+**Missing: 5 params** (filter.email, filter.national_identification_number, filter.marketing_mails_consent, sort, includes)
+
+---
+
+### teamleader_get_company (companies.info — doc 031)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| includes | **NO** | "related_companies,related_contacts" |
+
+**Missing: 1 param** (includes)
+
+---
+
+### teamleader_update_company (companies.update — doc 035)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| name | YES | |
+| business_type_id | **NO** | nullable string UUID |
+| vat_number | YES | |
+| national_identification_number | **NO** | nullable string |
+| emails[] | PARTIAL | Single `email` string. API supports array with type (primary/invoicing). |
+| telephones[] | PARTIAL | Single `phone` string. API supports array with type (phone/fax). |
+| website | YES | |
+| addresses[] | **NO** | Same complex nested structure |
+| iban | **NO** | nullable string |
+| bic | **NO** | nullable string |
+| language | YES | |
+| responsible_user_id | YES | nullable |
+| remarks | YES | nullable |
+| tags | YES | |
+| custom_fields[] | **NO** | Array of {id, value} |
+| marketing_mails_consent | **NO** | boolean |
+| preferred_currency | **NO** | nullable CurrencyCode enum |
+
+**Missing: 8 params** (business_type_id, national_identification_number, addresses, iban, bic, custom_fields, marketing_mails_consent, preferred_currency)
+
+---
+
+### teamleader_delete_company (companies.delete — doc 030)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+
+**Missing: 0 params** — complete
+
+---
+
+### teamleader_tag_company (companies.tag — doc 033)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| tags | YES | required |
+
+**Missing: 0 params** — complete
+
+---
+
+### teamleader_untag_company (companies.untag — doc 034)
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | required |
+| tags | YES | required |
+
+**Missing: 0 params** — complete
 
 ---
 
 ## Summary
 
-### Contacts
-- **Endpoints:** 10/10 ✅
-- **Params:** Many missing — addresses, custom_fields, remarks, birthdate, iban/bic, salutation, website, marketing_mails_consent across add/update; list missing ids, email, company_id, status, sort, includes filters
-- **describe():** All params have describe(). Quality issue: update tags should warn about overwrite behavior
-- **llmTip:** None present. Key missing tips: tags overwrite on update, first_name is optional in API, gender enum incomplete
+| Tool | Total API params | In tool | Missing | Coverage |
+|------|-----------------|---------|---------|----------|
+| **create_contact** | 17 | 10 | 7 | 59% |
+| **list_contacts** | 12 | 8 | 4 | 67% |
+| **get_contact** | 1 | 1 | 0 | 100% |
+| **update_contact** | 18 | 11 | 7 | 61% |
+| **delete_contact** | 1 | 1 | 0 | 100% |
+| **link_contact_to_company** | 4 | 4 | 0 | 100% |
+| **unlink_contact_from_company** | 2 | 2 | 0 | 100% |
+| **update_contact_company_link** | 4 | 4 | 0 | 100% |
+| **tag_contact** | 2 | 2 | 0 | 100% |
+| **untag_contact** | 2 | 2 | 0 | 100% |
+| **create_company** | 17 | 9 | 8 | 53% |
+| **list_companies** | 13 | 8 | 5 | 62% |
+| **get_company** | 2 | 1 | 1 | 50% |
+| **update_company** | 18 | 10 | 8 | 56% |
+| **delete_company** | 1 | 1 | 0 | 100% |
+| **tag_company** | 2 | 2 | 0 | 100% |
+| **untag_company** | 2 | 2 | 0 | 100% |
 
-### Companies
-- **Endpoints:** 4/7 — MISSING delete, tag, untag
-- **Params:** Many missing — business_type_id, addresses, iban/bic, responsible_user_id, remarks, custom_fields, marketing_mails_consent, preferred_currency, national_identification_number across add/update; list missing ids, email, national_identification_number, status, sort, includes; info missing includes
-- **describe():** All params have describe(). Quality issue: update tags should warn about overwrite behavior
-- **llmTip:** None present. Key missing tips: tags overwrite on update, telephones only phone/fax (no mobile)
+### Most impactful gaps (shared across multiple tools)
+
+| Gap | Affects | Priority |
+|-----|---------|----------|
+| addresses[] | create/update contact + company (4 tools) | HIGH — needed for invoicing |
+| custom_fields[] | create/update contact + company (4 tools) | HIGH — common CRM need |
+| iban / bic | create/update contact + company (4 tools) | MEDIUM — financial data |
+| marketing_mails_consent | create/update/list contact + company (6 tools) | MEDIUM — GDPR compliance |
+| sort[] | list contacts + companies (2 tools) | LOW — nice to have |
+| includes | list + get contacts + companies (3 tools) | MEDIUM — custom_fields/price_list visibility |
+| birthdate | create/update contact (2 tools) | LOW |
+| national_identification_number | create/update contact + company (4 tools) | LOW |
+| business_type_id | create/update company (2 tools) | LOW |
+| preferred_currency | create/update company (2 tools) | LOW |
