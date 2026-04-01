@@ -109,6 +109,65 @@ export interface CreditPartiallyParams {
   }>;
 }
 
+export interface UpdateInvoiceLineItem {
+  quantity: number;
+  description: string;
+  unit_price_amount: number;
+  tax_rate_id: string;
+  product_id?: string;
+  discount_value?: number;
+}
+
+export interface UpdateInvoiceParams {
+  id: string;
+  customer_type?: "contact" | "company";
+  customer_id?: string;
+  payment_term_type?: string;
+  payment_term_days?: number;
+  invoice_date?: string;
+  note?: string;
+  purchase_order_number?: string;
+  project_id?: string;
+  line_items?: UpdateInvoiceLineItem[];
+}
+
+export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<string, unknown> {
+  const body: Record<string, unknown> = { id: params.id };
+
+  if (params.customer_type && params.customer_id) {
+    body.invoicee = {
+      customer: { type: params.customer_type, id: params.customer_id },
+    };
+  }
+  if (params.payment_term_type) {
+    body.payment_term = {
+      type: params.payment_term_type,
+      ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
+    };
+  }
+  if (params.invoice_date) body.invoice_date = params.invoice_date;
+  if (params.note !== undefined) body.note = params.note;
+  if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
+  if (params.project_id) body.project_id = params.project_id;
+  if (params.line_items) {
+    body.grouped_lines = [
+      {
+        line_items: params.line_items.map((item) => ({
+          quantity: item.quantity,
+          description: item.description,
+          unit_price: { amount: item.unit_price_amount, tax: "excluding" },
+          tax_rate_id: item.tax_rate_id,
+          ...(item.product_id && { product_id: item.product_id }),
+          ...(item.discount_value !== undefined && {
+            discount: { value: item.discount_value, type: "percentage" },
+          }),
+        })),
+      },
+    ];
+  }
+  return body;
+}
+
 export function buildCreditPartiallyBody(params: CreditPartiallyParams): Record<string, unknown> {
   const body: Record<string, unknown> = {
     id: params.id,
@@ -422,6 +481,16 @@ export function registerInvoiceTools(
     }
   );
 
+  // ── Shared line item schema for update tools ─────────────────────────────
+  const updateLineItemSchema = z.object({
+    quantity: z.number().describe("Quantity"),
+    description: z.string().describe("Line item description"),
+    unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
+    tax_rate_id: z.string().describe("Tax rate ID"),
+    product_id: z.string().optional().describe("Product ID"),
+    discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
+  });
+
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
@@ -439,55 +508,10 @@ export function registerInvoiceTools(
       note: z.string().optional().describe("Note on the invoice"),
       purchase_order_number: z.string().optional().describe("Purchase order number"),
       project_id: z.string().optional().describe("Link to a project ID"),
-      line_items: z
-        .array(
-          z.object({
-            quantity: z.number().describe("Quantity"),
-            description: z.string().describe("Line item description"),
-            unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            tax_rate_id: z.string().describe("Tax rate ID"),
-            product_id: z.string().optional().describe("Product ID"),
-            discount_value: z.number().optional().describe("Discount percentage (0-100)"),
-          })
-        )
-        .optional()
-        .describe("Replace all line items (grouped_lines)"),
+      line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items (grouped_lines)"),
     },
     async (params) => {
-      const body: Record<string, unknown> = { id: params.id };
-
-      if (params.customer_type && params.customer_id) {
-        body.invoicee = {
-          customer: { type: params.customer_type, id: params.customer_id },
-        };
-      }
-      if (params.payment_term_type) {
-        body.payment_term = {
-          type: params.payment_term_type,
-          ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
-        };
-      }
-      if (params.invoice_date) body.invoice_date = params.invoice_date;
-      if (params.note !== undefined) body.note = params.note;
-      if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
-      if (params.project_id) body.project_id = params.project_id;
-      if (params.line_items) {
-        body.grouped_lines = [
-          {
-            line_items: params.line_items.map((item) => ({
-              quantity: item.quantity,
-              description: item.description,
-              unit_price: { amount: item.unit_price_amount, tax: "excluding" },
-              tax_rate_id: item.tax_rate_id,
-              ...(item.product_id && { product_id: item.product_id }),
-              ...(item.discount_value !== undefined && {
-                discount: { value: item.discount_value, type: "percentage" },
-              }),
-            })),
-          },
-        ];
-      }
-
+      const body = buildUpdateInvoiceBody(params);
       await client.request<void>({ endpoint: "invoices.update", body });
       return respond(`Invoice ${params.id} updated.`);
     }
@@ -509,54 +533,10 @@ export function registerInvoiceTools(
       invoice_date: z.string().optional().describe("Invoice date (YYYY-MM-DD)"),
       note: z.string().optional().describe("Note on the invoice"),
       project_id: z.string().optional().describe("Link to a project ID"),
-      line_items: z
-        .array(
-          z.object({
-            quantity: z.number().describe("Quantity"),
-            description: z.string().describe("Line item description"),
-            unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            tax_rate_id: z.string().describe("Tax rate ID"),
-            product_id: z.string().optional().describe("Product ID"),
-            discount_value: z.number().optional().describe("Discount percentage (0-100)"),
-          })
-        )
-        .optional()
-        .describe("Replace all line items (grouped_lines)"),
+      line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items (grouped_lines)"),
     },
     async (params) => {
-      const body: Record<string, unknown> = { id: params.id };
-
-      if (params.customer_type && params.customer_id) {
-        body.invoicee = {
-          customer: { type: params.customer_type, id: params.customer_id },
-        };
-      }
-      if (params.payment_term_type) {
-        body.payment_term = {
-          type: params.payment_term_type,
-          ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
-        };
-      }
-      if (params.invoice_date) body.invoice_date = params.invoice_date;
-      if (params.note !== undefined) body.note = params.note;
-      if (params.project_id) body.project_id = params.project_id;
-      if (params.line_items) {
-        body.grouped_lines = [
-          {
-            line_items: params.line_items.map((item) => ({
-              quantity: item.quantity,
-              description: item.description,
-              unit_price: { amount: item.unit_price_amount, tax: "excluding" },
-              tax_rate_id: item.tax_rate_id,
-              ...(item.product_id && { product_id: item.product_id }),
-              ...(item.discount_value !== undefined && {
-                discount: { value: item.discount_value, type: "percentage" },
-              }),
-            })),
-          },
-        ];
-      }
-
+      const body = buildUpdateInvoiceBody(params);
       await client.request<void>({ endpoint: "invoices.updateBooked", body });
       return respond(`Booked invoice ${params.id} updated.`);
     }

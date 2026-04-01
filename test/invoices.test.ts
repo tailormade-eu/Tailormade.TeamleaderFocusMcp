@@ -3,7 +3,9 @@ import {
   buildListInvoicesBody,
   buildRegisterPaymentBody,
   buildCreditPartiallyBody,
+  buildUpdateInvoiceBody,
 } from "../src/tools/invoices.js";
+import { z } from "zod";
 
 describe("buildListInvoicesBody", () => {
   it("returns empty body when no params", () => {
@@ -107,6 +109,98 @@ describe("buildRegisterPaymentBody", () => {
       payment_method_id: "pm-1",
     });
     expect(body.payment_method_id).toBe("pm-1");
+  });
+});
+
+describe("buildUpdateInvoiceBody", () => {
+  const baseLine = { quantity: 1, description: "Test", unit_price_amount: 100, tax_rate_id: "tr-1" };
+
+  it("maps discount_value 30 to { value: 30, type: 'percentage' }", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [{ ...baseLine, discount_value: 30 }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].discount).toEqual({ value: 30, type: "percentage" });
+  });
+
+  it("maps discount_value 0 to { value: 0, type: 'percentage' }", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [{ ...baseLine, discount_value: 0 }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].discount).toEqual({ value: 0, type: "percentage" });
+  });
+
+  it("maps discount_value 100 to { value: 100, type: 'percentage' }", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [{ ...baseLine, discount_value: 100 }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].discount).toEqual({ value: 100, type: "percentage" });
+  });
+
+  it("omits discount field when discount_value is undefined", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [baseLine],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("discount");
+  });
+
+  it("does not include grouped_lines when no line_items", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("grouped_lines");
+  });
+
+  it("maps invoicee correctly", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      customer_type: "company",
+      customer_id: "comp-1",
+    });
+    expect(body.invoicee).toEqual({ customer: { type: "company", id: "comp-1" } });
+  });
+});
+
+describe("discount_value Zod range validation", () => {
+  const lineItemSchema = z.object({
+    quantity: z.number(),
+    description: z.string(),
+    unit_price_amount: z.number(),
+    tax_rate_id: z.string(),
+    discount_value: z.number().min(0).max(100).optional(),
+  });
+
+  it("rejects discount_value 101", () => {
+    const result = lineItemSchema.safeParse({
+      quantity: 1, description: "X", unit_price_amount: 10, tax_rate_id: "tr-1", discount_value: 101,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects discount_value -1", () => {
+    const result = lineItemSchema.safeParse({
+      quantity: 1, description: "X", unit_price_amount: 10, tax_rate_id: "tr-1", discount_value: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts discount_value 0", () => {
+    const result = lineItemSchema.safeParse({
+      quantity: 1, description: "X", unit_price_amount: 10, tax_rate_id: "tr-1", discount_value: 0,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts discount_value 100", () => {
+    const result = lineItemSchema.safeParse({
+      quantity: 1, description: "X", unit_price_amount: 10, tax_rate_id: "tr-1", discount_value: 100,
+    });
+    expect(result.success).toBe(true);
   });
 });
 
