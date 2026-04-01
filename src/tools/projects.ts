@@ -708,7 +708,7 @@ export function registerProjectTools(
   // ── Create Project Task (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_task_v2",
-    "Create a new task within a project or project group (phase). Returns {id, type}. CRITICAL: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id).",
+    "Create a new task within a project or project group (phase). Returns {id, type}. CRITICAL: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id). ERROR: Silent ignore on tasks.create → CAUSE: Using assignee_id directly instead of assignees array → FIX: Use assignee_id param — this tool maps to assignees:[{type,id}] automatically.",
     {
       project_id: z.string().describe("Parent project ID"),
       project_group_id: z.string().optional().describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
@@ -917,7 +917,7 @@ export function registerProjectTools(
       title: z.string().optional().describe("New task title"),
       description: z.string().nullable().optional().describe("New description (null to clear)"),
       status: z.enum(["to_do", "in_progress", "on_hold", "done"]).optional().describe("Task status"),
-      work_type_id: z.string().nullable().optional().describe("Work type ID (null to clear, cannot be null if billing_method is work_type_rate)"),
+      work_type_id: z.string().nullable().optional().describe("Work type ID (null to clear, cannot be null if billing_method is work_type_rate). Use teamleader_list_work_types to find valid IDs."),
       billing_method: z.enum(["user_rate", "work_type_rate", "custom_rate", "fixed_price", "parent_fixed_price", "non_billable"]).optional().describe("Billing method"),
       fixed_price_amount: z.number().optional().describe("Fixed price amount"),
       fixed_price_currency: z.string().optional().describe("Fixed price currency (e.g. EUR)"),

@@ -126,10 +126,10 @@ export function registerProductTools(
       purchase_price_currency: z.string().optional().describe("Purchase price currency (e.g. EUR)"),
       selling_price_amount: z.number().optional().describe("Selling price amount"),
       selling_price_currency: z.string().optional().describe("Selling price currency (e.g. EUR)"),
-      unit_of_measure_id: z.string().optional().describe("Unit of measure ID"),
-      department_id: z.string().optional().describe("Department ID"),
+      unit_of_measure_id: z.string().optional().describe("Unit of measure ID. Use teamleader_list_units_of_measure to find valid IDs."),
+      department_id: z.string().optional().describe("Department ID. Use teamleader_list_departments to find valid IDs."),
       product_category_id: z.string().optional().describe("Product category ID"),
-      tax_rate_id: z.string().optional().describe("Tax rate ID"),
+      tax_rate_id: z.string().optional().describe("Tax rate ID. Use teamleader_list_tax_rates to find valid IDs."),
       stock_amount: z.number().optional().describe("Stock amount (requires stock management feature)"),
       configuration: z.object({
         stock_threshold: z.object({
@@ -138,7 +138,7 @@ export function registerProductTools(
         }).nullable().describe("Stock threshold configuration"),
       }).optional().describe("Stock configuration (requires stock management feature)"),
       price_list_prices: z.array(z.object({
-        price_list_id: z.string().describe("Price list ID"),
+        price_list_id: z.string().describe("Price list ID. Use teamleader_list_price_lists to find valid IDs."),
         price: z.object({
           amount: z.number().describe("Price amount"),
           currency: z.string().describe("Currency code (e.g. EUR)"),
@@ -194,10 +194,10 @@ export function registerProductTools(
       purchase_price_currency: z.string().optional().describe("Purchase price currency (e.g. EUR)"),
       selling_price_amount: z.number().optional().describe("Selling price amount"),
       selling_price_currency: z.string().optional().describe("Selling price currency (e.g. EUR)"),
-      unit_of_measure_id: z.string().nullable().optional().describe("Unit of measure ID (null to clear)"),
-      department_id: z.string().optional().describe("Department ID"),
+      unit_of_measure_id: z.string().nullable().optional().describe("Unit of measure ID (null to clear). Use teamleader_list_units_of_measure to find valid IDs."),
+      department_id: z.string().optional().describe("Department ID. Use teamleader_list_departments to find valid IDs."),
       product_category_id: z.string().optional().describe("Product category ID"),
-      tax_rate_id: z.string().optional().describe("Tax rate ID"),
+      tax_rate_id: z.string().optional().describe("Tax rate ID. Use teamleader_list_tax_rates to find valid IDs."),
       stock_amount: z.number().optional().describe("Stock amount (requires stock management feature)"),
       configuration: z.object({
         stock_threshold: z.object({
@@ -206,7 +206,7 @@ export function registerProductTools(
         }).nullable().describe("Stock threshold configuration"),
       }).optional().describe("Stock configuration (requires stock management feature)"),
       price_list_prices: z.array(z.object({
-        price_list_id: z.string().describe("Price list ID"),
+        price_list_id: z.string().describe("Price list ID. Use teamleader_list_price_lists to find valid IDs."),
         price: z.object({
           amount: z.number().describe("Price amount"),
           currency: z.string().describe("Currency code (e.g. EUR)"),

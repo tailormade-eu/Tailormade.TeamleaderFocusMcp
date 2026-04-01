@@ -126,7 +126,7 @@ export function registerLookupTools(
     "teamleader_list_product_categories",
     "List all product categories. Returns IDs for filtering products.",
     {
-      department_id: z.string().optional().describe("Filter by department ID"),
+      department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -370,7 +370,7 @@ export function registerLookupTools(
     "teamleader_list_commercial_discounts",
     "List commercial discounts. Returns discount names and department references.",
     {
-      department_id: z.string().optional().describe("Filter by department ID"),
+      department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -398,7 +398,7 @@ export function registerLookupTools(
     "teamleader_list_document_templates",
     "List document templates for a specific department and document type. Returns IDs usable when sending invoices/quotations.",
     {
-      department_id: z.string().describe("Department ID (required)"),
+      department_id: z.string().describe("Department ID (required). Use teamleader_list_departments to find valid IDs."),
       document_type: z.enum(["delivery_note", "invoice", "order", "order_confirmation", "quotation", "timetracking_report", "workorder"])
         .describe("Document type to filter by"),
       status: z.array(z.enum(["active", "archived"])).optional().describe("Filter by status"),
@@ -482,7 +482,7 @@ export function registerLookupTools(
     "teamleader_list_withholding_tax_rates",
     "List withholding tax rates. Returns IDs for use in invoices.",
     {
-      department_id: z.string().optional().describe("Filter by department ID"),
+      department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
     },
     async (params) => {
       const body: Record<string, unknown> = {};

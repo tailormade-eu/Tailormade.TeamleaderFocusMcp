@@ -137,6 +137,7 @@ export function registerTimeTrackingTools(
       "NOTE: Pass date filters as YYYY-MM-DD — they are automatically converted to ISO 8601 datetime (T00:00:00+00:00 for after/start, T23:59:59+00:00 for before/end).",
       "CRITICAL: subject.id from this response is NOT directly usable in teamleader_log_time — it references a todo/standalone task, not a nextgenTask ID. Always use teamleader_load_tasks to get the correct project task ID before logging time.",
       "NOTE: Dedup must match on start time (to second precision), NOT on subject ID — two entries on different subjects can share the same subject ID format.",
+      "ERROR: 400 Bad Request on timeTracking.list → CAUSE: Full ISO datetime sent instead of YYYY-MM-DD → FIX: Pass YYYY-MM-DD only — this tool converts to ISO 8601 automatically.",
     ].join("\n"),
     {
       page: z.number().optional().describe("Page number (default: 1)"),
@@ -289,7 +290,7 @@ export function registerTimeTrackingTools(
   // ── Update Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timetracking",
-    "Update an existing time tracking entry. CRITICAL: When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds). Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed. WARNING: Changing subject type (e.g. todo → nextgenTask) silently fails — returns {} but subject is unchanged. To move a time entry to a different task type: delete + re-log on the correct task.",
+    "Update an existing time tracking entry. CRITICAL: When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds). Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed. WARNING: Changing subject type (e.g. todo → nextgenTask) silently fails — returns {} but subject is unchanged. To move a time entry to a different task type: delete + re-log on the correct task. ERROR: 400 'started_at must be present' → CAUSE: Sending only duration without started_on → FIX: Always send both started_on + duration together.",
     {
       id: z.string().describe("Time tracking entry ID"),
       work_type_id: z

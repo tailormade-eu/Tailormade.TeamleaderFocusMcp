@@ -22,7 +22,7 @@ export function registerCreditNoteTools(
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
       ids: z.array(z.string()).optional().describe("Filter by specific credit note IDs"),
-      department_id: z.string().optional().describe("Filter by department ID"),
+      department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
       updated_since: z.string().optional().describe("ISO 8601 datetime - only credit notes updated after this"),
       invoice_id: z.string().optional().describe("Filter by related invoice ID"),
       project_id: z.string().optional().describe("Filter by project ID"),

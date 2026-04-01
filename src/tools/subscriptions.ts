@@ -73,7 +73,7 @@ export function registerSubscriptionTools(
       ids: z.array(z.string()).optional().describe("Filter by specific subscription IDs"),
       invoice_id: z.string().optional().describe("Find subscriptions that generated the given invoice ID"),
       deal_id: z.string().optional().describe("Filter on subscriptions created from a deal ID"),
-      department_id: z.string().optional().describe("Filter by department ID"),
+      department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type for customer filter (must provide with customer_id)"),
       customer_id: z.string().optional().describe("Customer ID for customer filter (must provide with customer_type)"),
       status: z
@@ -227,7 +227,7 @@ export function registerSubscriptionTools(
       title: z.string().optional().describe("Subscription title"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
-      department_id: z.string().optional().describe("Department ID"),
+      department_id: z.string().optional().describe("Department ID. Use teamleader_list_departments to find valid IDs."),
       starts_on: z.string().optional().describe("Start date (YYYY-MM-DD)"),
       ends_on: z.string().optional().describe("End date (YYYY-MM-DD)"),
       billing_unit: z
@@ -251,7 +251,7 @@ export function registerSubscriptionTools(
             quantity: z.number().describe("Quantity"),
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-            tax_rate_id: z.string().describe("Tax rate ID"),
+            tax_rate_id: z.string().describe("Tax rate ID. Use teamleader_list_tax_rates to find valid IDs."),
             product_id: z.string().optional().describe("Product ID"),
           })
         )

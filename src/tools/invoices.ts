@@ -486,7 +486,7 @@ export function registerInvoiceTools(
     quantity: z.number().describe("Quantity"),
     description: z.string().describe("Line item description"),
     unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
-    tax_rate_id: z.string().describe("Tax rate ID"),
+    tax_rate_id: z.string().describe("Tax rate ID. Use teamleader_list_tax_rates to find valid IDs."),
     product_id: z.string().optional().describe("Product ID"),
     discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
   });
@@ -545,7 +545,7 @@ export function registerInvoiceTools(
   // ── Register Payment ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_register_payment",
-    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. NOTE: the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params.",
+    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. NOTE: the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params. ERROR: 422 on invoices.registerPayment → CAUSE: Using wrong field name 'payment_date' → FIX: Use 'paid_at' param — this tool maps it correctly.",
     {
       id: z.string().describe("The invoice ID"),
       amount: z.number().describe("Payment amount"),
@@ -628,7 +628,7 @@ export function registerInvoiceTools(
   // ── Credit Invoice Partially ────────────────────────────────────────────
   server.tool(
     "teamleader_credit_invoice_partially",
-    "Create a partial credit note for a booked invoice. Specify which line items to credit. NOTE: the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically. Returns {id, type} of the created credit note.",
+    "Create a partial credit note for a booked invoice. Specify which line items to credit. NOTE: the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically. Returns {id, type} of the created credit note. ERROR: 400 on invoices.creditPartially → CAUSE: Wrong unit_price.tax value (e.g. currency instead of 'excluding') → FIX: This tool sets tax:'excluding' automatically — just provide unit_price_amount.",
     {
       id: z.string().describe("The invoice ID to partially credit"),
       credit_note_date: z

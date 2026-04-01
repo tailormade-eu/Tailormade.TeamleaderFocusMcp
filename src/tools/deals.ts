@@ -225,8 +225,8 @@ export function registerDealTools(
         .string()
         .optional()
         .describe("Responsible user ID"),
-      source_id: z.string().nullable().optional().describe("Source ID (pass null to clear)"),
-      department_id: z.string().nullable().optional().describe("Department ID (pass null to clear)"),
+      source_id: z.string().nullable().optional().describe("Source ID (pass null to clear). Use teamleader_list_deal_sources to find valid IDs."),
+      department_id: z.string().nullable().optional().describe("Department ID (pass null to clear). Use teamleader_list_departments to find valid IDs."),
       contact_person_id: z.string().nullable().optional().describe("Contact person ID (pass null to clear)"),
     },
     async (params) => {
