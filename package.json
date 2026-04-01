@@ -1,6 +1,6 @@
 {
   "name": "@tailormade/teamleader-focus-mcp",
-  "version": "3.2.5",
+  "version": "3.2.6",
   "description": "MCP server for Teamleader Focus CRM API — 112 tools covering contacts, companies, deals, tickets, invoices, subscriptions, meetings, projects, time tracking, files, notes, and smart cache-first task resolution.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

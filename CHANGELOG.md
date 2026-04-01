@@ -4,6 +4,27 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.6] - 2026-04-01
+
+### Improvements
+
+- **`discount_value` range validation**: Added `.min(0).max(100)` on `discount_value` in `teamleader_update_invoice` and `teamleader_update_booked_invoice`
+- **Shared schema**: Extracted `updateLineItemSchema` (DRY — was duplicated in both tools) and `buildUpdateInvoiceBody` builder (exported for testing)
+- **Unit tests**: 10 new tests for invoice body mapping and Zod range validation
+
+### Docs
+
+- **API audit docs**: Full param-by-param audit of all tool files vs scraped API docs (`docs/audit-*.md`)
+  - `docs/audit-contacts-companies.md` — 40 missing params across 6 tools
+  - `docs/audit-deals-quotations.md` — 11 gaps + 1 bug (contact_person_id placement)
+  - `docs/audit-invoices-other.md` — 32 gaps across 4 invoice tools
+  - `docs/audit-projects-tasks.md` — 40 gaps + 1 missing tool
+  - `docs/audit-remaining-tools.md` — 11 tool files, 7/11 fully complete
+  - `docs/audit-tickets-events-meetings.md` — 13 gaps across 22 endpoints
+  - `docs/audit-timetracking.md` — 8 gaps, all critical bugs confirmed fixed
+
+---
+
 ## [3.2.5] - 2026-03-22
 
 ### Bug Fixes
