@@ -1,259 +1,198 @@
-# Audit: timetracking.ts vs API docs
+# Audit: Timetracking Tools vs API Docs
 
-Date: 2026-03-05
-
----
-
-## 1. Endpoint coverage
-
-| API endpoint | MCP tool | Status |
-|---|---|---|
-| `timeTracking.list` | `teamleader_list_timetracking` | Covered |
-| `timeTracking.info` | `teamleader_get_timetracking` | Covered |
-| `timeTracking.add` | `teamleader_add_timetracking` | Covered |
-| `timeTracking.update` | `teamleader_update_timetracking` | Covered |
-| `timeTracking.delete` | `teamleader_delete_timetracking` | Covered |
-| `timeTracking.resume` | `teamleader_resume_timetracking` | Covered |
-| `timers.current` | `teamleader_get_current_timer` | Covered |
-| `timers.start` | `teamleader_start_timer` | Covered |
-| `timers.stop` | `teamleader_stop_timer` | Covered |
-| `timers.update` | `teamleader_update_timer` | Covered |
-
-**10/10 endpoints covered.**
+Audit date: 2026-04-01 (re-audit — replaces 2026-03-05 version)
+Source docs: `docs/api/330-335` (timeTracking.*), `docs/api/337-340` (timers.*)
+Tool source: `src/tools/timetracking.ts`
 
 ---
 
-## 2. Param coverage
-
-### `teamleader_list_timetracking` (timeTracking.list)
+## 1. teamleader_list_timetracking -> timeTracking.list
 
 | API param | In tool? | Notes |
-|---|---|---|
-| `filter.ids` | MISSING | Array of IDs filter |
-| `filter.user_id` | Yes | |
-| `filter.started_after` | Yes | Stripped to date-only |
-| `filter.started_before` | Yes | Stripped to date-only |
-| `filter.ended_after` | MISSING | |
-| `filter.ended_before` | MISSING | |
-| `filter.subject` (type+id) | Yes | Via `subject_type` + `subject_id` |
-| `filter.subject_types` | MISSING | Array of subject types |
-| `filter.relates_to` (type+id) | MISSING | Find entries linked to project/milestone/etc |
-| `sort` (field+order) | MISSING | Only field: `starts_on` |
-| `page` (size+number) | Yes | |
-| `includes` | MISSING | `materials,relates_to` |
-| subject_type enum values | ~~**BUG**~~ ✅ Fixed | ~~Tool has `nextgenTask`, `project`~~ → Now correct: `company`, `contact`, `event`, `todo`, `milestone`, `ticket` |
+|-----------|----------|-------|
+| filter.ids | NO | Array of IDs filter — missing |
+| filter.user_id | YES | |
+| filter.started_after | YES | Auto-converted from YYYY-MM-DD via `toDate()` |
+| filter.started_before | YES | Auto-converted from YYYY-MM-DD via `toDate()` |
+| filter.ended_after | YES | Added since last audit |
+| filter.ended_before | YES | Added since last audit |
+| filter.subject (id + type) | YES | Exposed as `subject_type` + `subject_id` params |
+| filter.subject_types | NO | Array of types to include (incl. `null`) — missing |
+| filter.relates_to (id + type) | NO | Find time linked to project/milestone — missing |
+| sort | NO | Array of {field, order}, only field is `starts_on` — missing |
+| page.size | YES | |
+| page.number | YES | |
+| includes | NO | `"materials,relates_to"` — not exposed (hardcoded in timesheet only) |
 
-### `teamleader_get_timetracking` (timeTracking.info)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `id` | Yes | |
-| `includes` | MISSING | `materials,relates_to` |
-
-### `teamleader_add_timetracking` (timeTracking.add)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `started_at` | Yes | Via `started_on` param, mapped to `started_at` in body |
-| `ended_at` | Yes | Via `ended_on` param, mapped to `ended_at` in body |
-| `duration` | Yes | Alternative to ended_at: started_at + duration |
-| `started_on` (date-only) | MISSING | Duration-only mode: started_on + duration |
-| `work_type_id` | Yes | But **required** in tool, optional in API |
-| `description` | Yes | |
-| `subject` (type+id) | Yes | But **required** in tool, optional in API |
-| `invoiceable` | ~~MISSING~~ ✅ Fixed | Now supported |
-| `user_id` | Yes | Optional in tool (defaults to authenticated user) |
-| subject.type enum values | ~~**BUG**~~ ✅ Fixed | ~~Tool missing `company`, `contact`, `event` and had `project`~~ → Now correct: `company`, `contact`, `event`, `milestone`, `nextgenTask`, `ticket`, `todo` |
-
-### `teamleader_update_timetracking` (timeTracking.update)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `id` | Yes | |
-| `started_at` | Yes | Via `started_on` param |
-| `started_on` (date-only) | MISSING | Duration-only mode |
-| `duration` | ~~MISSING~~ ✅ Fixed | ~~Tool sent `ended_at`~~ → Now correctly uses `started_at` + `duration` |
-| `work_type_id` | Yes | |
-| `description` | Yes | |
-| `subject` (type+id) | ~~MISSING~~ ✅ Fixed | Now supports `subject_type` + `subject_id` params |
-| `invoiceable` | ~~MISSING~~ ✅ Fixed | Now supported |
-| `ended_at` | ~~**BUG**~~ ✅ Fixed | ~~Tool sent `ended_at`~~ → Removed. Tool now uses `started_at` + `duration` |
-
-### `teamleader_delete_timetracking` (timeTracking.delete)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `id` | Yes | Complete |
-
-### `teamleader_resume_timetracking` (timeTracking.resume)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `id` | Yes | |
-| `started_at` | Yes | Complete |
-
-### `teamleader_start_timer` (timers.start)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `work_type_id` | Yes | But **required** in tool, optional in API |
-| `started_at` | ~~MISSING~~ ✅ Fixed | Optional, defaults to current time |
-| `description` | Yes | |
-| `subject` (type+id) | Yes | But **required** in tool, optional in API |
-| `invoiceable` | ~~MISSING~~ ✅ Fixed | Now supported |
-| `user_id` | ~~**BUG**~~ ✅ Fixed | ~~Tool had `user_id` as required param~~ → Removed. Always starts for authenticated user |
-| subject.type enum values | ~~**BUG**~~ ✅ Fixed | ~~Tool had `nextgenTask`, `project`~~ → Now correct: `company`, `contact`, `event`, `todo`, `milestone`, `ticket` |
-
-### `teamleader_stop_timer` (timers.stop)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| (none) | Correct | API takes no parameters. Tool has dummy `id` param marked as IGNORED |
-
-### `teamleader_get_current_timer` (timers.current)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| (none) | Correct | Complete |
-
-### `teamleader_update_timer` (timers.update)
-
-| API param | In tool? | Notes |
-|---|---|---|
-| `work_type_id` | Yes | |
-| `started_at` | Yes | |
-| `description` | Yes | |
-| `subject` (type+id) | Yes | |
-| `invoiceable` | Yes | |
-| subject.type enum values | Yes | Matches API: `company`, `contact`, `event`, `todo`, `milestone`, `ticket` |
+**Gaps: 5** (ids, subject_types, relates_to, sort, includes)
 
 ---
 
-## 3. describe() coverage
+## 2. teamleader_get_timetracking -> timeTracking.info
 
-### `teamleader_list_timetracking`
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | Required |
+| includes | NO | `"materials,relates_to"` — not exposed |
 
-| Param | Has describe()? |
-|---|---|
-| `page` | Yes |
-| `page_size` | Yes |
-| `user_id` | Yes |
-| `started_after` | Yes — includes YYYY-MM-DD warning |
-| `started_before` | Yes — includes YYYY-MM-DD warning |
-| `subject_type` | Yes |
-| `subject_id` | Yes |
-
-### `teamleader_get_timetracking`
-
-| Param | Has describe()? |
-|---|---|
-| `id` | Yes |
-
-### `teamleader_add_timetracking`
-
-| Param | Has describe()? |
-|---|---|
-| `started_on` | Yes — ISO 8601 + milliseconds warning |
-| `ended_on` | Yes — ISO 8601 format |
-| `duration` | Yes |
-| `user_id` | Yes |
-| `work_type_id` | Yes — cross-ref to list_work_types |
-| `subject_type` | Yes |
-| `subject_id` | Yes |
-| `description` | Yes |
-| `invoiceable` | Yes |
-
-### `teamleader_update_timetracking`
-
-| Param | Has describe()? |
-|---|---|
-| `id` | Yes |
-| `work_type_id` | Yes — cross-ref to list_work_types |
-| `started_on` | Yes |
-| `duration` | Yes |
-| `description` | Yes |
-| `subject_type` | Yes |
-| `subject_id` | Yes |
-| `invoiceable` | Yes |
-
-### `teamleader_delete_timetracking`
-
-| Param | Has describe()? |
-|---|---|
-| `id` | Yes |
-
-### `teamleader_start_timer`
-
-| Param | Has describe()? |
-|---|---|
-| `work_type_id` | Yes — cross-ref to list_work_types |
-| `subject_type` | Yes |
-| `subject_id` | Yes |
-| `description` | Yes |
-| `started_at` | Yes |
-| `invoiceable` | Yes |
-
-### `teamleader_stop_timer`
-
-| Param | Has describe()? |
-|---|---|
-| `id` | Yes — documents that it's IGNORED |
-
-### `teamleader_get_current_timer`
-
-(no params)
-
-### `teamleader_update_timer`
-
-| Param | Has describe()? |
-|---|---|
-| `work_type_id` | Yes — cross-ref to list_work_types |
-| `started_at` | Yes |
-| `description` | Yes |
-| `subject_type` | Yes |
-| `subject_id` | Yes |
-| `invoiceable` | Yes |
-
-### `teamleader_resume_timetracking`
-
-| Param | Has describe()? |
-|---|---|
-| `id` | Yes |
-| `started_at` | Yes |
-
-**All existing params have describe(). No gaps.**
+**Gaps: 1** (includes)
 
 ---
 
-## 4. llmTip / description quirk coverage
+## 3. teamleader_add_timetracking -> timeTracking.add
 
-| Known quirk | Where expected | Present? | Notes |
-|---|---|---|---|
-| `started_after`/`started_before`: pass `YYYY-MM-DD` to MCP filter params — API requires ISO 8601 datetime, `toDate()` converts internally | `list_timetracking` description | Yes | "NOTE: Pass `YYYY-MM-DD` to filter params — auto-converted to ISO 8601 (`T00:00:00+00:00`). API requires ISO 8601 with timezone." |
-| `timeTracking.update` requires both `started_at` + `duration` — no partial updates | `update_timetracking` description | ✅ Fixed | Description now correctly documents `started_at` + `duration` requirement |
-| Dedup must match on start time, not subject ID | `add_timetracking` description | Partial | Description warns "do not include milliseconds — causes dedup mismatches" but does NOT explicitly state to match on start time instead of subject ID |
-| Use `toFilterDate()` helper (strips ms) — NOT `.toISOString()` | Any time tracking tool | No | Not mentioned in any tool description. Code does use `toDate()` locally for date stripping, but `toFilterDate()` is not referenced |
-| `timers.stop` takes no parameters | `stop_timer` description | Yes | "CRITICAL: this API takes NO parameters — it always stops the current user's active timer" |
+API supports 3 body variants (oneOf): `started_at + duration`, `started_at + ended_at`, `started_on + duration`.
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| started_at | YES | Tool param `started_on` maps to body `started_at` |
+| ended_at | YES | Tool param `ended_on` maps to body `ended_at` |
+| duration | YES | Alternative to ended_at |
+| started_on (date-only) | NO | Duration-mode date-only variant. Low impact — datetime always works |
+| work_type_id | YES | Optional (correct) |
+| description | YES | |
+| subject.id | YES | Optional (correct) |
+| subject.type | YES | Enum: company, contact, event, milestone, nextgenTask, ticket, todo — matches API |
+| invoiceable | YES | |
+| user_id | YES | Optional, defaults to authenticated user |
+
+**Gaps: 1** (started_on date-only variant — minor)
 
 ---
 
-## Summary of bugs and issues
+## 4. teamleader_update_timetracking -> timeTracking.update
 
-### Critical bugs — ALL FIXED ✅
+API requires `started_at` or `started_on` (oneOf) + `duration` together.
 
-1. ~~**`update_timetracking` sends `ended_at` but API expects `duration`**~~ ✅ Fixed: tool now uses `started_at` + `duration`
-2. ~~**`start_timer` sends `user_id` but API has no such field**~~ ✅ Fixed: `user_id` removed from start_timer
-3. ~~**Wrong subject type enums** in 3 tools~~ ✅ Fixed: all enums now match the API
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | Required |
+| started_at (oneOf) | YES | Tool param `started_on` maps to body `started_at` |
+| started_on (oneOf, date-only) | NO | Duration-mode variant. Low impact |
+| work_type_id | YES | Nullable in API |
+| duration | YES | API says required, tool makes optional with client-side guard (returns error if duration without started_on) |
+| description | YES | Nullable in API |
+| subject (id + type) | YES | Nullable in API |
+| invoiceable | YES | |
 
-### Missing params — MOSTLY FIXED ✅
+**Gaps: 1** (started_on date-only variant — minor)
 
-4. `list_timetracking`: missing `filter.ids`, `filter.relates_to`, `sort`, `includes` (low priority)
-5. ~~`add_timetracking`: missing `duration`, `invoiceable`; params were required instead of optional~~ ✅ Fixed: `duration` and `invoiceable` added, params now optional
-6. ~~`update_timetracking`: missing `duration`, `subject`, `invoiceable`~~ ✅ Fixed: all three added
-7. `info`: missing `includes` (materials, relates_to) — low priority
-8. ~~`start_timer`: missing `started_at`, `invoiceable`; params were required instead of optional~~ ✅ Fixed
+---
 
-### Low priority
+## 5. teamleader_delete_timetracking -> timeTracking.delete
 
-9. `stop_timer` has a dummy `id` param that's always ignored — should ideally have zero params
-10. `add_timetracking` / `update_timetracking` use `started_on`/`ended_on` as param names but send `started_at`/`ended_at` to API — potentially confusing naming
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | Required |
+
+**Gaps: 0**
+
+---
+
+## 6. teamleader_resume_timetracking -> timeTracking.resume
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| id | YES | Required |
+| started_at | YES | Optional, defaults to current time |
+
+**Gaps: 0**
+
+---
+
+## 7. teamleader_start_timer -> timers.start
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| work_type_id | YES | Optional (correct) |
+| started_at | YES | Optional, defaults to current time |
+| description | YES | |
+| subject.id | YES | |
+| subject.type | YES | Enum matches API: company, contact, event, todo, milestone, ticket |
+| invoiceable | YES | |
+
+**Gaps: 0**
+
+---
+
+## 8. teamleader_stop_timer -> timers.stop
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| (none) | YES | API takes no params. Tool has dummy optional `id` param (documented as IGNORED) |
+
+**Gaps: 0**
+
+Note: Dummy `id` param is cosmetic noise — could be removed in future cleanup.
+
+---
+
+## 9. teamleader_get_current_timer -> timers.current
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| (none) | YES | No request params |
+
+**Gaps: 0**
+
+---
+
+## 10. teamleader_update_timer -> timers.update
+
+| API param | In tool? | Notes |
+|-----------|----------|-------|
+| work_type_id | YES | Nullable in API |
+| started_at | YES | |
+| description | YES | Nullable in API |
+| subject.id | YES | |
+| subject.type | YES | Nullable in API. Enum matches API |
+| invoiceable | YES | |
+
+**Gaps: 0**
+
+---
+
+## 11. teamleader_timesheet (composite tool — not a direct API endpoint)
+
+Uses `timeTracking.list` internally with `includes: "relates_to"`.
+Resolves todo -> group -> project -> client chain via multiple `.info` API calls.
+No param gap audit applicable — this is a higher-level reporting tool.
+
+---
+
+## Summary
+
+| Tool | API endpoint | Gaps |
+|------|-------------|------|
+| teamleader_list_timetracking | timeTracking.list | 5 (ids, subject_types, relates_to, sort, includes) |
+| teamleader_get_timetracking | timeTracking.info | 1 (includes) |
+| teamleader_add_timetracking | timeTracking.add | 1 (started_on date-only — minor) |
+| teamleader_update_timetracking | timeTracking.update | 1 (started_on date-only — minor) |
+| teamleader_delete_timetracking | timeTracking.delete | 0 |
+| teamleader_resume_timetracking | timeTracking.resume | 0 |
+| teamleader_start_timer | timers.start | 0 |
+| teamleader_stop_timer | timers.stop | 0 |
+| teamleader_get_current_timer | timers.current | 0 |
+| teamleader_update_timer | timers.update | 0 |
+| teamleader_timesheet | (composite) | N/A |
+| **Total** | | **8 gaps** |
+
+### Priority gaps
+
+1. **list: `includes`** — without this, materials and relates_to data not available in list output
+2. **list: `relates_to`** — useful for filtering time by project/milestone
+3. **list: `ids`** — batch lookup by ID
+4. **list: `subject_types`** — filter by multiple subject types at once
+5. **list: `sort`** — no sort control (only field is `starts_on`)
+6. **info: `includes`** — materials and relates_to not requestable
+7. **add/update: `started_on`** — date-only variant for duration-mode accounts (low priority)
+
+### Changes since previous audit (2026-03-05)
+
+All critical bugs from the 2026-03-05 audit have been fixed:
+- `update_timetracking` now uses `started_at` + `duration` (was sending `ended_at`)
+- `start_timer` no longer sends `user_id` (API has no such field)
+- All subject type enums match the API
+- `invoiceable` added to add/update/start_timer
+- `ended_after`/`ended_before` filters added to list
+- `started_at` added to start_timer
