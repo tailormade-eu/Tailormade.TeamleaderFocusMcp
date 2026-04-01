@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.8] - 2026-04-01
+
+### Improved
+
+- **API quirk docs**: Added CRITICAL/WARNING/NOTE prefixes to 17 known API quirks in tool descriptions across `projects.ts`, `tickets.ts`, `timetracking.ts`
+
+---
+
 ## [3.2.7] - 2026-04-01
 
 ### Fixed
