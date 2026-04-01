@@ -4,6 +4,15 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.7] - 2026-04-01
+
+### Fixed
+
+- **`teamleader_stop_timer`**: Removed unused `id` parameter — `timers.stop` API takes no params
+- **`teamleader_list_project_tasks_v2`**: Changed `only_open` default from `false` to `true` — consistent with CLAUDE.md design rules
+
+---
+
 ## [3.2.6] - 2026-04-01
 
 ### Improvements
