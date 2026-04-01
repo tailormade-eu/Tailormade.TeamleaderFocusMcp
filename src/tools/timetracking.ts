@@ -136,6 +136,7 @@ export function registerTimeTrackingTools(
       "Next steps: use teamleader_get_timetracking for full details, teamleader_update_timetracking to edit, or teamleader_delete_timetracking to remove.",
       "NOTE: Pass date filters as YYYY-MM-DD — they are automatically converted to ISO 8601 datetime (T00:00:00+00:00 for after/start, T23:59:59+00:00 for before/end).",
       "CRITICAL: subject.id from this response is NOT directly usable in teamleader_log_time — it references a todo/standalone task, not a nextgenTask ID. Always use teamleader_load_tasks to get the correct project task ID before logging time.",
+      "NOTE: Dedup must match on start time (to second precision), NOT on subject ID — two entries on different subjects can share the same subject ID format.",
     ].join("\n"),
     {
       page: z.number().optional().describe("Page number (default: 1)"),
@@ -444,7 +445,7 @@ export function registerTimeTrackingTools(
   // ── Stop Timer ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_stop_timer",
-    "Stops the current user's active timer. No parameters needed — always stops the currently running timer. Converts the running timer into a completed time tracking entry. Returns {id, type} of the created entry.",
+    "Stops the current user's active timer. NOTE: takes NO parameters — always stops the currently running timer. Converts the running timer into a completed time tracking entry. Returns {id, type} of the created entry.",
     {},
     async () => {
       const result = await client.request<{ data: { id: string; type: string } }>({

@@ -19,7 +19,7 @@ export function registerTicketTools(
   // ── List Tickets ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tickets",
-    "List tickets from Teamleader Focus. Returns array with id, subject, status, customer, assignee. WARNING: customer filter uses 'relates_to: {type, id}' internally (NOT 'customer_id') — this tool handles that automatically. Status filtering is exclusion-based only (exclude_status_ids) — there is no direct status filter. Use teamleader_list_ticket_statuses to find status IDs. Next steps: teamleader_get_ticket for details, teamleader_reply_ticket to respond.",
+    "List tickets from Teamleader Focus. Returns array with id, subject, status, customer, assignee. CRITICAL: customer filter uses 'relates_to: {type, id}' internally (NOT 'customer_id') — this tool handles that automatically. WARNING: Status filtering is exclusion-based only (exclude_status_ids) — there is no direct status include filter. Use teamleader_list_ticket_statuses to find status IDs. Next steps: teamleader_get_ticket for details, teamleader_reply_ticket to respond.",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),

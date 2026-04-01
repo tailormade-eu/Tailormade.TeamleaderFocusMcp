@@ -300,7 +300,7 @@ export function registerProjectTools(
   // ── Create Project Group (Phase) ─────────────────────────────────────────
   server.tool(
     "teamleader_create_project_group",
-    "Create a new project group (phase) within a project. Returns {id, type}. Next step: teamleader_create_project_task_v2 to add tasks to this group.",
+    "Create a new project group (phase) within a project. Returns {id, type}. Next step: teamleader_create_project_task_v2 to add tasks to this group. CRITICAL: the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.",
     {
       project_id: z.string().describe("Parent project ID"),
       title: z.string().describe("Group/phase title"),
@@ -590,7 +590,7 @@ export function registerProjectTools(
   // ── Update Project Group (Phase) ───────────────────────────────────────
   server.tool(
     "teamleader_update_project_group",
-    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. Returns success confirmation. Next steps: teamleader_get_project_group to verify changes, teamleader_list_project_groups to see all phases.",
+    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. Returns success confirmation. Next steps: teamleader_get_project_group to verify changes, teamleader_list_project_groups to see all phases. CRITICAL: the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.",
     {
       id: z.string().describe("Project group ID"),
       title: z.string().optional().describe("New group title"),
@@ -708,7 +708,7 @@ export function registerProjectTools(
   // ── Create Project Task (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_task_v2",
-    "Create a new task within a project or project group (phase). Returns {id, type}. NOTE: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id).",
+    "Create a new task within a project or project group (phase). Returns {id, type}. CRITICAL: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id).",
     {
       project_id: z.string().describe("Parent project ID"),
       project_group_id: z.string().optional().describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
@@ -769,7 +769,7 @@ export function registerProjectTools(
   // ── List Project Lines ──────────────────────────────────────────────────
   server.tool(
     "teamleader_list_project_lines",
-    "List all project lines (tasks, materials, groups) for a project. Returns array of {line: {type, id}, group: {type, id} | null}. Use filter.types to restrict to specific line types. Use this to see which lines belong to which groups.",
+    "List all project lines (tasks, materials, groups) for a project. Returns array of {line: {type, id}, group: {type, id} | null}. Use filter.types to restrict to specific line types. Use this to see which lines belong to which groups. WARNING: project_id must be top-level in the API body, NOT inside filter — this tool handles that automatically. NOTE: project_group_id is NOT a server-side filter — client-side filtering on group.id is applied after fetch.",
     {
       project_id: z.string().describe("Project ID"),
       types: z.array(z.enum(["nextgenTask", "nextgenMaterial", "nextgenProjectGroup"])).optional().describe("Filter by line types"),
