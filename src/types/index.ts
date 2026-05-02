@@ -425,21 +425,39 @@ export interface Invoice {
     customer: IdObject;
     for_attention_of?: IdObject;
   };
+  discounts?: { type: "percentage"; value: number; description?: string }[];
   total?: {
     tax_exclusive: Money;
     tax_inclusive: Money;
     payable: Money;
+    due: Money;
     taxes: { rate: number; taxable: Money; tax: Money }[];
+    withheld_taxes?: { id: string; taxable: Money; withheld: Money }[];
   };
   grouped_lines?: InvoiceGroupedLine[];
+  payment_term?: { type: string; days?: number };
+  payments?: { paid_at: string; payment: Money }[];
   payment_reference?: string | null;
   note?: string | null;
   currency?: string;
+  currency_exchange_rate?: { from: string; to: string; rate: number };
+  expected_payment_method?: {
+    method: string;
+    reference?: string | null;
+  } | null;
+  file?: IdObject | null;
+  deal?: IdObject | null;
+  project?: IdObject | null;
   on_hold_since?: string | null;
-  delivery_date?: string | null;
-  peppol_status?: string | null;
+  custom_fields?: {
+    definition: { type: string; id: string };
+    value: string | number | boolean | string[] | { id: string; type: string };
+  }[];
   created_at?: string;
   updated_at?: string;
+  document_template?: IdObject;
+  delivery_date?: string | null;
+  peppol_status?: string | null;
 }
 
 export interface InvoiceGroupedLine {

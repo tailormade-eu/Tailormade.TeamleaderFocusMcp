@@ -811,6 +811,122 @@ describe("buildCreditPartiallyBody", () => {
   });
 });
 
+describe("Invoice type — top-level objects/relations", () => {
+  it("accepts currency_exchange_rate object", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      currency_exchange_rate: { from: "USD", to: "EUR", rate: 1.1234 },
+    };
+    expect(inv.currency_exchange_rate).toEqual({ from: "USD", to: "EUR", rate: 1.1234 });
+  });
+
+  it("accepts deal relation as IdObject", () => {
+    const inv: Invoice = { id: "inv-1", deal: { id: "deal-1", type: "deal" } };
+    expect(inv.deal).toEqual({ id: "deal-1", type: "deal" });
+  });
+
+  it("accepts deal as null", () => {
+    const inv: Invoice = { id: "inv-1", deal: null };
+    expect(inv.deal).toBeNull();
+  });
+
+  it("accepts project relation as IdObject", () => {
+    const inv: Invoice = { id: "inv-1", project: { id: "proj-1", type: "project" } };
+    expect(inv.project).toEqual({ id: "proj-1", type: "project" });
+  });
+
+  it("accepts project as null", () => {
+    const inv: Invoice = { id: "inv-1", project: null };
+    expect(inv.project).toBeNull();
+  });
+
+  it("accepts file relation as IdObject", () => {
+    const inv: Invoice = { id: "inv-1", file: { id: "file-1", type: "file" } };
+    expect(inv.file).toEqual({ id: "file-1", type: "file" });
+  });
+
+  it("accepts file as null", () => {
+    const inv: Invoice = { id: "inv-1", file: null };
+    expect(inv.file).toBeNull();
+  });
+
+  it("accepts document_template relation as IdObject", () => {
+    const inv: Invoice = { id: "inv-1", document_template: { id: "tmpl-1", type: "documentTemplate" } };
+    expect(inv.document_template).toEqual({ id: "tmpl-1", type: "documentTemplate" });
+  });
+
+  it("accepts discounts array", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      discounts: [{ type: "percentage", value: 15.5, description: "winter promotion" }],
+    };
+    expect(inv.discounts).toHaveLength(1);
+    expect(inv.discounts![0].value).toBe(15.5);
+  });
+
+  it("accepts payment_term object", () => {
+    const inv: Invoice = { id: "inv-1", payment_term: { type: "after_invoice_date", days: 30 } };
+    expect(inv.payment_term).toEqual({ type: "after_invoice_date", days: 30 });
+  });
+
+  it("accepts payments array", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      payments: [{ paid_at: "2016-03-03T16:44:33+00:00", payment: { amount: 123.3, currency: "EUR" } }],
+    };
+    expect(inv.payments).toHaveLength(1);
+    expect(inv.payments![0].payment.amount).toBe(123.3);
+  });
+
+  it("accepts expected_payment_method with method and reference", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      expected_payment_method: { method: "sepa_direct_debit", reference: "AB1234" },
+    };
+    expect(inv.expected_payment_method?.method).toBe("sepa_direct_debit");
+  });
+
+  it("accepts expected_payment_method as null", () => {
+    const inv: Invoice = { id: "inv-1", expected_payment_method: null };
+    expect(inv.expected_payment_method).toBeNull();
+  });
+
+  it("accepts custom_fields array with string value", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      custom_fields: [
+        { definition: { type: "customFieldDefinition", id: "cf-1" }, value: "some text" },
+      ],
+    };
+    expect(inv.custom_fields).toHaveLength(1);
+    expect(inv.custom_fields![0].value).toBe("some text");
+  });
+
+  it("accepts custom_fields with object reference value", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      custom_fields: [
+        { definition: { type: "customFieldDefinition", id: "cf-2" }, value: { id: "comp-1", type: "company" } },
+      ],
+    };
+    expect((inv.custom_fields![0].value as any).type).toBe("company");
+  });
+
+  it("object/relation fields are absent when not present", () => {
+    const inv: Invoice = { id: "inv-3" };
+    expect(inv.currency_exchange_rate).toBeUndefined();
+    expect(inv.deal).toBeUndefined();
+    expect(inv.project).toBeUndefined();
+    expect(inv.file).toBeUndefined();
+    expect(inv.document_template).toBeUndefined();
+    expect(inv.discounts).toBeUndefined();
+    expect(inv.payment_term).toBeUndefined();
+    expect(inv.payments).toBeUndefined();
+    expect(inv.expected_payment_method).toBeUndefined();
+    expect(inv.custom_fields).toBeUndefined();
+  });
+});
+
 describe("Invoice type — top-level scalar fields", () => {
   it("accepts all new scalar fields on Invoice object", () => {
     const inv: Invoice = {
