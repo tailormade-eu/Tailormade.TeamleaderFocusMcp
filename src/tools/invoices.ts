@@ -159,6 +159,7 @@ export interface UpdateInvoiceParams {
   expected_payment_method?: UpdateInvoiceExpectedPaymentMethod | null;
   custom_fields?: UpdateInvoiceCustomField[];
   document_template_id?: string;
+  delivery_date?: string | null;
 }
 
 export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<string, unknown> {
@@ -185,6 +186,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   }
   if (params.custom_fields) body.custom_fields = params.custom_fields;
   if (params.document_template_id) body.document_template_id = params.document_template_id;
+  if (params.delivery_date !== undefined) body.delivery_date = params.delivery_date;
   if (params.line_items) {
     body.grouped_lines = [
       {
@@ -638,6 +640,13 @@ export function registerInvoiceTools(
         .string()
         .optional()
         .describe("Document template ID to use for this invoice. Use teamleader_list_document_templates to find available template IDs."),
+      delivery_date: z
+        .string()
+        .nullable()
+        .optional()
+        .describe(
+          "Delivery date of goods/services (YYYY-MM-DD). Distinct from invoice_date: invoice_date is when the invoice was issued; delivery_date is when goods/services were actually delivered. Required for Belgian VAT compliance on certain invoices. Pass null to clear."
+        ),
     },
     async (params) => {
       const body = buildUpdateInvoiceBody(params);

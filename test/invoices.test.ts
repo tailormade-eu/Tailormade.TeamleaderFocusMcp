@@ -320,6 +320,21 @@ describe("buildUpdateInvoiceBody", () => {
     const body = buildUpdateInvoiceBody({ id: "inv-1", document_template_id: "abc-123" });
     expect(body.document_template_id).toBe("abc-123");
   });
+
+  it("omits delivery_date when not provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("delivery_date");
+  });
+
+  it("includes delivery_date when provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1", delivery_date: "2025-12-08" });
+    expect(body.delivery_date).toBe("2025-12-08");
+  });
+
+  it("sends null to clear delivery_date", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1", delivery_date: null });
+    expect(body.delivery_date).toBeNull();
+  });
 });
 
 describe("discount_value Zod range validation", () => {
