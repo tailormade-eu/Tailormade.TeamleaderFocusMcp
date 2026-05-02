@@ -164,6 +164,24 @@ describe("buildUpdateInvoiceBody", () => {
     });
     expect(body.invoicee).toEqual({ customer: { type: "company", id: "comp-1" } });
   });
+
+  it("includes extended_description when provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [{ ...baseLine, extended_description: "Period: 2026-04, ref INV-042" }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].extended_description).toBe("Period: 2026-04, ref INV-042");
+  });
+
+  it("omits extended_description when not provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [baseLine],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("extended_description");
+  });
 });
 
 describe("discount_value Zod range validation", () => {

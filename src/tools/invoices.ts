@@ -112,6 +112,7 @@ export interface CreditPartiallyParams {
 export interface UpdateInvoiceLineItem {
   quantity: number;
   description: string;
+  extended_description?: string;
   unit_price_amount: number;
   tax_rate_id: string;
   product_id?: string;
@@ -155,6 +156,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
         line_items: params.line_items.map((item) => ({
           quantity: item.quantity,
           description: item.description,
+          ...(item.extended_description && { extended_description: item.extended_description }),
           unit_price: { amount: item.unit_price_amount, tax: "excluding" },
           tax_rate_id: item.tax_rate_id,
           ...(item.product_id && { product_id: item.product_id }),
@@ -487,6 +489,12 @@ export function registerInvoiceTools(
     description: z.string().describe("Line item description"),
     unit_price_amount: z.number().describe("Unit price (tax exclusive)"),
     tax_rate_id: z.string().describe("Tax rate ID. Use teamleader_list_tax_rates to find valid IDs."),
+    extended_description: z
+      .string()
+      .optional()
+      .describe(
+        'Extended description shown below the main description on the invoice. Use for additional details, e.g. "Period: 2026-04, ref INV-2026-042".'
+      ),
     product_id: z.string().optional().describe("Product ID"),
     discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
   });
