@@ -122,6 +122,25 @@ export interface UpdateInvoiceLineItem {
   withholding_tax_rate_id?: string;
 }
 
+function mapLineItem(item: UpdateInvoiceLineItem): Record<string, unknown> {
+  return {
+    quantity: item.quantity,
+    description: item.description,
+    ...(item.extended_description && { extended_description: item.extended_description }),
+    ...(item.unit_of_measure_id && { unit_of_measure_id: item.unit_of_measure_id }),
+    unit_price: { amount: item.unit_price_amount, tax: "excluding" },
+    tax_rate_id: item.tax_rate_id,
+    ...(item.product_id && { product_id: item.product_id }),
+    ...(item.product_category_id && { product_category_id: item.product_category_id }),
+    ...(item.discount_value !== undefined && {
+      discount: { value: item.discount_value, type: "percentage" },
+    }),
+    ...(item.withholding_tax_rate_id && {
+      withholding_tax_rate_id: item.withholding_tax_rate_id,
+    }),
+  };
+}
+
 export interface UpdateInvoiceDiscount {
   type: "percentage";
   value: number;
@@ -144,6 +163,11 @@ export interface UpdateInvoiceCustomField {
   value: UpdateInvoiceCustomFieldValue;
 }
 
+export interface UpdateInvoiceGroupedLine {
+  section?: { title?: string };
+  line_items: UpdateInvoiceLineItem[];
+}
+
 export interface UpdateInvoiceParams {
   id: string;
   customer_type?: "contact" | "company";
@@ -155,6 +179,7 @@ export interface UpdateInvoiceParams {
   purchase_order_number?: string;
   project_id?: string;
   line_items?: UpdateInvoiceLineItem[];
+  grouped_lines?: UpdateInvoiceGroupedLine[];
   discounts?: UpdateInvoiceDiscount[];
   expected_payment_method?: UpdateInvoiceExpectedPaymentMethod | null;
   custom_fields?: UpdateInvoiceCustomField[];
@@ -189,27 +214,13 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   if (params.document_template_id) body.document_template_id = params.document_template_id;
   if (params.delivery_date !== undefined) body.delivery_date = params.delivery_date;
   if (params.currency) body.currency = params.currency;
-  if (params.line_items) {
-    body.grouped_lines = [
-      {
-        line_items: params.line_items.map((item) => ({
-          quantity: item.quantity,
-          description: item.description,
-          ...(item.extended_description && { extended_description: item.extended_description }),
-          ...(item.unit_of_measure_id && { unit_of_measure_id: item.unit_of_measure_id }),
-          unit_price: { amount: item.unit_price_amount, tax: "excluding" },
-          tax_rate_id: item.tax_rate_id,
-          ...(item.product_id && { product_id: item.product_id }),
-          ...(item.product_category_id && { product_category_id: item.product_category_id }),
-          ...(item.discount_value !== undefined && {
-            discount: { value: item.discount_value, type: "percentage" },
-          }),
-          ...(item.withholding_tax_rate_id && {
-            withholding_tax_rate_id: item.withholding_tax_rate_id,
-          }),
-        })),
-      },
-    ];
+  if (params.grouped_lines) {
+    body.grouped_lines = params.grouped_lines.map((group) => ({
+      ...(group.section && { section: group.section }),
+      line_items: group.line_items.map(mapLineItem),
+    }));
+  } else if (params.line_items) {
+    body.grouped_lines = [{ line_items: params.line_items.map(mapLineItem) }];
   }
   return body;
 }
@@ -564,7 +575,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -578,7 +589,21 @@ export function registerInvoiceTools(
       note: z.string().optional().describe("Note on the invoice"),
       purchase_order_number: z.string().optional().describe("Purchase order number"),
       project_id: z.string().optional().describe("Link to a project ID"),
-      line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items (grouped_lines)"),
+      line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items in a single group (no section title). Use grouped_lines instead if you need section titles."),
+      grouped_lines: z
+        .array(
+          z.object({
+            section: z
+              .object({ title: z.string().optional().describe("Section title, e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .optional()
+              .describe("Optional section header for this group of line items"),
+            line_items: z.array(updateLineItemSchema).describe("Line items in this section"),
+          })
+        )
+        .optional()
+        .describe(
+          "Replace all line items using explicit groups with optional section titles. Use this instead of line_items when you need section headers. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
+        ),
       discounts: z
         .array(
           z.object({
@@ -682,7 +707,21 @@ export function registerInvoiceTools(
       invoice_date: z.string().optional().describe("Invoice date (YYYY-MM-DD)"),
       note: z.string().optional().describe("Note on the invoice"),
       project_id: z.string().optional().describe("Link to a project ID"),
-      line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items (grouped_lines)"),
+      line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items in a single group (no section title). Use grouped_lines instead if you need section titles."),
+      grouped_lines: z
+        .array(
+          z.object({
+            section: z
+              .object({ title: z.string().optional().describe("Section title, e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .optional()
+              .describe("Optional section header for this group of line items"),
+            line_items: z.array(updateLineItemSchema).describe("Line items in this section"),
+          })
+        )
+        .optional()
+        .describe(
+          "Replace all line items using explicit groups with optional section titles. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
+        ),
     },
     async (params) => {
       const body = buildUpdateInvoiceBody(params);

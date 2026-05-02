@@ -156,6 +156,60 @@ describe("buildUpdateInvoiceBody", () => {
     expect(body).not.toHaveProperty("grouped_lines");
   });
 
+  it("auto-wraps line_items in single group without section title", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1", line_items: [baseLine] });
+    const groups = body.grouped_lines as any[];
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).not.toHaveProperty("section");
+    expect(groups[0].line_items).toHaveLength(1);
+  });
+
+  it("grouped_lines with section title is passed as-is", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      grouped_lines: [{ section: { title: "Service Agreement JaRa-Tailormade_202605 (70%)" }, line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups).toHaveLength(1);
+    expect(groups[0].section).toEqual({ title: "Service Agreement JaRa-Tailormade_202605 (70%)" });
+    expect(groups[0].line_items[0].description).toBe("Test");
+  });
+
+  it("grouped_lines with multiple sections sends all groups correctly", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      grouped_lines: [
+        { section: { title: "Section A" }, line_items: [baseLine] },
+        { section: { title: "Section B" }, line_items: [{ ...baseLine, description: "Item B" }] },
+      ],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups).toHaveLength(2);
+    expect(groups[0].section.title).toBe("Section A");
+    expect(groups[1].section.title).toBe("Section B");
+    expect(groups[1].line_items[0].description).toBe("Item B");
+  });
+
+  it("grouped_lines takes precedence over line_items when both provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [baseLine],
+      grouped_lines: [{ section: { title: "X" }, line_items: [{ ...baseLine, description: "From grouped" }] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0].section.title).toBe("X");
+    expect(groups[0].line_items[0].description).toBe("From grouped");
+  });
+
+  it("grouped_lines maps line items with correct unit_price structure", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      grouped_lines: [{ line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0].line_items[0].unit_price).toEqual({ amount: 100, tax: "excluding" });
+  });
+
   it("omits discounts when not provided", () => {
     const body = buildUpdateInvoiceBody({ id: "inv-1" });
     expect(body).not.toHaveProperty("discounts");
