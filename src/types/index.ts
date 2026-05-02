@@ -432,11 +432,19 @@ export interface Invoice {
   discounts?: { type: "percentage"; value: number; description?: string }[];
   total?: {
     tax_exclusive: Money;
+    tax_exclusive_before_discount: Money;
     tax_inclusive: Money;
-    payable: Money;
-    due: Money;
+    tax_inclusive_before_discount: Money;
     taxes: { rate: number; taxable: Money; tax: Money }[];
     withheld_taxes?: { id: string; taxable: Money; withheld: Money }[];
+    payable: Money;
+    due: Money;
+    /** Only present when request includes "late_fees" */
+    due_incasso_inclusive?: Money;
+    /** Only present when request includes "late_fees" */
+    fixed_late_fee?: Money;
+    /** Only present when request includes "late_fees" */
+    interest?: Money;
   };
   grouped_lines?: InvoiceGroupedLine[];
   payment_term?: { type: string; days?: number };

@@ -1175,3 +1175,88 @@ describe("Invoice type — invoicee sub-type", () => {
     expect(inv.invoicee?.for_attention_of).toBeUndefined();
   });
 });
+
+describe("Invoice type — total sub-type", () => {
+  it("accepts total with all required money fields", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      total: {
+        tax_exclusive: { amount: 100, currency: "EUR" },
+        tax_exclusive_before_discount: { amount: 110, currency: "EUR" },
+        tax_inclusive: { amount: 121, currency: "EUR" },
+        tax_inclusive_before_discount: { amount: 133.1, currency: "EUR" },
+        taxes: [{ rate: 0.21, taxable: { amount: 100, currency: "EUR" }, tax: { amount: 21, currency: "EUR" } }],
+        payable: { amount: 121, currency: "EUR" },
+        due: { amount: 121, currency: "EUR" },
+      },
+    };
+    expect(inv.total?.tax_exclusive.amount).toBe(100);
+    expect(inv.total?.tax_exclusive_before_discount.amount).toBe(110);
+    expect(inv.total?.tax_inclusive.amount).toBe(121);
+    expect(inv.total?.tax_inclusive_before_discount.amount).toBe(133.1);
+    expect(inv.total?.payable.amount).toBe(121);
+    expect(inv.total?.due.amount).toBe(121);
+  });
+
+  it("accepts total with late_fee fields (present when includes=late_fees)", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      total: {
+        tax_exclusive: { amount: 100, currency: "EUR" },
+        tax_exclusive_before_discount: { amount: 110, currency: "EUR" },
+        tax_inclusive: { amount: 121, currency: "EUR" },
+        tax_inclusive_before_discount: { amount: 133.1, currency: "EUR" },
+        taxes: [],
+        payable: { amount: 121, currency: "EUR" },
+        due: { amount: 5, currency: "EUR" },
+        due_incasso_inclusive: { amount: 6, currency: "EUR" },
+        fixed_late_fee: { amount: 0.5, currency: "EUR" },
+        interest: { amount: 0.3, currency: "EUR" },
+      },
+    };
+    expect(inv.total?.due_incasso_inclusive?.amount).toBe(6);
+    expect(inv.total?.fixed_late_fee?.amount).toBe(0.5);
+    expect(inv.total?.interest?.amount).toBe(0.3);
+  });
+
+  it("late_fee fields are absent when not provided", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      total: {
+        tax_exclusive: { amount: 100, currency: "EUR" },
+        tax_exclusive_before_discount: { amount: 110, currency: "EUR" },
+        tax_inclusive: { amount: 121, currency: "EUR" },
+        tax_inclusive_before_discount: { amount: 133.1, currency: "EUR" },
+        taxes: [],
+        payable: { amount: 121, currency: "EUR" },
+        due: { amount: 121, currency: "EUR" },
+      },
+    };
+    expect(inv.total?.due_incasso_inclusive).toBeUndefined();
+    expect(inv.total?.fixed_late_fee).toBeUndefined();
+    expect(inv.total?.interest).toBeUndefined();
+  });
+
+  it("accepts withheld_taxes array", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      total: {
+        tax_exclusive: { amount: 100, currency: "EUR" },
+        tax_exclusive_before_discount: { amount: 110, currency: "EUR" },
+        tax_inclusive: { amount: 121, currency: "EUR" },
+        tax_inclusive_before_discount: { amount: 133.1, currency: "EUR" },
+        taxes: [],
+        payable: { amount: 121, currency: "EUR" },
+        due: { amount: 121, currency: "EUR" },
+        withheld_taxes: [{ id: "wt-1", taxable: { amount: 100, currency: "EUR" }, withheld: { amount: 15, currency: "EUR" } }],
+      },
+    };
+    expect(inv.total?.withheld_taxes).toHaveLength(1);
+    expect(inv.total?.withheld_taxes![0].withheld.amount).toBe(15);
+  });
+
+  it("total is absent when not provided", () => {
+    const inv: Invoice = { id: "inv-1" };
+    expect(inv.total).toBeUndefined();
+  });
+});
