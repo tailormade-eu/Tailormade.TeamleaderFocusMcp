@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.10] - 2026-05-02
+
+### Fixed
+
+- **`teamleader_update_invoice`**: Added `extended_description` per line item — field was missing from the line item schema despite being supported by the API
+
+---
+
 ## [3.2.9] - 2026-04-01
 
 ### Improved
