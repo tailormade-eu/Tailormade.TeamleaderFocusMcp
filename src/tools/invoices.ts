@@ -113,6 +113,7 @@ export interface UpdateInvoiceLineItem {
   quantity: number;
   description: string;
   extended_description?: string;
+  unit_of_measure_id?: string;
   unit_price_amount: number;
   tax_rate_id: string;
   product_id?: string;
@@ -157,6 +158,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
           quantity: item.quantity,
           description: item.description,
           ...(item.extended_description && { extended_description: item.extended_description }),
+          ...(item.unit_of_measure_id && { unit_of_measure_id: item.unit_of_measure_id }),
           unit_price: { amount: item.unit_price_amount, tax: "excluding" },
           tax_rate_id: item.tax_rate_id,
           ...(item.product_id && { product_id: item.product_id }),
@@ -495,6 +497,12 @@ export function registerInvoiceTools(
       .describe(
         'Extended description shown below the main description on the invoice. Use for additional details, e.g. "Period: 2026-04, ref INV-2026-042".'
       ),
+    unit_of_measure_id: z
+      .string()
+      .optional()
+      .describe(
+        "Unit of measure ID (e.g. hour, day, piece). Use teamleader_list_units_of_measure to find valid IDs."
+      ),
     product_id: z.string().optional().describe("Product ID"),
     discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
   });
@@ -502,7 +510,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id). Line items support optional discount_value (percentage, 0-100) — the full unit_price_amount is shown on the invoice with the discount applied separately.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id). Line items support optional discount_value (percentage, 0-100) and unit_of_measure_id (e.g. hour, day, piece).",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),

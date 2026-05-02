@@ -182,6 +182,24 @@ describe("buildUpdateInvoiceBody", () => {
     const lines = (body.grouped_lines as any)[0].line_items;
     expect(lines[0]).not.toHaveProperty("extended_description");
   });
+
+  it("includes unit_of_measure_id when provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [{ ...baseLine, unit_of_measure_id: "abc-123" }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].unit_of_measure_id).toBe("abc-123");
+  });
+
+  it("omits unit_of_measure_id when not provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [baseLine],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("unit_of_measure_id");
+  });
 });
 
 describe("discount_value Zod range validation", () => {
