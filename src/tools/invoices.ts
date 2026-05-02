@@ -285,6 +285,7 @@ export interface CreateInvoiceParams {
   line_items?: CreateInvoiceLineItem[];
   grouped_lines?: CreateInvoiceGroupedLine[];
   custom_fields?: UpdateInvoiceCustomField[];
+  document_template_id?: string;
 }
 
 export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<string, unknown> {
@@ -317,6 +318,7 @@ export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<stri
     body.expected_payment_method = params.expected_payment_method;
   }
   if (params.custom_fields) body.custom_fields = params.custom_fields;
+  if (params.document_template_id) body.document_template_id = params.document_template_id;
   return body;
 }
 
@@ -398,7 +400,7 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Supports custom_fields[] for mandatory or optional custom field values on the invoice — pass [{ id, value }] when the invoice type requires custom fields. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id).",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Supports custom_fields[] for mandatory or optional custom field values on the invoice — pass [{ id, value }] when the invoice type requires custom fields. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id), teamleader_list_document_templates (document_template_id).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -524,6 +526,10 @@ export function registerInvoiceTools(
         .describe(
           "Custom field values to set on this invoice. Required when the invoice has mandatory custom fields. Example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
         ),
+      document_template_id: z
+        .string()
+        .optional()
+        .describe("Document template ID to apply to this invoice. Use teamleader_list_document_templates to find available template IDs."),
     },
     async (params) => {
       const body = buildCreateInvoiceBody(params);

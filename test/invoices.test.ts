@@ -745,6 +745,19 @@ describe("buildCreateInvoiceBody", () => {
     });
     expect(body.custom_fields).toEqual([{ id: "cf-1", value: "some value" }]);
   });
+
+  it("omits document_template_id when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect(body).not.toHaveProperty("document_template_id");
+  });
+
+  it("includes document_template_id at top level when provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      document_template_id: "tmpl-abc-123",
+    });
+    expect(body.document_template_id).toBe("tmpl-abc-123");
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
