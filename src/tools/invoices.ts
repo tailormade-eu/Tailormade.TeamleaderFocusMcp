@@ -255,7 +255,17 @@ export interface CreateInvoiceLineItem {
   description: string;
   unit_price_amount: number;
   tax_rate_id: string;
+  extended_description?: string;
+  unit_of_measure_id?: string;
   product_id?: string;
+  product_category_id?: string;
+  discount_value?: number;
+  withholding_tax_rate_id?: string;
+}
+
+export interface CreateInvoiceGroupedLine {
+  section?: { title?: string };
+  line_items: CreateInvoiceLineItem[];
 }
 
 export interface CreateInvoiceParams {
@@ -270,7 +280,8 @@ export interface CreateInvoiceParams {
   purchase_order_number?: string;
   project_id?: string;
   note?: string;
-  line_items: CreateInvoiceLineItem[];
+  line_items?: CreateInvoiceLineItem[];
+  grouped_lines?: CreateInvoiceGroupedLine[];
 }
 
 export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<string, unknown> {
@@ -284,18 +295,15 @@ export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<stri
       type: params.payment_term_type,
       ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
     },
-    grouped_lines: [
-      {
-        line_items: params.line_items.map((item) => ({
-          quantity: item.quantity,
-          description: item.description,
-          unit_price: { amount: item.unit_price_amount, tax: "excluding" },
-          tax_rate_id: item.tax_rate_id,
-          ...(item.product_id && { product_id: item.product_id }),
-        })),
-      },
-    ],
   };
+  if (params.grouped_lines) {
+    body.grouped_lines = params.grouped_lines.map((group) => ({
+      ...(group.section && { section: group.section }),
+      line_items: group.line_items.map(mapLineItem),
+    }));
+  } else if (params.line_items) {
+    body.grouped_lines = [{ line_items: params.line_items.map(mapLineItem) }];
+  }
   if (params.currency) body.currency = params.currency;
   if (params.invoice_date) body.invoice_date = params.invoice_date;
   if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
@@ -382,7 +390,7 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes).",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -424,13 +432,41 @@ export function registerInvoiceTools(
             description: z.string().describe("Line item description"),
             unit_price_amount: z.number().describe("Unit price amount (tax exclusive)"),
             tax_rate_id: z.string().describe("Tax rate ID (use teamleader_list_tax_rates to find)"),
-            product_id: z
-              .string()
-              .optional()
-              .describe("Product ID (use teamleader_list_products to find)"),
+            extended_description: z.string().optional().describe("Extended description shown below the main description on the invoice"),
+            unit_of_measure_id: z.string().optional().describe("Unit of measure ID (use teamleader_list_units_of_measure to find)"),
+            product_id: z.string().optional().describe("Product ID (use teamleader_list_products to find)"),
+            product_category_id: z.string().optional().describe("Product category ID (use teamleader_list_product_categories to find)"),
+            discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
+            withholding_tax_rate_id: z.string().optional().describe("Withholding tax rate ID (use teamleader_list_withholding_tax_rates to find)"),
           })
         )
-        .describe("Line items for the invoice"),
+        .optional()
+        .describe("Line items for the invoice (flat list, no section title). Use grouped_lines instead if you need section headers."),
+      grouped_lines: z
+        .array(
+          z.object({
+            section: z
+              .object({ title: z.string().optional().describe("Section title, e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .optional()
+              .describe("Optional section header for this group of line items"),
+            line_items: z.array(
+              z.object({
+                quantity: z.number().describe("Quantity"),
+                description: z.string().describe("Line item description"),
+                unit_price_amount: z.number().describe("Unit price amount (tax exclusive)"),
+                tax_rate_id: z.string().describe("Tax rate ID (use teamleader_list_tax_rates to find)"),
+                extended_description: z.string().optional().describe("Extended description shown below the main description"),
+                unit_of_measure_id: z.string().optional().describe("Unit of measure ID (use teamleader_list_units_of_measure to find)"),
+                product_id: z.string().optional().describe("Product ID (use teamleader_list_products to find)"),
+                product_category_id: z.string().optional().describe("Product category ID (use teamleader_list_product_categories to find)"),
+                discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
+                withholding_tax_rate_id: z.string().optional().describe("Withholding tax rate ID (use teamleader_list_withholding_tax_rates to find)"),
+              })
+            ).describe("Line items in this section"),
+          })
+        )
+        .optional()
+        .describe("Line items grouped into sections with optional titles. Use instead of line_items when you need section headers. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."),
     },
     async (params) => {
       const body = buildCreateInvoiceBody(params);

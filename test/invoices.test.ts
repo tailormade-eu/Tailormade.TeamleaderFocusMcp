@@ -497,12 +497,13 @@ describe("discount_value Zod range validation", () => {
 });
 
 describe("buildCreateInvoiceBody", () => {
+  const baseLine = { quantity: 1, description: "Test", unit_price_amount: 100, tax_rate_id: "tr-1" };
   const baseParams = {
     customer_type: "company" as const,
     customer_id: "comp-1",
     department_id: "dep-1",
     payment_term_type: "cash",
-    line_items: [{ quantity: 1, description: "Test", unit_price_amount: 100, tax_rate_id: "tr-1" }],
+    line_items: [baseLine],
   };
 
   it("omits for_attention_of from body when not provided", () => {
@@ -559,6 +560,108 @@ describe("buildCreateInvoiceBody", () => {
       currency: { code: "GBP" },
     });
     expect(body.currency).toEqual({ code: "GBP" });
+  });
+
+  it("auto-wraps line_items in single group without section title", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    const groups = body.grouped_lines as any[];
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).not.toHaveProperty("section");
+    expect(groups[0].line_items).toHaveLength(1);
+  });
+
+  it("line_items maps unit_price correctly", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].unit_price).toEqual({ amount: 100, tax: "excluding" });
+  });
+
+  it("grouped_lines with section title passed as-is", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+      grouped_lines: [{ section: { title: "Service Agreement JaRa-Tailormade_202605 (70%)" }, line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups).toHaveLength(1);
+    expect(groups[0].section).toEqual({ title: "Service Agreement JaRa-Tailormade_202605 (70%)" });
+    expect(groups[0].line_items[0].description).toBe("Test");
+  });
+
+  it("grouped_lines without section omits section key", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+      grouped_lines: [{ line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0]).not.toHaveProperty("section");
+  });
+
+  it("grouped_lines with multiple sections sends all groups", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+      grouped_lines: [
+        { section: { title: "Section A" }, line_items: [baseLine] },
+        { section: { title: "Section B" }, line_items: [{ ...baseLine, description: "Item B" }] },
+      ],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups).toHaveLength(2);
+    expect(groups[0].section.title).toBe("Section A");
+    expect(groups[1].section.title).toBe("Section B");
+    expect(groups[1].line_items[0].description).toBe("Item B");
+  });
+
+  it("grouped_lines takes precedence over line_items when both provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      grouped_lines: [{ section: { title: "X" }, line_items: [{ ...baseLine, description: "From grouped" }] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0].section.title).toBe("X");
+    expect(groups[0].line_items[0].description).toBe("From grouped");
+  });
+
+  it("grouped_lines maps discount_value to { value, type: 'percentage' }", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+      grouped_lines: [{ line_items: [{ ...baseLine, discount_value: 20 }] }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].discount).toEqual({ value: 20, type: "percentage" });
+  });
+
+  it("grouped_lines omits discount when discount_value not provided", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+      grouped_lines: [{ line_items: [baseLine] }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("discount");
+  });
+
+  it("does not include grouped_lines when neither line_items nor grouped_lines provided", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+    });
+    expect(body).not.toHaveProperty("grouped_lines");
   });
 });
 
