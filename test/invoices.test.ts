@@ -732,6 +732,19 @@ describe("buildCreateInvoiceBody", () => {
     });
     expect(body.expected_payment_method).toBeNull();
   });
+
+  it("omits custom_fields when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect(body).not.toHaveProperty("custom_fields");
+  });
+
+  it("includes custom_fields at top level when provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      custom_fields: [{ id: "cf-1", value: "some value" }],
+    });
+    expect(body.custom_fields).toEqual([{ id: "cf-1", value: "some value" }]);
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
