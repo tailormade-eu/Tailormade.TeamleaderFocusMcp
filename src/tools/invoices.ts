@@ -850,7 +850,7 @@ export function registerInvoiceTools(
   // ── Update Booked Invoice ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_booked_invoice",
-    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project).",
+    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project, custom_fields).",
     {
       id: z.string().describe("The booked invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -886,6 +886,30 @@ export function registerInvoiceTools(
         .optional()
         .describe(
           "Replace all line items using explicit groups with optional section titles. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
+        ),
+      custom_fields: z
+        .array(
+          z.object({
+            id: z.string().describe("Custom field definition ID"),
+            value: z
+              .union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.array(z.string()),
+                z.object({
+                  id: z.string(),
+                  type: z.enum(["company", "contact", "product", "user"]),
+                }),
+              ])
+              .describe(
+                "Field value: string (text/email/phone), number (integer/money/auto-increment), boolean (yes/no), string[] (multiple selection), or { id, type } for linked record references (company/contact/product/user)"
+              ),
+          })
+        )
+        .optional()
+        .describe(
+          "Custom field values to set on the booked invoice. Example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
         ),
     },
     async (params) => {
