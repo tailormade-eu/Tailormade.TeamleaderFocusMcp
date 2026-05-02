@@ -164,7 +164,7 @@ export interface UpdateInvoiceCustomField {
 }
 
 export interface UpdateInvoiceGroupedLine {
-  section?: { title?: string };
+  section?: { title: string };
   line_items: UpdateInvoiceLineItem[];
 }
 
@@ -218,7 +218,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   if (params.currency) body.currency = params.currency;
   if (params.grouped_lines) {
     body.grouped_lines = params.grouped_lines.map((group) => ({
-      ...(group.section && { section: group.section }),
+      ...(group.section?.title && { section: { title: group.section.title } }),
       line_items: group.line_items.map(mapLineItem),
     }));
   } else if (params.line_items) {
@@ -264,7 +264,7 @@ export interface CreateInvoiceLineItem {
 }
 
 export interface CreateInvoiceGroupedLine {
-  section?: { title?: string };
+  section?: { title: string };
   line_items: CreateInvoiceLineItem[];
 }
 
@@ -303,7 +303,7 @@ export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<stri
   };
   if (params.grouped_lines) {
     body.grouped_lines = params.grouped_lines.map((group) => ({
-      ...(group.section && { section: group.section }),
+      ...(group.section?.title && { section: { title: group.section.title } }),
       line_items: group.line_items.map(mapLineItem),
     }));
   } else if (params.line_items) {
@@ -483,7 +483,7 @@ export function registerInvoiceTools(
         .array(
           z.object({
             section: z
-              .object({ title: z.string().optional().describe("Section title, e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
               .optional()
               .describe("Optional section header for this group of line items"),
             line_items: z.array(
@@ -750,7 +750,7 @@ export function registerInvoiceTools(
         .array(
           z.object({
             section: z
-              .object({ title: z.string().optional().describe("Section title, e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
               .optional()
               .describe("Optional section header for this group of line items"),
             line_items: z.array(updateLineItemSchema).describe("Line items in this section"),
@@ -877,7 +877,7 @@ export function registerInvoiceTools(
         .array(
           z.object({
             section: z
-              .object({ title: z.string().optional().describe("Section title, e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
               .optional()
               .describe("Optional section header for this group of line items"),
             line_items: z.array(updateLineItemSchema).describe("Line items in this section"),

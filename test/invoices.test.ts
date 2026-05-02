@@ -212,6 +212,25 @@ describe("buildUpdateInvoiceBody", () => {
     expect(groups[0].line_items[0].unit_price).toEqual({ amount: 100, tax: "excluding" });
   });
 
+  it("section not included in API body when section is absent", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      grouped_lines: [{ line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0]).not.toHaveProperty("section");
+  });
+
+  it("section.title included at correct position when section is present", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      grouped_lines: [{ section: { title: "Service Agreement" }, line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0].section).toEqual({ title: "Service Agreement" });
+    expect(groups[0].section.title).toBe("Service Agreement");
+  });
+
   it("omits discounts when not provided", () => {
     const body = buildUpdateInvoiceBody({ id: "inv-1" });
     expect(body).not.toHaveProperty("discounts");
@@ -623,6 +642,22 @@ describe("buildCreateInvoiceBody", () => {
     });
     const groups = body.grouped_lines as any[];
     expect(groups[0]).not.toHaveProperty("section");
+  });
+
+  it("section not included in API body when section is absent (create)", () => {
+    const body = buildCreateInvoiceBody({ ...baseParams });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0]).not.toHaveProperty("section");
+  });
+
+  it("section.title included at correct position when section is present (create)", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      grouped_lines: [{ section: { title: "Service Agreement" }, line_items: [baseLine] }],
+    });
+    const groups = body.grouped_lines as any[];
+    expect(groups[0].section).toEqual({ title: "Service Agreement" });
+    expect(groups[0].section.title).toBe("Service Agreement");
   });
 
   it("grouped_lines with multiple sections sends all groups", () => {
