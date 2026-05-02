@@ -122,6 +122,12 @@ export interface UpdateInvoiceLineItem {
   withholding_tax_rate_id?: string;
 }
 
+export interface UpdateInvoiceDiscount {
+  type: "percentage";
+  value: number;
+  description?: string;
+}
+
 export interface UpdateInvoiceParams {
   id: string;
   customer_type?: "contact" | "company";
@@ -133,6 +139,7 @@ export interface UpdateInvoiceParams {
   purchase_order_number?: string;
   project_id?: string;
   line_items?: UpdateInvoiceLineItem[];
+  discounts?: UpdateInvoiceDiscount[];
 }
 
 export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<string, unknown> {
@@ -153,6 +160,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   if (params.note !== undefined) body.note = params.note;
   if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
   if (params.project_id) body.project_id = params.project_id;
+  if (params.discounts) body.discounts = params.discounts;
   if (params.line_items) {
     body.grouped_lines = [
       {
@@ -528,7 +536,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing).",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item.",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -543,6 +551,18 @@ export function registerInvoiceTools(
       purchase_order_number: z.string().optional().describe("Purchase order number"),
       project_id: z.string().optional().describe("Link to a project ID"),
       line_items: z.array(updateLineItemSchema).optional().describe("Replace all line items (grouped_lines)"),
+      discounts: z
+        .array(
+          z.object({
+            type: z.literal("percentage"),
+            value: z.number().min(0).max(100),
+            description: z.string().optional().describe("Optional label (e.g. 'winter promotion')"),
+          })
+        )
+        .optional()
+        .describe(
+          "Invoice-level discounts applied to the whole invoice (NOT per line — use line_items[].discount_value for line-level discounts). Each entry: { type: 'percentage', value: 0-100, description? }."
+        ),
     },
     async (params) => {
       const body = buildUpdateInvoiceBody(params);

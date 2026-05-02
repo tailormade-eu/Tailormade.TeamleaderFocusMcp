@@ -156,6 +156,30 @@ describe("buildUpdateInvoiceBody", () => {
     expect(body).not.toHaveProperty("grouped_lines");
   });
 
+  it("omits discounts when not provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("discounts");
+  });
+
+  it("includes invoice-level discounts array at top level", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      discounts: [{ type: "percentage", value: 15.5, description: "winter promotion" }],
+    });
+    expect(body.discounts).toEqual([{ type: "percentage", value: 15.5, description: "winter promotion" }]);
+  });
+
+  it("discounts is at top level, not inside grouped_lines", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      discounts: [{ type: "percentage", value: 10 }],
+      line_items: [baseLine],
+    });
+    expect(body).toHaveProperty("discounts");
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("discounts");
+  });
+
   it("maps invoicee correctly", () => {
     const body = buildUpdateInvoiceBody({
       id: "inv-1",
