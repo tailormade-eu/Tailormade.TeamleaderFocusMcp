@@ -4,6 +4,17 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.3.0] - 2026-05-02
+
+### Added / Fixed
+
+- [task-99] `create_invoice`: added `invoicee.for_attention_of` (oneOf name/contact_id), `currency` object (code + exchange_rate), `grouped_lines` support (sections with title), `delivery_date`, `document_template_id`, `custom_fields[]`, `expected_payment_method`, `discounts[]` (invoice-level), `line_items[].unit_of_measure_id`, `line_items[].extended_description`, `line_items[].discount`, `line_items[].product_category_id`, `line_items[].withholding_tax_rate_id`
+- [task-99] `Invoice` TypeScript type: added all missing top-level scalars, relations, sub-types (`invoicee`, `InvoiceLineItem`, `InvoiceTotal`, `InvoiceLineItemTotal`)
+- [task-99] `update_booked_invoice`: added `invoicee.for_attention_of` and `custom_fields[]`
+- [task-99] `update_invoice` + `update_booked_invoice`: fixed `grouped_lines[].section.title` required guard (was optional in Zod but required by API)
+
+---
+
 ## [3.2.12] - 2026-05-02
 
 ### Changed
