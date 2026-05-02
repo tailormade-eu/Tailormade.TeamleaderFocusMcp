@@ -289,6 +289,27 @@ describe("buildUpdateInvoiceBody", () => {
     });
     expect(body.expected_payment_method).toBeNull();
   });
+
+  it("omits custom_fields when not provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("custom_fields");
+  });
+
+  it("includes custom_fields with string value", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      custom_fields: [{ id: "abc", value: "SA JaRa-Tailormade_202604" }],
+    });
+    expect(body.custom_fields).toEqual([{ id: "abc", value: "SA JaRa-Tailormade_202604" }]);
+  });
+
+  it("includes custom_fields with object reference value", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      custom_fields: [{ id: "xyz", value: { id: "contact-1", type: "contact" } }],
+    });
+    expect(body.custom_fields).toEqual([{ id: "xyz", value: { id: "contact-1", type: "contact" } }]);
+  });
 });
 
 describe("discount_value Zod range validation", () => {
