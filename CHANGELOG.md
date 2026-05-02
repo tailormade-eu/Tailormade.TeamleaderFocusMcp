@@ -4,6 +4,17 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.4.0] - 2026-05-03
+
+### Added
+
+- [B5] `scripts/scrape-tl-api.ts` — Playwright headless Chromium scraper for `developer.focus.teamleader.eu`: 2-phase SPA discovery (186 endpoints), HTML→Markdown via Turndown, outputs to `docs/api/NNN-slug.md`
+- [B5] CLI flags: `--diff` (skip existing), `--discover-only` (no write), `--no-delete` (skip cleanup)
+- [B5.2] Auto-delete obsolete `docs/api/*.md` files after scrape; safety guard (skips if scraped < 50% of existing); writes diff report to `.last-scrape.md`; protected files never deleted (`.method.md`, `.last-scrape.md`, `.diff-report.md`)
+- npm scripts: `scrape-api`, `scrape-api:discover`, `scrape-api:diff`
+
+---
+
 ## [3.3.0] - 2026-05-02
 
 ### Added / Fixed

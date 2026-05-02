@@ -52,7 +52,9 @@ function buildTurndown(): TurndownService {
 }
 
 async function waitForContent(page: Page): Promise<void> {
-  await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+  await page.waitForLoadState("networkidle", { timeout: 15000 }).catch((err) => {
+    console.warn(`waitForContent: networkidle timeout — continuing anyway (${String(err).split("\n")[0]})`);
+  });
 }
 
 function extractApiLinks(anchors: Array<{ href: string; text: string }>, baseUrl: string): Array<{ href: string; text: string }> {
@@ -112,8 +114,8 @@ async function discoverEndpoints(page: Page): Promise<Endpoint[]> {
           allLinks.set(ml.href, ml.text);
         }
       }
-    } catch {
-      // skip failed pages
+    } catch (err) {
+      console.warn(`Phase 2: failed to scrape ${cat.href} — ${String(err).split("\n")[0]}`);
     }
   }
   console.log(`\n  Total unique links after phase 2: ${allLinks.size}`);
@@ -224,7 +226,7 @@ async function main(): Promise<void> {
         written++;
         process.stdout.write(`\r[${i + 1}/${endpoints.length}] ${endpoint.slug.padEnd(50)}`);
       } catch (err) {
-        console.error(`\nFailed ${endpoint.url}: ${err}`);
+        console.error(`\nFailed ${endpoint.url}:`, err);
       }
     }
 
@@ -234,12 +236,10 @@ async function main(): Promise<void> {
     // Cleanup phase: delete obsolete files
     const removed: string[] = [];
     if (!NO_DELETE) {
-      const existingFiles = fs.readdirSync(DOCS_DIR).filter(
-        (f) => f.endsWith(".md") && !PROTECTED_FILES.has(f)
-      );
       const scrapedFilenames = new Set(endpoints.map((e) => e.filename));
-      // Also protect INDEX.md itself
-      scrapedFilenames.add("INDEX.md");
+      const existingFiles = fs.readdirSync(DOCS_DIR).filter(
+        (f) => f.endsWith(".md") && !PROTECTED_FILES.has(f) && f !== "INDEX.md"
+      );
 
       const obsolete = existingFiles.filter((f) => !scrapedFilenames.has(f));
 
