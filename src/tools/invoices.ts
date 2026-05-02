@@ -850,11 +850,20 @@ export function registerInvoiceTools(
   // ── Update Booked Invoice ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_booked_invoice",
-    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee, payment term, invoice date, note, grouped lines, project).",
+    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project).",
     {
       id: z.string().describe("The booked invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
+      for_attention_of: z
+        .union([
+          z.object({ name: z.string().describe("Free-text name (e.g. 'Finance Dept.')") }),
+          z.object({ contact_id: z.string().describe("Contact ID to reference by record") }),
+        ])
+        .optional()
+        .describe(
+          "Attention line on the invoice. Two forms: (1) { name: 'Finance Dept.' } — free text; (2) { contact_id: 'uuid' } — linked contact. Requires customer_type + customer_id."
+        ),
       payment_term_type: z
         .string()
         .optional()

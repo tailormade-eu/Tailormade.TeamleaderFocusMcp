@@ -437,6 +437,28 @@ describe("buildUpdateInvoiceBody", () => {
   });
 });
 
+describe("update_booked_invoice — for_attention_of", () => {
+  it("omits for_attention_of from body when not provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      customer_type: "company",
+      customer_id: "comp-1",
+    });
+    expect((body.invoicee as any).for_attention_of).toBeUndefined();
+  });
+
+  it("includes for_attention_of inside invoicee when provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      customer_type: "company",
+      customer_id: "comp-1",
+      for_attention_of: { name: "Finance Dept." },
+    });
+    expect((body.invoicee as any).for_attention_of).toEqual({ name: "Finance Dept." });
+    expect(body).not.toHaveProperty("for_attention_of");
+  });
+});
+
 describe("currency Zod validation", () => {
   const currencySchema = z.object({
     code: z.enum(["BAM","CAD","CHF","CLP","CNY","COP","CZK","DKK","EUR","GBP","INR","ISK","JPY","MAD","MXN","NOK","PEN","PLN","RON","SEK","TRY","USD","ZAR"]),
