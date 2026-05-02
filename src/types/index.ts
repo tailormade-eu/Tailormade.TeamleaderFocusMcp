@@ -419,6 +419,8 @@ export interface Invoice {
   due_on?: string;
   paid?: boolean;
   paid_at?: string;
+  sent?: boolean;
+  purchase_order_number?: string | null;
   invoicee?: {
     customer: IdObject;
     for_attention_of?: IdObject;
@@ -430,6 +432,12 @@ export interface Invoice {
     taxes: { rate: number; taxable: Money; tax: Money }[];
   };
   grouped_lines?: InvoiceGroupedLine[];
+  payment_reference?: string | null;
+  note?: string | null;
+  currency?: string;
+  on_hold_since?: string | null;
+  delivery_date?: string | null;
+  peppol_status?: string | null;
   created_at?: string;
   updated_at?: string;
 }

@@ -6,6 +6,7 @@ import {
   buildUpdateInvoiceBody,
   buildCreateInvoiceBody,
 } from "../src/tools/invoices.js";
+import type { Invoice } from "../src/types/index.js";
 import { z } from "zod";
 
 describe("buildListInvoicesBody", () => {
@@ -807,5 +808,59 @@ describe("buildCreditPartiallyBody", () => {
       ],
     });
     expect(body.credit_note_date).toBe("2026-03-01");
+  });
+});
+
+describe("Invoice type — top-level scalar fields", () => {
+  it("accepts all new scalar fields on Invoice object", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      sent: true,
+      purchase_order_number: "000023",
+      payment_reference: "+++084/2613/66074+++",
+      note: "Some extra remarks",
+      currency: "USD",
+      on_hold_since: "2016-02-01",
+      delivery_date: "2025-12-08",
+      peppol_status: "sent",
+    };
+    expect(inv.sent).toBe(true);
+    expect(inv.purchase_order_number).toBe("000023");
+    expect(inv.payment_reference).toBe("+++084/2613/66074+++");
+    expect(inv.note).toBe("Some extra remarks");
+    expect(inv.currency).toBe("USD");
+    expect(inv.on_hold_since).toBe("2016-02-01");
+    expect(inv.delivery_date).toBe("2025-12-08");
+    expect(inv.peppol_status).toBe("sent");
+  });
+
+  it("accepts null for nullable scalar fields", () => {
+    const inv: Invoice = {
+      id: "inv-2",
+      purchase_order_number: null,
+      payment_reference: null,
+      note: null,
+      on_hold_since: null,
+      delivery_date: null,
+      peppol_status: null,
+    };
+    expect(inv.purchase_order_number).toBeNull();
+    expect(inv.payment_reference).toBeNull();
+    expect(inv.note).toBeNull();
+    expect(inv.on_hold_since).toBeNull();
+    expect(inv.delivery_date).toBeNull();
+    expect(inv.peppol_status).toBeNull();
+  });
+
+  it("fields are absent when not present (pass-through API response)", () => {
+    const inv: Invoice = { id: "inv-3" };
+    expect(inv.sent).toBeUndefined();
+    expect(inv.purchase_order_number).toBeUndefined();
+    expect(inv.payment_reference).toBeUndefined();
+    expect(inv.note).toBeUndefined();
+    expect(inv.currency).toBeUndefined();
+    expect(inv.on_hold_since).toBeUndefined();
+    expect(inv.delivery_date).toBeUndefined();
+    expect(inv.peppol_status).toBeUndefined();
   });
 });
