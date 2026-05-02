@@ -172,6 +172,7 @@ export interface UpdateInvoiceParams {
   id: string;
   customer_type?: "contact" | "company";
   customer_id?: string;
+  for_attention_of?: { name: string } | { contact_id: string };
   payment_term_type?: string;
   payment_term_days?: number;
   invoice_date?: string;
@@ -194,6 +195,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   if (params.customer_type && params.customer_id) {
     body.invoicee = {
       customer: { type: params.customer_type, id: params.customer_id },
+      ...(params.for_attention_of && { for_attention_of: params.for_attention_of }),
     };
   }
   if (params.payment_term_type) {
@@ -580,6 +582,15 @@ export function registerInvoiceTools(
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
+      for_attention_of: z
+        .union([
+          z.object({ name: z.string().describe("Free-text name (e.g. 'Finance Dept.')") }),
+          z.object({ contact_id: z.string().describe("Contact ID to reference by record") }),
+        ])
+        .optional()
+        .describe(
+          "Attention line on the invoice. Two forms: (1) { name: 'Finance Dept.' } — free text; (2) { contact_id: 'uuid' } — linked contact. Requires customer_type + customer_id."
+        ),
       payment_term_type: z
         .string()
         .optional()

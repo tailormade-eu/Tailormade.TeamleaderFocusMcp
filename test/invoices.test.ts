@@ -243,6 +243,35 @@ describe("buildUpdateInvoiceBody", () => {
     expect(body.invoicee).toEqual({ customer: { type: "company", id: "comp-1" } });
   });
 
+  it("omits for_attention_of from body when not provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      customer_type: "company",
+      customer_id: "comp-1",
+    });
+    expect((body.invoicee as any).for_attention_of).toBeUndefined();
+  });
+
+  it("includes for_attention_of.name when provided by name", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      customer_type: "company",
+      customer_id: "comp-1",
+      for_attention_of: { name: "Finance Dept." },
+    });
+    expect((body.invoicee as any).for_attention_of).toEqual({ name: "Finance Dept." });
+  });
+
+  it("includes for_attention_of.contact_id when provided by contact", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      customer_type: "contact",
+      customer_id: "cust-1",
+      for_attention_of: { contact_id: "abc-123" },
+    });
+    expect((body.invoicee as any).for_attention_of).toEqual({ contact_id: "abc-123" });
+  });
+
   it("includes extended_description when provided", () => {
     const body = buildUpdateInvoiceBody({
       id: "inv-1",
