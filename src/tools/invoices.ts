@@ -281,6 +281,7 @@ export interface CreateInvoiceParams {
   project_id?: string;
   note?: string;
   discounts?: UpdateInvoiceDiscount[];
+  expected_payment_method?: UpdateInvoiceExpectedPaymentMethod | null;
   line_items?: CreateInvoiceLineItem[];
   grouped_lines?: CreateInvoiceGroupedLine[];
 }
@@ -311,6 +312,9 @@ export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<stri
   if (params.project_id) body.project_id = params.project_id;
   if (params.note) body.note = params.note;
   if (params.discounts) body.discounts = params.discounts;
+  if (params.expected_payment_method !== undefined) {
+    body.expected_payment_method = params.expected_payment_method;
+  }
   return body;
 }
 
@@ -392,7 +396,7 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id).",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -418,6 +422,19 @@ export function registerInvoiceTools(
       purchase_order_number: z.string().optional().describe("Purchase order number"),
       project_id: z.string().optional().describe("Link to a project ID"),
       note: z.string().optional().describe("Note to include on the invoice"),
+      expected_payment_method: z
+        .union([
+          z.object({
+            method: z.enum(["sepa_direct_debit", "direct_debit", "credit_card"]).describe("Payment method that requires a reference"),
+            reference: z.string().nullable().optional().describe("Mandate reference (e.g. 'AB1234')"),
+          }),
+          z.object({
+            method: z.enum(["cash", "cheque", "bankers_draft", "bank_transfer", "payment_card"]).describe("Payment method without reference"),
+          }),
+        ])
+        .nullable()
+        .optional()
+        .describe("Optional: expected payment method for this invoice. Use { method: 'bank_transfer' } for wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Pass null to clear."),
       discounts: z
         .array(
           z.object({

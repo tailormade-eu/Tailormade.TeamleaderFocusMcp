@@ -703,6 +703,35 @@ describe("buildCreateInvoiceBody", () => {
     });
     expect(body.discounts).toEqual([{ type: "percentage", value: 15.5, description: "winter promotion" }]);
   });
+
+  it("omits expected_payment_method when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect(body).not.toHaveProperty("expected_payment_method");
+  });
+
+  it("includes expected_payment_method for bank_transfer", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      expected_payment_method: { method: "bank_transfer" },
+    });
+    expect(body.expected_payment_method).toEqual({ method: "bank_transfer" });
+  });
+
+  it("includes expected_payment_method with reference for sepa_direct_debit", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      expected_payment_method: { method: "sepa_direct_debit", reference: "AB1234" },
+    });
+    expect(body.expected_payment_method).toEqual({ method: "sepa_direct_debit", reference: "AB1234" });
+  });
+
+  it("sends null for expected_payment_method when explicitly set to null", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      expected_payment_method: null,
+    });
+    expect(body.expected_payment_method).toBeNull();
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
