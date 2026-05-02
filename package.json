@@ -18,7 +18,10 @@
     "typecheck": "tsc --noEmit",
     "prepare": "npm run build",
     "check-coverage": "npx tsx tools/check-coverage.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "scrape-api": "tsx scripts/scrape-tl-api.ts",
+    "scrape-api:discover": "tsx scripts/scrape-tl-api.ts --discover-only",
+    "scrape-api:diff": "tsx scripts/scrape-tl-api.ts --diff"
   },
   "keywords": [
     "mcp",
@@ -52,7 +55,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/turndown": "^5.0.6",
+    "playwright": "^1.59.1",
     "tsx": "^4.19.0",
+    "turndown": "^7.2.4",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   }
