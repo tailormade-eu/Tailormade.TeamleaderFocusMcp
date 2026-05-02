@@ -539,6 +539,27 @@ describe("buildCreateInvoiceBody", () => {
     const body = buildCreateInvoiceBody(baseParams);
     expect((body.invoicee as any).customer).toEqual({ type: "company", id: "comp-1" });
   });
+
+  it("omits currency from body when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect(body.currency).toBeUndefined();
+  });
+
+  it("includes currency object when provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      currency: { code: "USD", exchange_rate: 1.0852 },
+    });
+    expect(body.currency).toEqual({ code: "USD", exchange_rate: 1.0852 });
+  });
+
+  it("includes currency without exchange_rate when only code provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      currency: { code: "GBP" },
+    });
+    expect(body.currency).toEqual({ code: "GBP" });
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
