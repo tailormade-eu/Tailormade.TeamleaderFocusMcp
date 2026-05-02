@@ -4,6 +4,7 @@ import {
   buildRegisterPaymentBody,
   buildCreditPartiallyBody,
   buildUpdateInvoiceBody,
+  buildCreateInvoiceBody,
 } from "../src/tools/invoices.js";
 import { z } from "zod";
 
@@ -492,6 +493,51 @@ describe("discount_value Zod range validation", () => {
       quantity: 1, description: "X", unit_price_amount: 10, tax_rate_id: "tr-1", discount_value: 100,
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("buildCreateInvoiceBody", () => {
+  const baseParams = {
+    customer_type: "company" as const,
+    customer_id: "comp-1",
+    department_id: "dep-1",
+    payment_term_type: "cash",
+    line_items: [{ quantity: 1, description: "Test", unit_price_amount: 100, tax_rate_id: "tr-1" }],
+  };
+
+  it("omits for_attention_of from body when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect((body.invoicee as any).for_attention_of).toBeUndefined();
+  });
+
+  it("includes for_attention_of.name when provided by name", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      for_attention_of: { name: "Finance Dept." },
+    });
+    expect((body.invoicee as any).for_attention_of).toEqual({ name: "Finance Dept." });
+  });
+
+  it("includes for_attention_of.contact_id when provided by contact", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      for_attention_of: { contact_id: "abc-123" },
+    });
+    expect((body.invoicee as any).for_attention_of).toEqual({ contact_id: "abc-123" });
+  });
+
+  it("for_attention_of is nested inside invoicee (not top-level)", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      for_attention_of: { name: "Finance" },
+    });
+    expect(body).not.toHaveProperty("for_attention_of");
+    expect((body.invoicee as any)).toHaveProperty("for_attention_of");
+  });
+
+  it("maps customer to invoicee.customer object", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect((body.invoicee as any).customer).toEqual({ type: "company", id: "comp-1" });
   });
 });
 

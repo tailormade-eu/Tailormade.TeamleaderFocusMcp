@@ -250,6 +250,58 @@ export function buildCreditPartiallyBody(params: CreditPartiallyParams): Record<
   return body;
 }
 
+export interface CreateInvoiceLineItem {
+  quantity: number;
+  description: string;
+  unit_price_amount: number;
+  tax_rate_id: string;
+  product_id?: string;
+}
+
+export interface CreateInvoiceParams {
+  customer_type: "contact" | "company";
+  customer_id: string;
+  for_attention_of?: { name: string } | { contact_id: string };
+  department_id: string;
+  payment_term_type: string;
+  payment_term_days?: number;
+  invoice_date?: string;
+  purchase_order_number?: string;
+  project_id?: string;
+  note?: string;
+  line_items: CreateInvoiceLineItem[];
+}
+
+export function buildCreateInvoiceBody(params: CreateInvoiceParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    invoicee: {
+      customer: { type: params.customer_type, id: params.customer_id },
+      ...(params.for_attention_of && { for_attention_of: params.for_attention_of }),
+    },
+    department_id: params.department_id,
+    payment_term: {
+      type: params.payment_term_type,
+      ...(params.payment_term_days !== undefined && { days: params.payment_term_days }),
+    },
+    grouped_lines: [
+      {
+        line_items: params.line_items.map((item) => ({
+          quantity: item.quantity,
+          description: item.description,
+          unit_price: { amount: item.unit_price_amount, tax: "excluding" },
+          tax_rate_id: item.tax_rate_id,
+          ...(item.product_id && { product_id: item.product_id }),
+        })),
+      },
+    ],
+  };
+  if (params.invoice_date) body.invoice_date = params.invoice_date;
+  if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
+  if (params.project_id) body.project_id = params.project_id;
+  if (params.note) body.note = params.note;
+  return body;
+}
+
 export function registerInvoiceTools(
   server: McpServer,
   client: TeamleaderClient
@@ -328,10 +380,17 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id).",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id).",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
+      for_attention_of: z
+        .union([
+          z.object({ name: z.string().describe("Free-text name (e.g. 'Finance Dept.')") }),
+          z.object({ contact_id: z.string().describe("Contact ID (use teamleader_list_contacts to find)") }),
+        ])
+        .optional()
+        .describe("Optional: address invoice to a specific person or department — either { name } for free text or { contact_id } to link a contact record"),
       department_id: z.string().describe("Department ID (use teamleader_list_departments to find)"),
       payment_term_type: z
         .string()
@@ -363,40 +422,7 @@ export function registerInvoiceTools(
         .describe("Line items for the invoice"),
     },
     async (params) => {
-      const body: Record<string, unknown> = {
-        invoicee: {
-          customer: {
-            type: params.customer_type,
-            id: params.customer_id,
-          },
-        },
-        department_id: params.department_id,
-        payment_term: {
-          type: params.payment_term_type,
-          ...(params.payment_term_days !== undefined && {
-            days: params.payment_term_days,
-          }),
-        },
-        grouped_lines: [
-          {
-            line_items: params.line_items.map((item) => ({
-              quantity: item.quantity,
-              description: item.description,
-              unit_price: {
-                amount: item.unit_price_amount,
-                tax: "excluding",
-              },
-              tax_rate_id: item.tax_rate_id,
-              ...(item.product_id && { product_id: item.product_id }),
-            })),
-          },
-        ],
-      };
-
-      if (params.invoice_date) body.invoice_date = params.invoice_date;
-      if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
-      if (params.project_id) body.project_id = params.project_id;
-      if (params.note) body.note = params.note;
+      const body = buildCreateInvoiceBody(params);
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "invoices.draft",
