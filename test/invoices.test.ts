@@ -690,6 +690,19 @@ describe("buildCreateInvoiceBody", () => {
     const lines = (body.grouped_lines as any)[0].line_items;
     expect(lines[0].unit_of_measure_id).toBe("uom-99");
   });
+
+  it("omits discounts when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect(body).not.toHaveProperty("discounts");
+  });
+
+  it("includes invoice-level discounts at top level when provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      discounts: [{ type: "percentage", value: 15.5, description: "winter promotion" }],
+    });
+    expect(body.discounts).toEqual([{ type: "percentage", value: 15.5, description: "winter promotion" }]);
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
