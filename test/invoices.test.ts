@@ -200,6 +200,24 @@ describe("buildUpdateInvoiceBody", () => {
     const lines = (body.grouped_lines as any)[0].line_items;
     expect(lines[0]).not.toHaveProperty("unit_of_measure_id");
   });
+
+  it("includes withholding_tax_rate_id when provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [{ ...baseLine, withholding_tax_rate_id: "abc-123" }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].withholding_tax_rate_id).toBe("abc-123");
+  });
+
+  it("omits withholding_tax_rate_id when not provided", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      line_items: [baseLine],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("withholding_tax_rate_id");
+  });
 });
 
 describe("discount_value Zod range validation", () => {

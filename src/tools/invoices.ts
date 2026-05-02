@@ -118,6 +118,7 @@ export interface UpdateInvoiceLineItem {
   tax_rate_id: string;
   product_id?: string;
   discount_value?: number;
+  withholding_tax_rate_id?: string;
 }
 
 export interface UpdateInvoiceParams {
@@ -164,6 +165,9 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
           ...(item.product_id && { product_id: item.product_id }),
           ...(item.discount_value !== undefined && {
             discount: { value: item.discount_value, type: "percentage" },
+          }),
+          ...(item.withholding_tax_rate_id && {
+            withholding_tax_rate_id: item.withholding_tax_rate_id,
           }),
         })),
       },
@@ -505,12 +509,18 @@ export function registerInvoiceTools(
       ),
     product_id: z.string().optional().describe("Product ID"),
     discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
+    withholding_tax_rate_id: z
+      .string()
+      .optional()
+      .describe(
+        "Withholding tax rate ID (bedrijfsvoorheffing). Use teamleader_list_withholding_tax_rates to find valid IDs."
+      ),
   });
 
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id). Line items support optional discount_value (percentage, 0-100) and unit_of_measure_id (e.g. hour, day, piece).",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing).",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
