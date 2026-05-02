@@ -117,6 +117,7 @@ export interface UpdateInvoiceLineItem {
   unit_price_amount: number;
   tax_rate_id: string;
   product_id?: string;
+  product_category_id?: string;
   discount_value?: number;
   withholding_tax_rate_id?: string;
 }
@@ -163,6 +164,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
           unit_price: { amount: item.unit_price_amount, tax: "excluding" },
           tax_rate_id: item.tax_rate_id,
           ...(item.product_id && { product_id: item.product_id }),
+          ...(item.product_category_id && { product_category_id: item.product_category_id }),
           ...(item.discount_value !== undefined && {
             discount: { value: item.discount_value, type: "percentage" },
           }),
@@ -508,6 +510,12 @@ export function registerInvoiceTools(
         "Unit of measure ID (e.g. hour, day, piece). Use teamleader_list_units_of_measure to find valid IDs."
       ),
     product_id: z.string().optional().describe("Product ID"),
+    product_category_id: z
+      .string()
+      .optional()
+      .describe(
+        "Product category ID for accounting classification. Use teamleader_list_product_categories to find valid IDs."
+      ),
     discount_value: z.number().min(0).max(100).optional().describe("Discount percentage (0-100)"),
     withholding_tax_rate_id: z
       .string()
