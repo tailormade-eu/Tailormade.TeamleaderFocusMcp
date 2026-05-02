@@ -128,6 +128,10 @@ export interface UpdateInvoiceDiscount {
   description?: string;
 }
 
+export type UpdateInvoiceExpectedPaymentMethod =
+  | { method: "sepa_direct_debit" | "direct_debit" | "credit_card"; reference?: string | null }
+  | { method: "cash" | "cheque" | "bankers_draft" | "bank_transfer" | "payment_card" };
+
 export interface UpdateInvoiceParams {
   id: string;
   customer_type?: "contact" | "company";
@@ -140,6 +144,7 @@ export interface UpdateInvoiceParams {
   project_id?: string;
   line_items?: UpdateInvoiceLineItem[];
   discounts?: UpdateInvoiceDiscount[];
+  expected_payment_method?: UpdateInvoiceExpectedPaymentMethod | null;
 }
 
 export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<string, unknown> {
@@ -161,6 +166,9 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   if (params.purchase_order_number) body.purchase_order_number = params.purchase_order_number;
   if (params.project_id) body.project_id = params.project_id;
   if (params.discounts) body.discounts = params.discounts;
+  if (params.expected_payment_method !== undefined) {
+    body.expected_payment_method = params.expected_payment_method;
+  }
   if (params.line_items) {
     body.grouped_lines = [
       {
@@ -536,7 +544,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear.",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -562,6 +570,29 @@ export function registerInvoiceTools(
         .optional()
         .describe(
           "Invoice-level discounts applied to the whole invoice (NOT per line — use line_items[].discount_value for line-level discounts). Each entry: { type: 'percentage', value: 0-100, description? }."
+        ),
+      expected_payment_method: z
+        .union([
+          z
+            .object({
+              method: z
+                .enum(["sepa_direct_debit", "direct_debit", "credit_card"])
+                .describe("Payment method that supports an optional reference"),
+              reference: z.string().nullable().optional().describe("SEPA/direct debit mandate reference (optional)"),
+            })
+            .describe("Payment method with optional reference (sepa_direct_debit, direct_debit, credit_card)"),
+          z
+            .object({
+              method: z
+                .enum(["cash", "cheque", "bankers_draft", "bank_transfer", "payment_card"])
+                .describe("Payment method without reference"),
+            })
+            .describe("Payment method without reference (cash, cheque, bankers_draft, bank_transfer, payment_card)"),
+        ])
+        .nullable()
+        .optional()
+        .describe(
+          "Expected payment method. Two forms: (1) { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null } — supports an optional mandate reference; (2) { method: cash|cheque|bankers_draft|bank_transfer|payment_card } — no reference. Pass null to clear."
         ),
     },
     async (params) => {

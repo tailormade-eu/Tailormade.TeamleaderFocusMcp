@@ -260,6 +260,35 @@ describe("buildUpdateInvoiceBody", () => {
     const lines = (body.grouped_lines as any)[0].line_items;
     expect(lines[0]).not.toHaveProperty("product_category_id");
   });
+
+  it("omits expected_payment_method when not provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("expected_payment_method");
+  });
+
+  it("includes expected_payment_method with reference for sepa_direct_debit", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      expected_payment_method: { method: "sepa_direct_debit", reference: "AB1234" },
+    });
+    expect(body.expected_payment_method).toEqual({ method: "sepa_direct_debit", reference: "AB1234" });
+  });
+
+  it("includes expected_payment_method without reference for cash", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      expected_payment_method: { method: "cash" },
+    });
+    expect(body.expected_payment_method).toEqual({ method: "cash" });
+  });
+
+  it("sends null to clear expected_payment_method", () => {
+    const body = buildUpdateInvoiceBody({
+      id: "inv-1",
+      expected_payment_method: null,
+    });
+    expect(body.expected_payment_method).toBeNull();
+  });
 });
 
 describe("discount_value Zod range validation", () => {
