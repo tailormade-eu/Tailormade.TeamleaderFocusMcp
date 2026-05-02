@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.4.1] - 2026-05-03
+
+### Changed
+
+- [B5.3] `scripts/scrape-tl-api.ts` — sub-action discovery: scraper now finds 350+ endpoints (was 186); detects all sub-action URLs per resource page instead of only top-level sidebar entries
+
+---
+
 ## [3.4.0] - 2026-05-03
 
 ### Added

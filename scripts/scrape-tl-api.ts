@@ -89,10 +89,8 @@ const MIN_FAIL = 150;
 async function discoverEndpoints(browser: Browser): Promise<Endpoint[]> {
   const indexUrl = `${BASE_URL}/docs/api`;
   const queue: string[] = [indexUrl];
-  const queued = new Set<string>([indexUrl]);
-  const visited = new Set<string>();
+  const queued = new Set<string>([indexUrl]); // dedup: prevents any URL from entering queue twice
   const found = new Map<string, string>(); // url → title
-  let total = 0;
 
   console.log("Transitive BFS crawl starting...");
 
@@ -101,9 +99,6 @@ async function discoverEndpoints(browser: Browser): Promise<Endpoint[]> {
 
     await Promise.all(
       batch.map(async (url) => {
-        if (visited.has(url)) return;
-        visited.add(url);
-
         const page = await browser.newPage();
         try {
           await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -117,8 +112,7 @@ async function discoverEndpoints(browser: Browser): Promise<Endpoint[]> {
           // The index page itself is not an endpoint
           if (url !== indexUrl) {
             found.set(url, titleText);
-            total++;
-            process.stdout.write(`\r  Discovered: ${total} endpoints (queue: ${queue.length})   `);
+            process.stdout.write(`\r  Discovered: ${found.size} endpoints (queue: ${queue.length})   `);
           }
 
           const rawLinks = await getLinksFromPage(page);
@@ -139,7 +133,7 @@ async function discoverEndpoints(browser: Browser): Promise<Endpoint[]> {
     );
   }
 
-  console.log(`\n  BFS complete: ${found.size} unique endpoints found (${visited.size} pages visited)`);
+  console.log(`\n  BFS complete: ${found.size} unique endpoints found (${queued.size} pages queued)`);
 
   if (found.size < MIN_FAIL) {
     throw new Error(`ABORT: only ${found.size} endpoints found — expected >= ${MIN_FAIL}. Scraper may be broken.`);
@@ -235,25 +229,28 @@ async function main(): Promise<void> {
     const scrapePage = await browser.newPage();
     await scrapePage.setViewportSize({ width: 1280, height: 900 });
 
-    for (let i = 0; i < endpoints.length; i++) {
-      const endpoint = endpoints[i];
-      const outPath = path.join(DOCS_DIR, endpoint.filename);
+    try {
+      for (let i = 0; i < endpoints.length; i++) {
+        const endpoint = endpoints[i];
+        const outPath = path.join(DOCS_DIR, endpoint.filename);
 
-      if (DIFF_MODE && fs.existsSync(outPath)) {
-        skipped++;
-        continue;
-      }
+        if (DIFF_MODE && fs.existsSync(outPath)) {
+          skipped++;
+          continue;
+        }
 
-      try {
-        const content = await scrapeEndpoint(scrapePage, endpoint, td);
-        fs.writeFileSync(outPath, content, "utf-8");
-        written++;
-        process.stdout.write(`\r[${i + 1}/${endpoints.length}] ${endpoint.slug.padEnd(50)}`);
-      } catch (err) {
-        console.error(`\nFailed ${endpoint.url}:`, err);
+        try {
+          const content = await scrapeEndpoint(scrapePage, endpoint, td);
+          fs.writeFileSync(outPath, content, "utf-8");
+          written++;
+          process.stdout.write(`\r[${i + 1}/${endpoints.length}] ${endpoint.slug.padEnd(50)}`);
+        } catch (err) {
+          console.error(`\nFailed ${endpoint.url}:`, err);
+        }
       }
+    } finally {
+      await scrapePage.close();
     }
-    await scrapePage.close();
 
     console.log(`\nDone: ${written} written, ${skipped} skipped`);
     writeIndex(endpoints);
