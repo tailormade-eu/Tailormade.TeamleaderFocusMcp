@@ -4,6 +4,16 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.12] - 2026-05-02
+
+### Changed
+
+- **Audit `invoices.draft` vs API docs**: 13 gaps identified in `teamleader_create_invoice` — fields present in `update_invoice` but missing from create tool; added as B3.1.1–B3.1.13 in BACKLOG
+- **Audit `invoices.info` vs API docs**: 37 typing gaps in `Invoice` TypeScript interface (pass-through tool, no data loss); added as B3.2.1–B3.2.5 in BACKLOG
+- **Audit `invoices.updatebooked` vs API docs**: 3 gaps in `teamleader_update_booked_invoice`; added as B3.3.1–B3.3.3 in BACKLOG
+
+---
+
 ## [3.2.11] - 2026-05-02
 
 ### Added
