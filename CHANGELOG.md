@@ -4,6 +4,26 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.2.11] - 2026-05-02
+
+### Added
+
+- **`teamleader_update_invoice`**: `grouped_lines` param with `section.title` support — enables invoice line grouping with section headers
+- **`teamleader_update_invoice`**: `currency` param (`code` + optional `exchange_rate`) — multi-currency invoice support
+- **`teamleader_update_invoice`**: `delivery_date` param (nullable) — Belgian VAT compliance field, distinct from `invoice_date`
+- **`teamleader_update_invoice`**: `document_template_id` param — override default document template per invoice
+- **`teamleader_update_invoice`**: `custom_fields` param — pass custom field values to draft invoices
+- **`teamleader_update_invoice`**: `expected_payment_method` param — discriminated union (with-reference: sepa_direct_debit/direct_debit/credit_card; without-reference: cash/cheque/bank_transfer/etc.)
+- **`teamleader_update_invoice`**: `discounts` param (invoice-level) — separate from line-item `discount_value`
+- **`teamleader_update_invoice` + `teamleader_update_booked_invoice`**: `unit_of_measure_id`, `withholding_tax_rate_id`, `product_category_id` per line item
+- **`teamleader_update_invoice`**: `invoicee.for_attention_of` — by name or contact_id
+
+### Fixed
+
+- Backlog item B2 fully resolved: all missing `invoices.update` fields now implemented (11 params across 2 tools)
+
+---
+
 ## [3.2.10] - 2026-05-02
 
 ### Fixed
