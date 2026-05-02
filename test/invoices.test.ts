@@ -310,6 +310,16 @@ describe("buildUpdateInvoiceBody", () => {
     });
     expect(body.custom_fields).toEqual([{ id: "xyz", value: { id: "contact-1", type: "contact" } }]);
   });
+
+  it("omits document_template_id when not provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("document_template_id");
+  });
+
+  it("includes document_template_id when provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1", document_template_id: "abc-123" });
+    expect(body.document_template_id).toBe("abc-123");
+  });
 });
 
 describe("discount_value Zod range validation", () => {

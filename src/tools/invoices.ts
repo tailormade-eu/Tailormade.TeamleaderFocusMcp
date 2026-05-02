@@ -158,6 +158,7 @@ export interface UpdateInvoiceParams {
   discounts?: UpdateInvoiceDiscount[];
   expected_payment_method?: UpdateInvoiceExpectedPaymentMethod | null;
   custom_fields?: UpdateInvoiceCustomField[];
+  document_template_id?: string;
 }
 
 export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<string, unknown> {
@@ -183,6 +184,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
     body.expected_payment_method = params.expected_payment_method;
   }
   if (params.custom_fields) body.custom_fields = params.custom_fields;
+  if (params.document_template_id) body.document_template_id = params.document_template_id;
   if (params.line_items) {
     body.grouped_lines = [
       {
@@ -558,7 +560,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
     {
       id: z.string().describe("The invoice ID to update"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -632,6 +634,10 @@ export function registerInvoiceTools(
         .describe(
           "Custom field values to set. Example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
         ),
+      document_template_id: z
+        .string()
+        .optional()
+        .describe("Document template ID to use for this invoice. Use teamleader_list_document_templates to find available template IDs."),
     },
     async (params) => {
       const body = buildUpdateInvoiceBody(params);
