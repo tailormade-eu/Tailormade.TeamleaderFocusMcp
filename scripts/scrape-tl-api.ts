@@ -6,6 +6,7 @@
  *   tsx scripts/scrape-tl-api.ts                  # full scrape (overwrite all)
  *   tsx scripts/scrape-tl-api.ts --discover-only  # list endpoints, no write
  *   tsx scripts/scrape-tl-api.ts --diff           # only scrape missing endpoints
+ *   tsx scripts/scrape-tl-api.ts --no-delete      # skip auto-delete of obsolete files
  */
 
 import { chromium, type Page } from "playwright";
@@ -16,10 +17,15 @@ import * as path from "path";
 const BASE_URL = "https://developer.focus.teamleader.eu";
 const DOCS_DIR = path.join(process.cwd(), "docs/api");
 const INDEX_FILE = path.join(DOCS_DIR, "INDEX.md");
+const LAST_SCRAPE_FILE = path.join(DOCS_DIR, ".last-scrape.md");
+
+// Files that must never be auto-deleted
+const PROTECTED_FILES = new Set([".method.md", ".last-scrape.md", ".diff-report.md"]);
 
 const args = process.argv.slice(2);
 const DISCOVER_ONLY = args.includes("--discover-only");
 const DIFF_MODE = args.includes("--diff");
+const NO_DELETE = args.includes("--no-delete");
 
 interface Endpoint {
   title: string;
@@ -144,6 +150,25 @@ async function scrapeEndpoint(page: Page, endpoint: Endpoint, td: TurndownServic
   return `# ${result.title}\n\n> Source: ${endpoint.url}\n\n${markdown}`;
 }
 
+function writeLastScrapeReport(total: number, written: number, skipped: number, removed: string[]): void {
+  const now = new Date().toISOString().replace("T", " ").slice(0, 16);
+  const removedSection =
+    removed.length > 0
+      ? `- **Removed (obsolete): ${removed.length}**\n${removed.map((f) => `  - ${f}`).join("\n")}`
+      : `- Removed (obsolete): 0`;
+  const lines = [
+    `# Last scrape — ${now}`,
+    ``,
+    `- Endpoints scraped: ${total}`,
+    `- New/updated files: ${written}`,
+    `- Skipped (--diff): ${skipped}`,
+    removedSection,
+    ``,
+  ];
+  fs.writeFileSync(LAST_SCRAPE_FILE, lines.join("\n"), "utf-8");
+  console.log(`Wrote .last-scrape.md`);
+}
+
 function writeIndex(endpoints: Endpoint[]): void {
   const lines = [
     `# Teamleader Focus API — Documentation Index`,
@@ -205,6 +230,37 @@ async function main(): Promise<void> {
 
     console.log(`\nDone: ${written} written, ${skipped} skipped`);
     writeIndex(endpoints);
+
+    // Cleanup phase: delete obsolete files
+    const removed: string[] = [];
+    if (!NO_DELETE) {
+      const existingFiles = fs.readdirSync(DOCS_DIR).filter(
+        (f) => f.endsWith(".md") && !PROTECTED_FILES.has(f)
+      );
+      const scrapedFilenames = new Set(endpoints.map((e) => e.filename));
+      // Also protect INDEX.md itself
+      scrapedFilenames.add("INDEX.md");
+
+      const obsolete = existingFiles.filter((f) => !scrapedFilenames.has(f));
+
+      // Safety: don't mass-delete if scraped result is less than 50% of existing
+      if (endpoints.length < existingFiles.length * 0.5) {
+        console.warn(`\nSafety: scraped ${endpoints.length} endpoints but ${existingFiles.length} files exist. Skipping auto-delete to prevent mass-delete on scrape failure.`);
+      } else {
+        for (const f of obsolete) {
+          fs.unlinkSync(path.join(DOCS_DIR, f));
+          console.log(`Deleted obsolete: ${f}`);
+          removed.push(f);
+        }
+        if (removed.length === 0) {
+          console.log("No obsolete files to delete.");
+        }
+      }
+    } else {
+      console.log("--no-delete: skipping obsolete file cleanup.");
+    }
+
+    writeLastScrapeReport(endpoints.length, written, skipped, removed);
   } finally {
     await browser.close();
   }
