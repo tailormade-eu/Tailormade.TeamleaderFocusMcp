@@ -9,7 +9,7 @@
  *   tsx scripts/scrape-tl-api.ts --no-delete      # skip auto-delete of obsolete files
  */
 
-import { chromium, type Page } from "playwright";
+import { chromium, type Browser, type Page } from "playwright";
 import TurndownService from "turndown";
 import * as fs from "fs";
 import * as path from "path";
@@ -82,46 +82,74 @@ async function getLinksFromPage(page: Page): Promise<Array<{ href: string; text:
   });
 }
 
-async function discoverEndpoints(page: Page): Promise<Endpoint[]> {
-  console.log("Phase 1: Discovering top-level categories...");
-  await page.goto(`${BASE_URL}/docs/api`, { waitUntil: "domcontentloaded" });
-  await waitForContent(page);
+const CONCURRENCY = 5;
+const MIN_WARN = 300;
+const MIN_FAIL = 150;
 
-  const allRawLinks = await getLinksFromPage(page);
-  const topLevel = extractApiLinks(allRawLinks, BASE_URL);
-  console.log(`  Found ${topLevel.length} top-level categories`);
+async function discoverEndpoints(browser: Browser): Promise<Endpoint[]> {
+  const indexUrl = `${BASE_URL}/docs/api`;
+  const queue: string[] = [indexUrl];
+  const queued = new Set<string>([indexUrl]);
+  const visited = new Set<string>();
+  const found = new Map<string, string>(); // url → title
+  let total = 0;
 
-  // Phase 2: visit each category page to find method links in sidebar
-  const allLinks = new Map<string, string>(); // url → title
-  for (const tl of topLevel) {
-    allLinks.set(tl.href, tl.text);
-  }
+  console.log("Transitive BFS crawl starting...");
 
-  console.log("Phase 2: Visiting each category to collect method links...");
-  for (let i = 0; i < topLevel.length; i++) {
-    const cat = topLevel[i];
-    process.stdout.write(`\r  [${i + 1}/${topLevel.length}] ${cat.href.split("/").pop()?.padEnd(40)}`);
+  while (queue.length > 0) {
+    const batch = queue.splice(0, CONCURRENCY);
 
-    try {
-      await page.goto(cat.href, { waitUntil: "domcontentloaded" });
-      await waitForContent(page);
+    await Promise.all(
+      batch.map(async (url) => {
+        if (visited.has(url)) return;
+        visited.add(url);
 
-      const rawLinks = await getLinksFromPage(page);
-      const methodLinks = extractApiLinks(rawLinks, BASE_URL);
+        const page = await browser.newPage();
+        try {
+          await page.goto(url, { waitUntil: "domcontentloaded" });
+          await waitForContent(page);
 
-      for (const ml of methodLinks) {
-        if (!allLinks.has(ml.href)) {
-          allLinks.set(ml.href, ml.text);
+          const titleText = await page.evaluate(() => {
+            const h1 = document.querySelector("h1");
+            return h1?.textContent?.trim() || document.title;
+          });
+
+          // The index page itself is not an endpoint
+          if (url !== indexUrl) {
+            found.set(url, titleText);
+            total++;
+            process.stdout.write(`\r  Discovered: ${total} endpoints (queue: ${queue.length})   `);
+          }
+
+          const rawLinks = await getLinksFromPage(page);
+          const apiLinks = extractApiLinks(rawLinks, BASE_URL);
+
+          for (const link of apiLinks) {
+            if (!queued.has(link.href)) {
+              queued.add(link.href);
+              queue.push(link.href);
+            }
+          }
+        } catch (err) {
+          console.warn(`\nFailed: ${url} — ${String(err).split("\n")[0]}`);
+        } finally {
+          await page.close();
         }
-      }
-    } catch (err) {
-      console.warn(`Phase 2: failed to scrape ${cat.href} — ${String(err).split("\n")[0]}`);
-    }
+      })
+    );
   }
-  console.log(`\n  Total unique links after phase 2: ${allLinks.size}`);
+
+  console.log(`\n  BFS complete: ${found.size} unique endpoints found (${visited.size} pages visited)`);
+
+  if (found.size < MIN_FAIL) {
+    throw new Error(`ABORT: only ${found.size} endpoints found — expected >= ${MIN_FAIL}. Scraper may be broken.`);
+  }
+  if (found.size < MIN_WARN) {
+    console.warn(`Warning: only ${found.size} endpoints found — expected >= ${MIN_WARN}. Check if SPA rendered correctly.`);
+  }
 
   // Sort and assign filenames
-  const sorted = Array.from(allLinks.entries()).sort(([a], [b]) => a.localeCompare(b));
+  const sorted = Array.from(found.entries()).sort(([a], [b]) => a.localeCompare(b));
 
   const endpoints: Endpoint[] = sorted.map(([url, title], i) => {
     const slug = urlToSlug(url);
@@ -186,16 +214,10 @@ function writeIndex(endpoints: Endpoint[]): void {
 
 async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setViewportSize({ width: 1280, height: 900 });
 
   try {
-    const endpoints = await discoverEndpoints(page);
+    const endpoints = await discoverEndpoints(browser);
     console.log(`\nDiscovered ${endpoints.length} endpoints`);
-
-    if (endpoints.length < 50) {
-      console.warn(`Warning: expected >50 endpoints, found ${endpoints.length}. SPA may not have rendered fully.`);
-    }
 
     if (DISCOVER_ONLY) {
       console.log("\nEndpoints:");
@@ -210,6 +232,8 @@ async function main(): Promise<void> {
     const td = buildTurndown();
     let written = 0;
     let skipped = 0;
+    const scrapePage = await browser.newPage();
+    await scrapePage.setViewportSize({ width: 1280, height: 900 });
 
     for (let i = 0; i < endpoints.length; i++) {
       const endpoint = endpoints[i];
@@ -221,7 +245,7 @@ async function main(): Promise<void> {
       }
 
       try {
-        const content = await scrapeEndpoint(page, endpoint, td);
+        const content = await scrapeEndpoint(scrapePage, endpoint, td);
         fs.writeFileSync(outPath, content, "utf-8");
         written++;
         process.stdout.write(`\r[${i + 1}/${endpoints.length}] ${endpoint.slug.padEnd(50)}`);
@@ -229,6 +253,7 @@ async function main(): Promise<void> {
         console.error(`\nFailed ${endpoint.url}:`, err);
       }
     }
+    await scrapePage.close();
 
     console.log(`\nDone: ${written} written, ${skipped} skipped`);
     writeIndex(endpoints);
