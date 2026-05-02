@@ -758,6 +758,21 @@ describe("buildCreateInvoiceBody", () => {
     });
     expect(body.document_template_id).toBe("tmpl-abc-123");
   });
+
+  it("omits delivery_date when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    expect(body).not.toHaveProperty("delivery_date");
+  });
+
+  it("includes delivery_date when provided", () => {
+    const body = buildCreateInvoiceBody({ ...baseParams, delivery_date: "2025-12-08" });
+    expect(body.delivery_date).toBe("2025-12-08");
+  });
+
+  it("sends null to clear delivery_date", () => {
+    const body = buildCreateInvoiceBody({ ...baseParams, delivery_date: null });
+    expect(body.delivery_date).toBeNull();
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
