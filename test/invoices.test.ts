@@ -663,6 +663,33 @@ describe("buildCreateInvoiceBody", () => {
     });
     expect(body).not.toHaveProperty("grouped_lines");
   });
+
+  it("includes unit_of_measure_id in line_items when provided", () => {
+    const body = buildCreateInvoiceBody({
+      ...baseParams,
+      line_items: [{ ...baseLine, unit_of_measure_id: "uom-42" }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].unit_of_measure_id).toBe("uom-42");
+  });
+
+  it("omits unit_of_measure_id from line_items when not provided", () => {
+    const body = buildCreateInvoiceBody(baseParams);
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0]).not.toHaveProperty("unit_of_measure_id");
+  });
+
+  it("includes unit_of_measure_id in grouped_lines when provided", () => {
+    const body = buildCreateInvoiceBody({
+      customer_type: "company",
+      customer_id: "comp-1",
+      department_id: "dep-1",
+      payment_term_type: "cash",
+      grouped_lines: [{ line_items: [{ ...baseLine, unit_of_measure_id: "uom-99" }] }],
+    });
+    const lines = (body.grouped_lines as any)[0].line_items;
+    expect(lines[0].unit_of_measure_id).toBe("uom-99");
+  });
 });
 
 describe("buildCreditPartiallyBody", () => {
