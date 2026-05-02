@@ -422,8 +422,12 @@ export interface Invoice {
   sent?: boolean;
   purchase_order_number?: string | null;
   invoicee?: {
+    name?: string;
+    vat_number?: string | null;
     customer: IdObject;
-    for_attention_of?: IdObject;
+    for_attention_of?: { name?: string | null; contact?: IdObject | null } | null;
+    email?: string | null;
+    national_identification_number?: string | null;
   };
   discounts?: { type: "percentage"; value: number; description?: string }[];
   total?: {

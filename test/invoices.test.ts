@@ -980,3 +980,83 @@ describe("Invoice type — top-level scalar fields", () => {
     expect(inv.peppol_status).toBeUndefined();
   });
 });
+
+describe("Invoice type — invoicee sub-type", () => {
+  it("accepts invoicee with all scalar fields", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      invoicee: {
+        name: "De Rode Duivels",
+        vat_number: "BE0899623035",
+        customer: { id: "cust-1", type: "company" },
+        email: "duivels@test.com",
+        national_identification_number: "123",
+      },
+    };
+    expect(inv.invoicee?.name).toBe("De Rode Duivels");
+    expect(inv.invoicee?.vat_number).toBe("BE0899623035");
+    expect(inv.invoicee?.email).toBe("duivels@test.com");
+    expect(inv.invoicee?.national_identification_number).toBe("123");
+  });
+
+  it("accepts nullable scalar fields as null", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      invoicee: {
+        customer: { id: "cust-1", type: "company" },
+        vat_number: null,
+        email: null,
+        national_identification_number: null,
+      },
+    };
+    expect(inv.invoicee?.vat_number).toBeNull();
+    expect(inv.invoicee?.email).toBeNull();
+    expect(inv.invoicee?.national_identification_number).toBeNull();
+  });
+
+  it("accepts for_attention_of with name only", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      invoicee: {
+        customer: { id: "cust-1", type: "company" },
+        for_attention_of: { name: "Radja Nainggolan" },
+      },
+    };
+    expect(inv.invoicee?.for_attention_of?.name).toBe("Radja Nainggolan");
+    expect(inv.invoicee?.for_attention_of?.contact).toBeUndefined();
+  });
+
+  it("accepts for_attention_of with contact IdObject", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      invoicee: {
+        customer: { id: "cust-1", type: "company" },
+        for_attention_of: { contact: { id: "contact-1", type: "contact" } },
+      },
+    };
+    expect(inv.invoicee?.for_attention_of?.contact?.id).toBe("contact-1");
+  });
+
+  it("accepts for_attention_of as null", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      invoicee: {
+        customer: { id: "cust-1", type: "company" },
+        for_attention_of: null,
+      },
+    };
+    expect(inv.invoicee?.for_attention_of).toBeNull();
+  });
+
+  it("invoicee scalar fields absent when not provided", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      invoicee: { customer: { id: "cust-1", type: "company" } },
+    };
+    expect(inv.invoicee?.name).toBeUndefined();
+    expect(inv.invoicee?.vat_number).toBeUndefined();
+    expect(inv.invoicee?.email).toBeUndefined();
+    expect(inv.invoicee?.national_identification_number).toBeUndefined();
+    expect(inv.invoicee?.for_attention_of).toBeUndefined();
+  });
+});
