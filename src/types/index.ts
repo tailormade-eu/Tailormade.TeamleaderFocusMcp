@@ -470,16 +470,22 @@ export interface InvoiceGroupedLine {
 }
 
 export interface InvoiceLineItem {
+  product?: IdObject | null;
   quantity: number;
   description: string;
-  extended_description?: string;
-  unit_price: Money;
-  tax_rate_id: string;
-  discount?: {
-    type: "percentage";
-    value: number;
+  extended_description?: string | null;
+  unit?: IdObject | null;
+  unit_price: { amount: number; tax: "excluding" };
+  tax?: IdObject;
+  discount?: { value: number; type: "percentage" } | null;
+  total?: {
+    tax_exclusive: Money;
+    tax_exclusive_before_discount: Money;
+    tax_inclusive: Money;
+    tax_inclusive_before_discount: Money;
   };
-  product_id?: string;
+  product_category?: IdObject | null;
+  withheld_tax?: IdObject | null;
 }
 
 export interface InvoiceListFilter {

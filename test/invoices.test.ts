@@ -981,6 +981,121 @@ describe("Invoice type — top-level scalar fields", () => {
   });
 });
 
+describe("Invoice type — InvoiceLineItem sub-type", () => {
+  it("accepts product as IdObject", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, product: { id: "prod-1", type: "product" } }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].product).toEqual({ id: "prod-1", type: "product" });
+  });
+
+  it("accepts product as null", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, product: null }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].product).toBeNull();
+  });
+
+  it("omits product when not provided", () => {
+    const item = { quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" as const } };
+    expect(item).not.toHaveProperty("product");
+  });
+
+  it("accepts unit as IdObject", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, unit: { id: "unit-1", type: "unit" } }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].unit).toEqual({ id: "unit-1", type: "unit" });
+  });
+
+  it("accepts unit as null", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, unit: null }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].unit).toBeNull();
+  });
+
+  it("accepts tax as IdObject", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, tax: { id: "tax-1", type: "taxRate" } }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].tax).toEqual({ id: "tax-1", type: "taxRate" });
+  });
+
+  it("omits tax when not provided", () => {
+    const item = { quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" as const } };
+    expect(item).not.toHaveProperty("tax");
+  });
+
+  it("unit_price has amount and tax fields (not currency)", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 123.3, tax: "excluding" } }] }],
+    };
+    const item = inv.grouped_lines![0].line_items[0];
+    expect(item.unit_price.amount).toBe(123.3);
+    expect(item.unit_price.tax).toBe("excluding");
+    expect(item.unit_price).not.toHaveProperty("currency");
+  });
+
+  it("accepts total sub-object with all four money fields", () => {
+    const total = {
+      tax_exclusive: { amount: 100, currency: "EUR" },
+      tax_exclusive_before_discount: { amount: 110, currency: "EUR" },
+      tax_inclusive: { amount: 121, currency: "EUR" },
+      tax_inclusive_before_discount: { amount: 133.1, currency: "EUR" },
+    };
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, total }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].total?.tax_exclusive.amount).toBe(100);
+    expect(inv.grouped_lines![0].line_items[0].total?.tax_inclusive.currency).toBe("EUR");
+  });
+
+  it("omits total when not provided", () => {
+    const item = { quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" as const } };
+    expect(item).not.toHaveProperty("total");
+  });
+
+  it("accepts product_category as IdObject", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, product_category: { id: "cat-1", type: "productCategory" } }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].product_category).toEqual({ id: "cat-1", type: "productCategory" });
+  });
+
+  it("accepts product_category as null", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, product_category: null }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].product_category).toBeNull();
+  });
+
+  it("accepts withheld_tax as IdObject", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, withheld_tax: { id: "wt-1", type: "withholdingTaxRate" } }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].withheld_tax).toEqual({ id: "wt-1", type: "withholdingTaxRate" });
+  });
+
+  it("accepts withheld_tax as null", () => {
+    const inv: Invoice = {
+      id: "inv-1",
+      grouped_lines: [{ line_items: [{ quantity: 1, description: "X", unit_price: { amount: 10, tax: "excluding" }, withheld_tax: null }] }],
+    };
+    expect(inv.grouped_lines![0].line_items[0].withheld_tax).toBeNull();
+  });
+});
+
 describe("Invoice type — invoicee sub-type", () => {
   it("accepts invoicee with all scalar fields", () => {
     const inv: Invoice = {
