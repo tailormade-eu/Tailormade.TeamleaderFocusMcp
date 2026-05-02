@@ -160,6 +160,7 @@ export interface UpdateInvoiceParams {
   custom_fields?: UpdateInvoiceCustomField[];
   document_template_id?: string;
   delivery_date?: string | null;
+  currency?: { code: string; exchange_rate?: number };
 }
 
 export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<string, unknown> {
@@ -187,6 +188,7 @@ export function buildUpdateInvoiceBody(params: UpdateInvoiceParams): Record<stri
   if (params.custom_fields) body.custom_fields = params.custom_fields;
   if (params.document_template_id) body.document_template_id = params.document_template_id;
   if (params.delivery_date !== undefined) body.delivery_date = params.delivery_date;
+  if (params.currency) body.currency = params.currency;
   if (params.line_items) {
     body.grouped_lines = [
       {
@@ -647,6 +649,15 @@ export function registerInvoiceTools(
         .describe(
           "Delivery date of goods/services (YYYY-MM-DD). Distinct from invoice_date: invoice_date is when the invoice was issued; delivery_date is when goods/services were actually delivered. Required for Belgian VAT compliance on certain invoices. Pass null to clear."
         ),
+      currency: z
+        .object({
+          code: z
+            .enum(["BAM","CAD","CHF","CLP","CNY","COP","CZK","DKK","EUR","GBP","INR","ISK","JPY","MAD","MXN","NOK","PEN","PLN","RON","SEK","TRY","USD","ZAR"])
+            .describe("ISO 4217 currency code (e.g. 'USD', 'GBP')"),
+          exchange_rate: z.number().optional().describe("Exchange rate to account currency (e.g. 1.0852 for USD→EUR). Optional."),
+        })
+        .optional()
+        .describe("Invoice currency. Example: { code: 'USD', exchange_rate: 1.0852 }. Omit to keep the current currency."),
     },
     async (params) => {
       const body = buildUpdateInvoiceBody(params);

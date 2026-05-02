@@ -335,6 +335,43 @@ describe("buildUpdateInvoiceBody", () => {
     const body = buildUpdateInvoiceBody({ id: "inv-1", delivery_date: null });
     expect(body.delivery_date).toBeNull();
   });
+
+  it("omits currency when not provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1" });
+    expect(body).not.toHaveProperty("currency");
+  });
+
+  it("includes currency with code and exchange_rate when provided", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1", currency: { code: "USD", exchange_rate: 1.0852 } });
+    expect(body.currency).toEqual({ code: "USD", exchange_rate: 1.0852 });
+  });
+
+  it("includes currency with code only (no exchange_rate)", () => {
+    const body = buildUpdateInvoiceBody({ id: "inv-1", currency: { code: "GBP" } });
+    expect(body.currency).toEqual({ code: "GBP" });
+  });
+});
+
+describe("currency Zod validation", () => {
+  const currencySchema = z.object({
+    code: z.enum(["BAM","CAD","CHF","CLP","CNY","COP","CZK","DKK","EUR","GBP","INR","ISK","JPY","MAD","MXN","NOK","PEN","PLN","RON","SEK","TRY","USD","ZAR"]),
+    exchange_rate: z.number().optional(),
+  });
+
+  it("rejects invalid currency code", () => {
+    const result = currencySchema.safeParse({ code: "INVALID" });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts valid currency code without exchange_rate", () => {
+    const result = currencySchema.safeParse({ code: "USD" });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts valid currency code with exchange_rate", () => {
+    const result = currencySchema.safeParse({ code: "USD", exchange_rate: 1.0852 });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("discount_value Zod range validation", () => {
