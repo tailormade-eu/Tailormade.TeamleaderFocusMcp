@@ -48,6 +48,12 @@ export function registerCompanyTools(
         .string()
         .optional()
         .describe("ISO 8601 date - only companies updated after this date"),
+      email: z.string().optional().describe("Filter by primary email address (exact match)"),
+      sort_field: z
+        .enum(["name", "added_at", "updated_at"])
+        .optional()
+        .describe("Field to sort by"),
+      sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -60,6 +66,7 @@ export function registerCompanyTools(
       }
 
       const filter: Record<string, unknown> = {};
+      if (params.email) filter.email = { type: "primary", email: params.email };
       if (params.term) filter.term = params.term;
       if (params.tags) filter.tags = params.tags;
       if (params.ids) filter.ids = params.ids;
@@ -67,6 +74,10 @@ export function registerCompanyTools(
       if (params.vat_number) filter.vat_number = params.vat_number;
       if (params.updated_since) filter.updated_since = params.updated_since;
       if (Object.keys(filter).length > 0) body.filter = filter;
+
+      if (params.sort_field) {
+        body.sort = [{ field: params.sort_field, order: params.sort_order ?? "asc" }];
+      }
 
       const result = await client.request<TeamleaderListResponse<Company>>({
         endpoint: "companies.list",

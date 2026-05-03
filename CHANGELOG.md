@@ -6,6 +6,13 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ## [3.5.2] - 2026-05-03
 
+### Added (B7.2 — 5 Zod drift fixes uit round-2 audit)
+- [B7.2.1] `teamleader_list_deals`: added `created_before` filter (ISO 8601 datetime)
+- [B7.2.2] `teamleader_list_timetracking`: added `ids`, `subject_types`, `relates_to_type`/`relates_to_id` filters
+- [B7.2.3] `teamleader_list_tasks`: added `milestone_id` filter + `sort_field`/`sort_order` parameters
+- [B7.2.4] `teamleader_list_meetings`: added `milestone_id` and `recurrence_id` filters
+- [B7.2.5] `teamleader_list_contacts` + `teamleader_list_companies`: added `email` filter (exact primary) + `sort_field`/`sort_order` parameters
+
 ### Added (B6.4.1 smoke-test coverage)
 - B6.4.1: smoke-test coverage voor 18 tool-files (~106 nieuwe tests)
 - New test files: calls, companies, creditnotes, deals, departments, events, files, login, lookups, materials, meetings, notes, orders, products, projects, quotations, tasks, tickets, users

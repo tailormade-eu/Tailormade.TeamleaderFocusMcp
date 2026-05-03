@@ -45,6 +45,10 @@ export function registerDealTools(
         .string()
         .optional()
         .describe("ISO 8601 date - only deals updated after this date"),
+      created_before: z
+        .string()
+        .optional()
+        .describe("ISO 8601 datetime - only deals created before this date (inclusive, e.g. '2018-02-11T16:45:30+00:00')"),
       sort_field: z.enum(["created_at", "weighted_value"]).optional().describe("Field to sort by"),
       sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)"),
     },
@@ -76,6 +80,7 @@ export function registerDealTools(
       if (params.responsible_user_id)
         filter.responsible_user_id = params.responsible_user_id;
       if (params.updated_since) filter.updated_since = params.updated_since;
+      if (params.created_before) filter.created_before = params.created_before;
       if (Object.keys(filter).length > 0) body.filter = filter;
 
       if (params.sort_field) {

@@ -41,6 +41,9 @@ export function registerTaskTools(
         .string()
         .optional()
         .describe("Customer ID to filter by"),
+      milestone_id: z.string().optional().describe("Filter by milestone ID"),
+      sort_field: z.enum(["name"]).optional().describe("Field to sort by (only 'name' supported)"),
+      sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -60,6 +63,7 @@ export function registerTaskTools(
       if (params.scheduled !== undefined) filter.scheduled = params.scheduled;
       if (params.due_by) filter.due_by = params.due_by;
       if (params.due_from) filter.due_from = params.due_from;
+      if (params.milestone_id) filter.milestone_id = params.milestone_id;
       if (params.customer_type && params.customer_id) {
         filter.customer = {
           type: params.customer_type,
@@ -67,6 +71,10 @@ export function registerTaskTools(
         };
       }
       if (Object.keys(filter).length > 0) body.filter = filter;
+
+      if (params.sort_field) {
+        body.sort = [{ field: params.sort_field, order: params.sort_order ?? "asc" }];
+      }
 
       const result = await client.request<TeamleaderListResponse<Task>>({
         endpoint: "tasks.list",

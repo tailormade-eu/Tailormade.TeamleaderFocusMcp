@@ -39,6 +39,9 @@ export interface ListContactsParams {
   company_id?: string;
   status?: "active" | "deactivated";
   updated_since?: string;
+  email?: string;
+  sort_field?: "added_at" | "name" | "updated_at";
+  sort_order?: "asc" | "desc";
 }
 
 export function buildListContactsBody(params: ListContactsParams): Record<string, unknown> {
@@ -52,6 +55,7 @@ export function buildListContactsBody(params: ListContactsParams): Record<string
   }
 
   const filter: Record<string, unknown> = {};
+  if (params.email) filter.email = { type: "primary", email: params.email };
   if (params.term) filter.term = params.term;
   if (params.tags) filter.tags = params.tags;
   if (params.ids) filter.ids = params.ids;
@@ -59,6 +63,10 @@ export function buildListContactsBody(params: ListContactsParams): Record<string
   if (params.status) filter.status = params.status;
   if (params.updated_since) filter.updated_since = params.updated_since;
   if (Object.keys(filter).length > 0) body.filter = filter;
+
+  if (params.sort_field) {
+    body.sort = [{ field: params.sort_field, order: params.sort_order ?? "asc" }];
+  }
 
   return body;
 }
@@ -146,6 +154,12 @@ export function registerContactTools(
         .string()
         .optional()
         .describe("ISO 8601 date - only contacts updated after this date (e.g. '2026-03-15')"),
+      email: z.string().optional().describe("Filter by primary email address (exact match)"),
+      sort_field: z
+        .enum(["added_at", "name", "updated_at"])
+        .optional()
+        .describe("Field to sort by"),
+      sort_order: z.enum(["asc", "desc"]).optional().describe("Sort order (default: asc)"),
     },
     async (params) => {
       const body = buildListContactsBody(params);

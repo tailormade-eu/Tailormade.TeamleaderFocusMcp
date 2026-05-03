@@ -56,6 +56,10 @@ export interface ListTimetrackingParams {
   ended_before?: string;
   subject_type?: "company" | "contact" | "event" | "todo" | "milestone" | "ticket";
   subject_id?: string;
+  ids?: string[];
+  subject_types?: Array<"company" | "contact" | "event" | "todo" | "milestone" | "ticket">;
+  relates_to_type?: "milestone" | "project" | "nextgenProject" | "nextgenProjectGroup";
+  relates_to_id?: string;
 }
 
 export function buildListTimetrackingBody(params: ListTimetrackingParams): Record<string, unknown> {
@@ -74,6 +78,7 @@ export function buildListTimetrackingBody(params: ListTimetrackingParams): Recor
   };
 
   const filter: Record<string, unknown> = {};
+  if (params.ids) filter.ids = params.ids;
   if (params.user_id) filter.user_id = params.user_id;
   if (params.started_after) filter.started_after = toDate(params.started_after);
   if (params.started_before) filter.started_before = toDate(params.started_before, true);
@@ -83,6 +88,13 @@ export function buildListTimetrackingBody(params: ListTimetrackingParams): Recor
     filter.subject = {
       type: params.subject_type,
       id: params.subject_id,
+    };
+  }
+  if (params.subject_types) filter.subject_types = params.subject_types;
+  if (params.relates_to_type && params.relates_to_id) {
+    filter.relates_to = {
+      type: params.relates_to_type,
+      id: params.relates_to_id,
     };
   }
   if (Object.keys(filter).length > 0) body.filter = filter;
@@ -162,11 +174,27 @@ export function registerTimeTrackingTools(
       subject_type: z
         .enum(["company", "contact", "event", "todo", "milestone", "ticket"])
         .optional()
-        .describe("Filter by subject type"),
+        .describe("Filter by subject type (requires subject_id)"),
       subject_id: z
         .string()
         .optional()
-        .describe("Filter by subject ID"),
+        .describe("Filter by subject ID (requires subject_type)"),
+      ids: z
+        .array(z.string())
+        .optional()
+        .describe("Filter by specific time tracking entry IDs"),
+      subject_types: z
+        .array(z.enum(["company", "contact", "event", "todo", "milestone", "ticket"]))
+        .optional()
+        .describe("Include all tracked time with one of these subject types"),
+      relates_to_type: z
+        .enum(["milestone", "project", "nextgenProject", "nextgenProjectGroup"])
+        .optional()
+        .describe("Find all tracked time linked to this subject type (requires relates_to_id). Use 'nextgenProject' for projects-v2."),
+      relates_to_id: z
+        .string()
+        .optional()
+        .describe("ID of the subject to find all linked time tracking for (requires relates_to_type)"),
     },
     async (params) => {
       const body = buildListTimetrackingBody(params);

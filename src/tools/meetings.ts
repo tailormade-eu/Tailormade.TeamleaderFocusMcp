@@ -39,6 +39,8 @@ export function registerMeetingTools(
         .optional()
         .describe("Filter by specific meeting IDs"),
       term: z.string().optional().describe("Search term to filter meetings"),
+      milestone_id: z.string().optional().describe("Filter by milestone ID"),
+      recurrence_id: z.string().optional().describe("Filter by recurrence ID to get all instances of a recurring meeting"),
       sort_order: z
         .enum(["asc", "desc"])
         .optional()
@@ -60,6 +62,8 @@ export function registerMeetingTools(
       if (params.start_date) filter.start_date = params.start_date;
       if (params.end_date) filter.end_date = params.end_date;
       if (params.term) filter.term = params.term;
+      if (params.milestone_id) filter.milestone_id = params.milestone_id;
+      if (params.recurrence_id) filter.recurrence_id = params.recurrence_id;
       if (Object.keys(filter).length > 0) body.filter = filter;
 
       if (params.sort_order) {
