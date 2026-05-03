@@ -424,8 +424,8 @@ export function registerTicketTools(
       id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Message body (HTML formatted)"),
       sent_by_type: z.enum(["company", "contact", "user"]).describe("Sender entity type"),
-      sent_by_id: z.string().describe("Sender entity ID"),
-      sent_at: z.string().describe("When the message was sent (ISO 8601 datetime)"),
+      sent_by_id: z.string().describe("Sender entity ID. Use teamleader_list_users / teamleader_list_contacts / teamleader_list_companies depending on sent_by_type."),
+      sent_at: z.string().describe("When the message was sent (ISO 8601 datetime, e.g. '2026-06-15T09:00:00+02:00')"),
       attachments: z.array(z.string()).optional().describe("Array of file IDs to attach"),
     },
     async (params) => {

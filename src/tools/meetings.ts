@@ -21,7 +21,7 @@ export function registerMeetingTools(
   // ── List Meetings ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_meetings",
-    "List meetings from Teamleader Focus. Returns array with id, title, scheduled_at, attendees, status. Separate from events (events.*) — meetings support completion, reports, and richer attendee management. Next steps: teamleader_get_meeting for details, teamleader_complete_meeting when done.",
+    "List meetings from Teamleader Focus. Returns array with id, title, scheduled_at, attendees, status. Separate from events (events.*) — meetings support completion, reports, and richer attendee management. Next steps: teamleader_get_meeting for details, teamleader_complete_meeting when done. <NOTE>Use recurrence_id filter to retrieve all instances of a recurring meeting series.</NOTE>",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
@@ -29,11 +29,11 @@ export function registerMeetingTools(
       start_date: z
         .string()
         .optional()
-        .describe("Filter meetings starting from this date (ISO 8601)"),
+        .describe("Filter meetings starting from this date (ISO 8601, e.g. '2026-06-01T00:00:00+02:00')"),
       end_date: z
         .string()
         .optional()
-        .describe("Filter meetings ending before this date (ISO 8601)"),
+        .describe("Filter meetings ending before this date (ISO 8601, e.g. '2026-06-30T23:59:59+02:00')"),
       ids: z
         .array(z.string())
         .optional()
@@ -199,7 +199,7 @@ export function registerMeetingTools(
   // ── Update Meeting ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_meeting",
-    "Update an existing meeting. Only provided fields are changed. When updating attendees, the full list must be provided (at least one user). Next steps: teamleader_get_meeting to verify the update. <NOTE>Idempotent</NOTE>",
+    "Update an existing meeting. Only provided fields are changed. When updating attendees, the full list must be provided (at least one user). Returns {success: true} on success. Next steps: teamleader_get_meeting to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The meeting ID to update. Use teamleader_list_meetings to find valid IDs."),
       title: z.string().optional().describe("New meeting title"),

@@ -491,7 +491,7 @@ export function registerProjectTools(
   // ── Add Deal to Project ────────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_deal",
-    "Link a deal to a project. Use when a deal should be associated with project work. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify, teamleader_remove_project_deal to unlink. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
+    "Link a deal to a project. Use when a deal should be associated with project work. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify, teamleader_remove_project_deal to unlink. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project ID"),
       deal_id: z.string().describe("Deal ID to link"),
@@ -1035,7 +1035,7 @@ export function registerProjectTools(
   // ── Add Quotation to Project ────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_quotation",
-    "Add a quotation to a project. Idempotent: does not fail if the quotation was already added. <NOTE>Idempotent</NOTE>",
+    "Add a quotation to a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent: does not fail if the quotation was already added.</NOTE>",
     {
       id: z.string().describe("Project ID"),
       quotation_id: z.string().describe("Quotation ID to link"),

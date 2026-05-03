@@ -105,7 +105,7 @@ export function registerTaskTools(
       assignee_id: z
         .string()
         .optional()
-        .describe("Assignee ID"),
+        .describe("Assignee ID. Use teamleader_list_users to find valid user IDs."),
       customer_type: z
         .enum(["contact", "company"])
         .optional()
@@ -208,7 +208,7 @@ export function registerTaskTools(
       assignee_id: z
         .string()
         .optional()
-        .describe("Assignee ID (both assignee_type and assignee_id required together)"),
+        .describe("Assignee ID (both assignee_type and assignee_id required together). Use teamleader_list_users for user IDs."),
       customer_type: z
         .enum(["contact", "company"])
         .optional()

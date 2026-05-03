@@ -6,6 +6,23 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ## [3.7.1] - 2026-05-03
 
+### Changed (B7.3.1-14 — Description quality polish)
+- B7.3.1-14: minor description quality polish (14 tool-files, lookup-refs + Returns + WARNING markers)
+  - calls.ts: NOTE on customer+type pair, lookup refs for customer_id and assignee_id, Returns consistency fix on update_call
+  - contacts.ts: update_contact_company_link Returns + Next steps + ID lookup refs
+  - deals.ts: WARNING on win_deal/lose_deal (irreversible), responsible_user_id lookup refs, pipeline create/update Next steps
+  - departments.ts: get_department Returns + Next steps
+  - events.ts: NOTE on attendees structure, user_id filter lookup ref, update_event Returns
+  - materials.ts: NOTE on assign prereq, project_id + origin_id lookup refs
+  - meetings.ts: NOTE on recurrence_id filter, update_meeting Returns consistency, date filter tz-example
+  - notes.ts: subject_id lookup hint for create_note
+  - orders.ts: get_order id lookup ref
+  - projects.ts: add_project_quotation + add_project_deal explicit Returns
+  - quotations.ts: WARNING on accept_quotation (irreversible), deal_id lookup ref
+  - tasks.ts: assignee_id lookup refs on create + update
+  - tickets.ts: sent_by_id lookup ref, sent_at ISO 8601 tz-example
+  - timetracking.ts: id lookup ref on delete, update_timer Returns + Next steps
+
 ### Refactored (B6.5 — Shared Zod schemas)
 - Extracted `customFieldSchema` and `addressSchema` to `src/tools/_shared.ts`
 - Removed 5 inline duplicate definitions from contacts.ts, companies.ts, deals.ts, tasks.ts, tickets.ts

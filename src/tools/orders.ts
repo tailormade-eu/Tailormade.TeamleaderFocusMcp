@@ -42,7 +42,7 @@ export function registerOrderTools(
     "teamleader_get_order",
     "Get full details of a single order including grouped line items with products, quantities, unit prices, tax, discounts, totals, purchase prices. Also includes supplier, department, deal, project, assignee, payment terms, web URL. Use includes=custom_fields for custom field data.",
     {
-      id: z.string().describe("The order ID"),
+      id: z.string().describe("The order ID. Use teamleader_list_orders to find valid IDs."),
       includes: z.string().optional().describe("Comma-separated includes (e.g. 'custom_fields')"),
     },
     async (params) => {

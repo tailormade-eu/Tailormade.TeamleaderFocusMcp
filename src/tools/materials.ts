@@ -194,7 +194,7 @@ export function registerMaterialTools(
     "teamleader_create_material",
     "Create a new material in a Teamleader Focus project. Only project_id and title are required. Supports pricing, budgets, dates, assignees, and product linking. Returns {id, type}. Next steps: teamleader_get_material to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
-      project_id: z.string().describe("Project ID to add the material to"),
+      project_id: z.string().describe("Project ID to add the material to. Use teamleader_list_projects_v2 to find valid IDs."),
       title: z.string().describe("Material title"),
       group_id: z
         .string()
@@ -420,7 +420,7 @@ export function registerMaterialTools(
   // ── Assign Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_assign_material",
-    "Assign a user or team to a material in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_get_material to verify. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
+    "Assign a user or team to a material in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_get_material to verify. <NOTE>The material must already be part of a project before assigning users — use teamleader_create_material or verify with teamleader_get_material first.</NOTE> <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("The material ID. Use teamleader_list_materials to find valid IDs."),
       assignee_type: z
@@ -484,7 +484,7 @@ export function registerMaterialTools(
     {
       origin_id: z
         .string()
-        .describe("ID of the material to duplicate"),
+        .describe("ID of the material to duplicate. Use teamleader_list_materials to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{

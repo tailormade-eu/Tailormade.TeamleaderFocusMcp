@@ -167,16 +167,16 @@ export function registerCallTools(
   // ── Add Call ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_call",
-    "Add a new CRM call in Teamleader Focus. Requires a customer (contact or company), due date, and assignee. Optionally link to a deal. Returns {id, type}. Next steps: teamleader_get_call to verify, teamleader_complete_call when done. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
+    "Add a new CRM call in Teamleader Focus. Requires a customer (contact or company), due date, and assignee. Optionally link to a deal. Returns {id, type}. Next steps: teamleader_get_call to verify, teamleader_complete_call when done. <NOTE>customer_type and customer_id must always be provided together.</NOTE> <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       customer_type: z
         .enum(["contact", "company"])
         .describe("Type of the customer for the call"),
-      customer_id: z.string().describe("ID of the customer (contact or company)"),
+      customer_id: z.string().describe("ID of the customer (contact or company). Use teamleader_list_contacts or teamleader_list_companies to find valid IDs."),
       due_at: z
         .string()
         .describe("When the call is due (ISO 8601 datetime, e.g. 2026-03-05T14:00:00+00:00)"),
-      assignee_id: z.string().describe("User ID of the assignee"),
+      assignee_id: z.string().describe("User ID of the assignee. Use teamleader_list_users to find valid IDs."),
       description: z
         .string()
         .optional()
@@ -228,7 +228,7 @@ export function registerCallTools(
   // ── Update Call ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_call",
-    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_call to verify the update. <NOTE>Idempotent</NOTE>",
+    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Returns call updated confirmation. Next steps: teamleader_get_call to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The call ID to update. Use teamleader_list_calls to find valid IDs."),
       description: z.string().optional().describe("New description"),

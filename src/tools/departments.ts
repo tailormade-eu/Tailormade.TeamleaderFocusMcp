@@ -99,7 +99,7 @@ export function registerDepartmentTools(
   // ── Get Department ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_department",
-    "Get detailed information about a specific department, including address, emails, telephones, banking details, and fiscal regime.",
+    "Get detailed information about a specific department, including address, emails, telephones, banking details, and fiscal regime. Returns full department object. Next steps: teamleader_list_departments to find other departments, teamleader_create_invoice with department_id.",
     {
       id: z.string().describe("The department ID. Use teamleader_list_departments to find valid IDs."),
     },

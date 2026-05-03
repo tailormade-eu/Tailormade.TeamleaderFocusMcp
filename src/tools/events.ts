@@ -29,7 +29,7 @@ export function registerEventTools(
       user_id: z
         .string()
         .optional()
-        .describe("Filter by user ID"),
+        .describe("Filter by user ID. Use teamleader_list_users to find valid IDs."),
       activity_type_id: z
         .string()
         .optional()
@@ -158,7 +158,7 @@ export function registerEventTools(
   // ── Create Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_event",
-    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id), teamleader_list_work_types (work_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead. Next steps: teamleader_get_event to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
+    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id), teamleader_list_work_types (work_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead. Next steps: teamleader_get_event to verify. <NOTE>attendees is an array of {type, id} objects — type is 'user' or 'contact', id is the entity ID.</NOTE> <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       title: z.string().describe("Event title"),
       description: z.string().optional().describe("Event description"),
@@ -219,7 +219,7 @@ export function registerEventTools(
   // ── Update Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_event",
-    "Update an existing calendar event. All fields except id are optional — only provided fields are updated. Attendees and links arrays replace the full list when provided. Next steps: teamleader_get_event to verify the update. <NOTE>Idempotent</NOTE>",
+    "Update an existing calendar event. All fields except id are optional — only provided fields are updated. Attendees and links arrays replace the full list when provided. Returns {success: true} on success. Next steps: teamleader_get_event to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The event ID to update. Use teamleader_list_events to find valid IDs."),
       title: z.string().optional().describe("New event title"),

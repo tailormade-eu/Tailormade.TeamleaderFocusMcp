@@ -389,7 +389,7 @@ export function registerTimeTrackingTools(
     "teamleader_delete_timetracking",
     "Delete a time tracking entry. This action is irreversible. Returns {success: true}. <NOTE>Idempotent</NOTE>",
     {
-      id: z.string().describe("Time tracking entry ID to delete"),
+      id: z.string().describe("Time tracking entry ID to delete. Use teamleader_list_timetracking to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -515,7 +515,7 @@ export function registerTimeTrackingTools(
   // ── Update Timer ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timer",
-    "Update the currently running timer. Only possible if a timer is running. Use this to change the subject, work type, description, or start time of the active timer. <NOTE>Idempotent</NOTE>",
+    "Update the currently running timer. Only possible if a timer is running. Use this to change the subject, work type, description, or start time of the active timer. Returns {success: true} on success. Next steps: teamleader_get_current_timer to verify, teamleader_stop_timer to stop. <NOTE>Idempotent</NOTE>",
     {
       work_type_id: z.string().optional().describe("New work type ID (use teamleader_list_work_types to find valid IDs)"),
       started_at: z

@@ -111,7 +111,7 @@ export function registerNoteTools(
       subject_type: z
         .enum(CREATE_SUBJECT_TYPES)
         .describe("Type of entity to attach the note to ('company' | 'contact' | 'creditNote' | 'deal' | 'invoice' | 'nextgenProject' | 'product' | 'quotation' | 'subscription')"),
-      subject_id: z.string().describe("ID of the entity"),
+      subject_id: z.string().describe("ID of the entity. Use teamleader_list_companies / teamleader_list_contacts / teamleader_list_deals / teamleader_list_invoices etc. depending on subject_type."),
       content: z.string().describe("Note content (free text)"),
     },
     async (params) => {

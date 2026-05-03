@@ -386,10 +386,10 @@ export function registerContactTools(
   // ── Update Contact-Company Link ─────────────────────────────────────────
   server.tool(
     "teamleader_update_contact_company_link",
-    "Update the link between a contact and a company (position, decision maker) <NOTE>Idempotent</NOTE>",
+    "Update the link between a contact and a company (position, decision maker). Returns {success: true} on success. Next steps: teamleader_get_contact to verify the updated link. <NOTE>Idempotent</NOTE>",
     {
-      id: z.string().describe("The contact ID"),
-      company_id: z.string().describe("The company ID"),
+      id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
+      company_id: z.string().describe("The company ID. Use teamleader_list_companies to find valid IDs."),
       position: z.string().optional().describe("Position/role at the company (e.g. 'CEO')"),
       decision_maker: z.boolean().optional().describe("Whether this contact is a decision maker"),
     },

@@ -147,7 +147,7 @@ export function registerDealTools(
       responsible_user_id: z
         .string()
         .optional()
-        .describe("Responsible user ID"),
+        .describe("Responsible user ID. Use teamleader_list_users to find valid IDs."),
       department_id: z.string().optional().describe("Department ID (use teamleader_list_departments to find)"),
       source_id: z.string().optional().describe("Source ID (use teamleader_list_deal_sources to find)"),
       currency_code: z.string().optional().describe("Currency code for the deal (e.g. 'EUR'). Overrides company default."),
@@ -236,7 +236,7 @@ export function registerDealTools(
       responsible_user_id: z
         .string()
         .optional()
-        .describe("Responsible user ID"),
+        .describe("Responsible user ID. Use teamleader_list_users to find valid IDs."),
       source_id: z.string().nullable().optional().describe("Source ID (pass null to clear). Use teamleader_list_deal_sources to find valid IDs."),
       department_id: z.string().nullable().optional().describe("Department ID (pass null to clear). Use teamleader_list_departments to find valid IDs."),
       lead_customer_type: z.enum(["contact", "company"]).optional().describe("New customer type for lead (use with lead_customer_id)"),
@@ -312,7 +312,7 @@ export function registerDealTools(
   // ── Lose Deal ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_lose_deal",
-    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status. <NOTE>Idempotent</NOTE>",
+    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status. <WARNING>This action is irreversible — the deal moves to the 'lost' state permanently.</WARNING> <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to mark as lost. Use teamleader_list_deals to find valid IDs."),
       reason_id: z.string().optional().describe("Lost reason ID (use teamleader_list_lost_reasons to find IDs)"),
@@ -334,7 +334,7 @@ export function registerDealTools(
   // ── Win Deal ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_win_deal",
-    "Mark a deal as won. This is irreversible — the deal moves to the 'won' state. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status. <NOTE>Idempotent</NOTE>",
+    "Mark a deal as won. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status. <WARNING>This action is irreversible — the deal moves to the 'won' state permanently.</WARNING> <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to mark as won. Use teamleader_list_deals to find valid IDs."),
     },
@@ -574,7 +574,7 @@ export function registerDealTools(
   // ── Create Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal_pipeline",
-    "Create a new deal pipeline. Returns the new pipeline ID. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
+    "Create a new deal pipeline. Returns the new pipeline ID. Next steps: teamleader_list_deal_pipelines to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       name: z.string().describe("Pipeline name"),
     },
@@ -591,7 +591,7 @@ export function registerDealTools(
   // ── Update Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal_pipeline",
-    "Update a deal pipeline name. Next steps: teamleader_list_deal_pipelines to verify. <NOTE>Idempotent</NOTE>",
+    "Update a deal pipeline name. Returns pipeline updated confirmation. Next steps: teamleader_list_deal_pipelines to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal pipeline ID to update. Use teamleader_list_deal_pipelines to find valid IDs."),
       name: z.string().describe("New pipeline name"),
