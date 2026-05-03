@@ -498,4 +498,8 @@ export function registerMaterialTools(
       });
 
       return respond(
-  
+        `Material duplicated. New material ID: ${result.data.id}.`
+      );
+    }
+  );
+}

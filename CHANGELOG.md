@@ -4,6 +4,19 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.4.5] - 2026-05-03
+
+### Fixed / Improved
+- [B6.4.2] `client.ts` retry refinements: `getAccessToken()` moved inside retry loop (fresh token per attempt), 30s cap on `Retry-After` delay, empty-string guard on header parse
+- [B6.3.7] Added "Use teamleader_list_X to find valid IDs" to ID params in 7 tool files (creditnotes, departments, materials, products, quotations, subscriptions, users)
+- [B6.3.2/B6.3.3] Added output format + next steps to action tools in same 7 files
+
+### Added
+- `docs/conventions-xml-markers.md` — convention for `<CRITICAL>`/`<WARNING>`/`<NOTE>` XML semantic markers in tool descriptions (B6.3.1 standard)
+- `test/client.test.ts` updated with tests for retry cap and empty-header guard
+
+---
+
 ## [3.4.4] - 2026-05-03
 
 ### Added (B6.2 Zod schema drift batch — 26 gaps fixed)

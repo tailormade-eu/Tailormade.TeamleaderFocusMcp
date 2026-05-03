@@ -9,10 +9,18 @@ describe("getRetryDelay", () => {
     expect(getRetryDelay(2, "0")).toBe(0);
   });
 
-  it("falls back to exponential when header is null", () => {
+  it("caps Retry-After at 30s to prevent indefinite stall", () => {
+    expect(getRetryDelay(1, "999999")).toBe(30_000);
+    expect(getRetryDelay(1, "30")).toBe(30_000);
+    expect(getRetryDelay(1, "29")).toBe(29_000);
+  });
+
+  it("falls back to exponential when header is null or empty", () => {
     expect(getRetryDelay(1, null)).toBe(1000);
     expect(getRetryDelay(2, null)).toBe(2000);
     expect(getRetryDelay(3, null)).toBe(4000);
+    expect(getRetryDelay(1, "")).toBe(1000);
+    expect(getRetryDelay(1, "   ")).toBe(1000);
   });
 
   it("falls back to exponential when header is non-numeric non-date", () => {
@@ -25,12 +33,17 @@ describe("getRetryDelay", () => {
     expect(delay).toBeGreaterThan(2000);
     expect(delay).toBeLessThan(4000);
   });
+
+  it("caps HTTP-date Retry-After at 30s", () => {
+    const far = new Date(Date.now() + 60_000).toUTCString();
+    expect(getRetryDelay(1, far)).toBe(30_000);
+  });
 });
 
 // ── TeamleaderClient retry integration tests ─────────────────────────────────
 
 function makeMockAuth() {
-  return { getAccessToken: async () => "test-token" };
+  return { getAccessToken: vi.fn().mockResolvedValue("test-token") };
 }
 
 function makeResponse(status: number, body: unknown, headers: Record<string, string> = {}): Response {
@@ -68,7 +81,8 @@ describe("TeamleaderClient.request — retry behaviour", () => {
       .mockResolvedValueOnce(makeResponse(200, { data: "ok" }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const client = new TeamleaderClient(makeMockAuth() as never);
+    const mockAuth = makeMockAuth();
+    const client = new TeamleaderClient(mockAuth as never);
     const resultPromise = client.request<{ data: string }>({ endpoint: "contacts.list" });
 
     await vi.runAllTimersAsync();
@@ -76,6 +90,7 @@ describe("TeamleaderClient.request — retry behaviour", () => {
 
     expect(result).toEqual({ data: "ok" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(mockAuth.getAccessToken).toHaveBeenCalledTimes(2);
   });
 
   it("retries on 429 without Retry-After using exponential backoff", async () => {

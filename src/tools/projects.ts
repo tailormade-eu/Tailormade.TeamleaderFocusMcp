@@ -252,7 +252,7 @@ export function registerProjectTools(
   // ── List Project Tasks (v2) ──────────────────────────────────────────────
   server.tool(
     "teamleader_list_project_tasks_v2",
-    "List tasks for a project or project group (phase). Returns array with id, title, status, assignees, group, estimated_duration. NOTE: project_group_id and only_open are filtered client-side (API does not support these as server-side filters). For a full project tree with IDs, prefer teamleader_load_tasks.",
+    "List tasks for a project or project group (phase). Returns array with id, title, status, assignees, group, estimated_duration. <NOTE>project_group_id and only_open are filtered client-side (API does not support these as server-side filters). For a full project tree with IDs, prefer teamleader_load_tasks.</NOTE>",
     {
       project_id: z.string().describe("Project ID to list tasks for"),
       project_group_id: z
@@ -786,7 +786,7 @@ export function registerProjectTools(
   // ── List Project Lines ──────────────────────────────────────────────────
   server.tool(
     "teamleader_list_project_lines",
-    "List all project lines (tasks, materials, groups) for a project. Returns array of {line: {type, id}, group: {type, id} | null}. Use filter.types to restrict to specific line types. Use this to see which lines belong to which groups. WARNING: project_id must be top-level in the API body, NOT inside filter — this tool handles that automatically. NOTE: project_group_id is NOT a server-side filter — client-side filtering on group.id is applied after fetch.",
+    "List all project lines (tasks, materials, groups) for a project. Returns array of {line: {type, id}, group: {type, id} | null}. Use filter.types to restrict to specific line types. Use this to see which lines belong to which groups. <WARNING>project_id must be top-level in the API body, NOT inside filter — this tool handles that automatically.</WARNING> <NOTE>project_group_id is NOT a server-side filter — client-side filtering on group.id is applied after fetch.</NOTE>",
     {
       project_id: z.string().describe("Project ID"),
       types: z.array(z.enum(["nextgenTask", "nextgenMaterial", "nextgenProjectGroup"])).optional().describe("Filter by line types"),
@@ -815,7 +815,7 @@ export function registerProjectTools(
   // ── Add Project Line to Group ───────────────────────────────────────────
   server.tool(
     "teamleader_add_project_line_to_group",
-    "Move a task or material to a different project group. CRITICAL: line_id MUST be a nextgenTask ID from teamleader_load_tasks (task_selection=N). Do NOT use IDs from get_task — those are todo IDs and will return 404. Group IDs not in YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find group ID by name.",
+    "Move a task or material to a different project group. <CRITICAL>line_id MUST be a nextgenTask ID from teamleader_load_tasks (task_selection=N). Do NOT use IDs from get_task — those are todo IDs and will return 404.</CRITICAL> Group IDs not in YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find group ID by name.",
     {
       line_id: z.string().describe("Task or material ID to add to the group"),
       group_id: z.string().describe("Target group ID"),

@@ -68,7 +68,7 @@ export function registerCreditNoteTools(
     "teamleader_get_credit_note",
     "Get full details of a credit note including line items, invoicee, totals, taxes, discounts, payment status, currency exchange rate, document template, and peppol status. Next steps: teamleader_download_credit_note for PDF/UBL, teamleader_send_credit_note_peppol to send via Peppol.",
     {
-      id: z.string().describe("The credit note ID"),
+      id: z.string().describe("The credit note ID. Use teamleader_list_credit_notes to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: unknown }>({
@@ -85,7 +85,7 @@ export function registerCreditNoteTools(
     "teamleader_download_credit_note",
     "Get a temporary download URL for a credit note in PDF or UBL/e-FFF format. Returns a URL that expires after a short time.",
     {
-      id: z.string().describe("The credit note ID to download"),
+      id: z.string().describe("The credit note ID to download. Use teamleader_list_credit_notes to find valid IDs."),
       format: z.enum(["pdf", "ubl/e-fff"]).describe("Download format: pdf or ubl/e-fff"),
     },
     async (params) => {
@@ -105,9 +105,9 @@ export function registerCreditNoteTools(
   // ── Send Credit Note via Peppol ─────────────────────────────────────────
   server.tool(
     "teamleader_send_credit_note_peppol",
-    "Send a credit note via the Peppol e-invoicing network. The credit note must be booked and the customer must have a valid Peppol identifier configured.",
+    "Send a credit note via the Peppol e-invoicing network. The credit note must be booked and the customer must have a valid Peppol identifier configured. Returns {success: true} on success. Next steps: teamleader_get_credit_note to verify peppol status.",
     {
-      id: z.string().describe("The credit note ID to send via Peppol"),
+      id: z.string().describe("The credit note ID to send via Peppol. Use teamleader_list_credit_notes to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({

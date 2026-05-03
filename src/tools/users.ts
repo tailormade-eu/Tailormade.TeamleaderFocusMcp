@@ -31,7 +31,7 @@ export function registerUserTools(
   // ── List Users ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_users",
-    "List all users (co-workers) in the Teamleader Focus account. Returns user ID, name, email, and status. Use this to find user IDs for assigning tasks or filtering. NOTE: For the current authenticated user, the system uses users.me internally. Most accounts have <50 users so pagination is rarely needed. Use `term` to search by name/email.",
+    "List all users (co-workers) in the Teamleader Focus account. Returns user ID, name, email, and status. Use this to find user IDs for assigning tasks or filtering. <NOTE>For the current authenticated user, the system uses users.me internally. Most accounts have <50 users so pagination is rarely needed. Use `term` to search by name/email.</NOTE>",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -76,7 +76,7 @@ export function registerUserTools(
     "teamleader_get_user",
     "Get detailed information about a specific user by ID. Returns name, email, language, function, time zone, and status.",
     {
-      id: z.string().describe("The user ID"),
+      id: z.string().describe("The user ID. Use teamleader_list_users to find valid IDs."),
       includes: z.literal("external_rate").optional().describe("Pass 'external_rate' to include hourly rate in response"),
     },
     async (params) => {

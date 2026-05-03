@@ -127,7 +127,7 @@ export function registerQuotationTools(
     "teamleader_get_quotation",
     "Get full details of a quotation including deal, grouped line items, totals, discounts, status, currency, text, document_template. Next steps: teamleader_update_quotation, teamleader_accept_quotation, teamleader_send_quotation, teamleader_download_quotation.",
     {
-      id: z.string().describe("The quotation ID"),
+      id: z.string().describe("The quotation ID. Use teamleader_list_quotations to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: unknown }>({
@@ -142,7 +142,7 @@ export function registerQuotationTools(
   // ── Create Quotation ────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_quotation",
-    "Create a new quotation for a deal in Teamleader Focus. Returns {id, type}. A quotation needs grouped_lines and/or text to be valid. Lookup IDs first: teamleader_list_tax_rates (tax_rate_id), teamleader_list_products (product_id). unit_price.tax is always 'excluding'.",
+    "Create a new quotation for a deal in Teamleader Focus. Returns {id, type}. A quotation needs grouped_lines and/or text to be valid. Lookup IDs first: teamleader_list_tax_rates (tax_rate_id), teamleader_list_products (product_id). unit_price.tax is always 'excluding'. Next steps: teamleader_get_quotation to verify, teamleader_send_quotation to send.",
     {
       deal_id: z.string().describe("The deal ID this quotation belongs to"),
       grouped_lines: z.array(groupedLineSchema).optional().describe("Grouped line items with optional section titles"),
@@ -195,9 +195,9 @@ export function registerQuotationTools(
   // ── Update Quotation ────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_quotation",
-    "Update an existing quotation. Only provided fields are updated. A quotation needs grouped_lines and/or text to be valid. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_products (product_id).",
+    "Update an existing quotation. Only provided fields are updated. A quotation needs grouped_lines and/or text to be valid. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_products (product_id). Next steps: teamleader_get_quotation to verify the update.",
     {
-      id: z.string().describe("The quotation ID to update"),
+      id: z.string().describe("The quotation ID to update. Use teamleader_list_quotations to find valid IDs."),
       grouped_lines: z.array(groupedLineSchema).optional().describe("Replace all grouped line items"),
       text: z.string().nullable().optional().describe("Quotation text (Markdown). Set null to clear"),
       currency_code: z.string().optional().describe("Currency code (e.g. 'EUR', 'USD')"),
@@ -242,9 +242,9 @@ export function registerQuotationTools(
   // ── Delete Quotation ────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_quotation",
-    "Delete a quotation from Teamleader Focus. This action cannot be undone.",
+    "Delete a quotation from Teamleader Focus. This action cannot be undone. Returns {success: true} on success.",
     {
-      id: z.string().describe("The quotation ID to delete"),
+      id: z.string().describe("The quotation ID to delete. Use teamleader_list_quotations to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -258,9 +258,9 @@ export function registerQuotationTools(
   // ── Accept Quotation ────────────────────────────────────────────────────
   server.tool(
     "teamleader_accept_quotation",
-    "Mark a quotation as accepted in Teamleader Focus.",
+    "Mark a quotation as accepted in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_get_quotation to verify the new status.",
     {
-      id: z.string().describe("The quotation ID to accept"),
+      id: z.string().describe("The quotation ID to accept. Use teamleader_list_quotations to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -274,7 +274,7 @@ export function registerQuotationTools(
   // ── Send Quotation ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_send_quotation",
-    "Send one or more quotations via email. All quotations must belong to the same deal. Use #LINK in content to insert the CloudSign URL. Lookup IDs: teamleader_list_users (sender user ID), teamleader_list_departments (sender department ID).",
+    "Send one or more quotations via email. All quotations must belong to the same deal. Use #LINK in content to insert the CloudSign URL. Lookup IDs: teamleader_list_users (sender user ID), teamleader_list_departments (sender department ID). Returns {success: true} on success.",
     {
       quotation_ids: z.array(z.string()).describe("Quotation IDs to send (must be from the same deal)"),
       from_sender_type: z.enum(["user", "department"]).describe("Sender type: 'user' or 'department'"),
@@ -317,7 +317,7 @@ export function registerQuotationTools(
     "teamleader_download_quotation",
     "Download a quotation as PDF. Returns a temporary download URL with expiration time.",
     {
-      id: z.string().describe("The quotation ID to download"),
+      id: z.string().describe("The quotation ID to download. Use teamleader_list_quotations to find valid IDs."),
       format: z.enum(["pdf"]).optional().describe("Download format (default: 'pdf')"),
     },
     async (params) => {

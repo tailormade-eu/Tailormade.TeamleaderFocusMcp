@@ -47,7 +47,7 @@ export function registerTicketTools(
       exclude_status_ids: z
         .array(z.string())
         .optional()
-        .describe("Ticket status IDs to exclude (use teamleader_list_ticket_statuses to find IDs). NOTE: this is the only way to filter by status — there is no direct status include filter."),
+        .describe("Ticket status IDs to exclude (use teamleader_list_ticket_statuses to find IDs). <NOTE>this is the only way to filter by status — there is no direct status include filter.</NOTE>"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};

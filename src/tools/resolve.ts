@@ -535,8 +535,8 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       "If not in cache: run teamleader_find_task first.",
       "Formats: ISO 8601, 'YYYY-MM-DD HH:MM', or 'HH:MM' (uses today's date).",
       "Deduplication: checks existing entries before adding. Use force=true to override.",
-      "CRITICAL: Never guess or invent a task_id. An invalid task_id returns '400 Invalid subject' — not a 'not found' error, making it hard to diagnose. Always get task_id from load_tasks + task_selection=N first.",
-      "CRITICAL: If task_id comes from teamleader_list_timetracking subject.id — do NOT use it directly. That ID is a todo/standalone reference, not a nextgenTask ID. Run teamleader_load_tasks first to get the correct project task ID.",
+      "<CRITICAL>Never guess or invent a task_id. An invalid task_id returns '400 Invalid subject' — not a 'not found' error, making it hard to diagnose. Always get task_id from load_tasks + task_selection=N first.</CRITICAL>",
+      "<CRITICAL>If task_id comes from teamleader_list_timetracking subject.id — do NOT use it directly. That ID is a todo/standalone reference, not a nextgenTask ID. Run teamleader_load_tasks first to get the correct project task ID.</CRITICAL>",
       "PAST DATES: Always use started_on='HH:MM' + date='YYYY-MM-DD' for historical entries. Do NOT pass ISO datetime string (e.g. '2026-03-17T16:00:00') — TL API rejects ISO without timezone offset for past dates.",
     ].join("\n"),
     {
@@ -810,7 +810,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
     "teamleader_load_tasks",
     [
       "Load and display the full Project > Group > Task tree for a company. Returns nextgenTask IDs (projects-v2). IMPORTANT: v1 todo IDs (from get_task/list_tasks) are NOT the same as v2 nextgenTask IDs — they are incompatible. Always use IDs from this tool for projects-v2 operations (add_project_line_to_group, log_time, task_action, etc.).",
-      "Cache-first (30 min TTL). Writes YAML with task IDs to ~/.teamleader-tasks-{slug}.yaml. NOTE: Group IDs are NOT in the YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find a group ID by name.",
+      "Cache-first (30 min TTL). Writes YAML with task IDs to ~/.teamleader-tasks-{slug}.yaml. <NOTE>Group IDs are NOT in the YAML cache — use teamleader_list_project_groups + teamleader_get_project_group to find a group ID by name.</NOTE>",
       "Returns a summary by default (small context footprint). Use visual=true for ASCII tree.",
       "WHEN TO USE:",
       "  - First time working with a company in a session",
@@ -1176,7 +1176,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       "  create        : create new task. Requires: project_id, group_id, task_title. Optional: description.",
       "  update        : update task title/description/status. Requires: task_id or task_number. Optional: task_title, description.",
       "  move_time     : move time entry to different task. Requires: time_entry_id + (new_task_id or new_task_number).",
-      "  delete_group  : delete a project group/phase. Requires: group_id (get from load_tasks YAML). CRITICAL: API requires delete_strategy. ERROR: 400 on projectGroups.delete → CAUSE: Missing delete_strategy → FIX: Use task_action(delete_group) — it always provides the strategy automatically.",
+      "  delete_group  : delete a project group/phase. Requires: group_id (get from load_tasks YAML). <CRITICAL>API requires delete_strategy. ERROR: 400 on projectGroups.delete → CAUSE: Missing delete_strategy → FIX: Use task_action(delete_group) — it always provides the strategy automatically.</CRITICAL>",
       "  move_to_group : move task to different group. Requires: task_id or task_number + group_id.",
       "Returns confirmation message. All IDs should come from the YAML file written by teamleader_load_tasks.",
     ].join("\n"),

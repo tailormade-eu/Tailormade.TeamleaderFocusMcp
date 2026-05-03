@@ -17,13 +17,16 @@ export interface ApiRequestOptions {
   body?: Record<string, unknown>;
 }
 
+const MAX_RETRY_AFTER_MS = 30_000;
+
 /** Exported for testing. Returns delay in ms for a given retry attempt (1-indexed). */
 export function getRetryDelay(attempt: number, retryAfterHeader: string | null): number {
   if (retryAfterHeader) {
-    const numeric = Number(retryAfterHeader.trim());
-    if (!isNaN(numeric) && numeric >= 0) return numeric * 1000;
+    const trimmed = retryAfterHeader.trim();
+    const numeric = Number(trimmed);
+    if (trimmed.length > 0 && !isNaN(numeric) && numeric >= 0) return Math.min(numeric * 1000, MAX_RETRY_AFTER_MS);
     const date = new Date(retryAfterHeader);
-    if (!isNaN(date.getTime())) return Math.max(0, date.getTime() - Date.now());
+    if (!isNaN(date.getTime())) return Math.min(Math.max(0, date.getTime() - Date.now()), MAX_RETRY_AFTER_MS);
   }
   // Exponential backoff: 1s, 2s, 4s
   return Math.pow(2, attempt - 1) * 1000;
@@ -41,10 +44,10 @@ export class TeamleaderClient {
    * Retries up to 3 times on HTTP 429, respecting Retry-After header.
    */
   async request<T = unknown>(options: ApiRequestOptions): Promise<T> {
-    const accessToken = await this.auth.getAccessToken();
     const url = `${BASE_URL}/${options.endpoint}`;
 
     for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+      const accessToken = await this.auth.getAccessToken();
       const response = await fetch(url, {
         method: "POST",
         headers: {

@@ -35,7 +35,7 @@ export function registerDepartmentTools(
   // ── List Departments ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_departments",
-    "List departments (legal entities / billing divisions). Returns id, name, status, VAT number, currency. Use the IDs when creating invoices (teamleader_create_invoice department_id) or filtering data. NOTE: Department IDs are needed for invoices (teamleader_create_invoice department_id param). Most accounts have very few departments.",
+    "List departments (legal entities / billing divisions). Returns id, name, status, VAT number, currency. Use the IDs when creating invoices (teamleader_create_invoice department_id) or filtering data. <NOTE>Department IDs are needed for invoices (teamleader_create_invoice department_id param). Most accounts have very few departments.</NOTE>",
     {
       ids: z.array(z.string()).optional().describe("Filter by specific department IDs"),
       status: z
@@ -101,7 +101,7 @@ export function registerDepartmentTools(
     "teamleader_get_department",
     "Get detailed information about a specific department, including address, emails, telephones, banking details, and fiscal regime.",
     {
-      id: z.string().describe("The department ID"),
+      id: z.string().describe("The department ID. Use teamleader_list_departments to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Department>>({

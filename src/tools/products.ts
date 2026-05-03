@@ -69,7 +69,7 @@ export function registerProductTools(
     "teamleader_get_product",
     "Get details for a single product by ID. Returns name, code, description, prices, unit, tax, category, stock info, custom fields, and optionally suppliers.",
     {
-      id: z.string().describe("Product ID"),
+      id: z.string().describe("Product ID. Use teamleader_list_products to find valid IDs."),
       includes: z.string().optional().describe("Comma-separated list of optional includes (e.g. 'suppliers')"),
     },
     async (params) => {
@@ -117,7 +117,7 @@ export function registerProductTools(
   // ── Add Product ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_product",
-    "Add a new product to the catalog. Requires either name or code (or both). Returns the new product ID.",
+    "Add a new product to the catalog. Requires either name or code (or both). Returns the new product ID. Next steps: teamleader_get_product to verify.",
     {
       name: z.string().optional().describe("Product name (required if no code)"),
       code: z.string().optional().describe("Product code (required if no name)"),
@@ -184,9 +184,9 @@ export function registerProductTools(
   // ── Update Product ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_product",
-    "Update an existing product. Only provided fields are updated.",
+    "Update an existing product. Only provided fields are updated. Next steps: teamleader_get_product to verify the update.",
     {
-      id: z.string().describe("Product ID to update"),
+      id: z.string().describe("Product ID to update. Use teamleader_list_products to find valid IDs."),
       name: z.string().nullable().optional().describe("Product name (null to clear)"),
       code: z.string().nullable().optional().describe("Product code (null to clear)"),
       description: z.string().nullable().optional().describe("Product description in Markdown (null to clear)"),
@@ -248,9 +248,9 @@ export function registerProductTools(
   // ── Delete Product ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_product",
-    "Delete a product from the catalog.",
+    "Delete a product from the catalog. Returns {success: true} on success.",
     {
-      id: z.string().describe("Product ID to delete"),
+      id: z.string().describe("Product ID to delete. Use teamleader_list_products to find valid IDs."),
     },
     async (params) => {
       await client.request({ endpoint: "products.delete", body: { id: params.id } });

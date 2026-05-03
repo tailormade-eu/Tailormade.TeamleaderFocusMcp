@@ -1005,7 +1005,7 @@ export function registerInvoiceTools(
   // ── Credit Invoice Partially ────────────────────────────────────────────
   server.tool(
     "teamleader_credit_invoice_partially",
-    "Create a partial credit note for a booked invoice. Specify which line items to credit. NOTE: the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically. Returns {id, type} of the created credit note. ERROR: 400 on invoices.creditPartially → CAUSE: Wrong unit_price.tax value (e.g. currency instead of 'excluding') → FIX: This tool sets tax:'excluding' automatically — just provide unit_price_amount.",
+    "Create a partial credit note for a booked invoice. Specify which line items to credit. <NOTE>the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically.</NOTE> Returns {id, type} of the created credit note. ERROR: 400 on invoices.creditPartially → CAUSE: Wrong unit_price.tax value (e.g. currency instead of 'excluding') → FIX: This tool sets tax:'excluding' automatically — just provide unit_price_amount.",
     {
       id: z.string().describe("The invoice ID to partially credit"),
       credit_note_date: z

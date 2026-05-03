@@ -100,7 +100,7 @@ export function registerSubscriptionTools(
     "teamleader_get_subscription",
     "Get full details of a subscription including invoicee, renewal period, line items, and next renewal date. Next steps: teamleader_update_subscription to modify, teamleader_deactivate_subscription to stop.",
     {
-      id: z.string().describe("The subscription ID"),
+      id: z.string().describe("The subscription ID. Use teamleader_list_subscriptions to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Subscription>>({
@@ -115,7 +115,7 @@ export function registerSubscriptionTools(
   // ── Create Subscription ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_subscription",
-    "Create a new subscription (recurring invoice) in Teamleader Focus. Returns {id, type}. billing_cycle uses unit ('week','month','year') + period (e.g. period=3,unit=month = quarterly). days_in_advance = how many days before renewal the invoice is created. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types). CRITICAL: `invoice_generation` is required — it controls what happens when a subscription generates an invoice (draft/book/book_and_send). `title` is also required. Line items use unit_price.tax = 'excluding' (NOT a currency field).",
+    "Create a new subscription (recurring invoice) in Teamleader Focus. Returns {id, type}. billing_cycle uses unit ('week','month','year') + period (e.g. period=3,unit=month = quarterly). days_in_advance = how many days before renewal the invoice is created. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types). <CRITICAL>`invoice_generation` is required — it controls what happens when a subscription generates an invoice (draft/book/book_and_send). `title` is also required. Line items use unit_price.tax = 'excluding' (NOT a currency field).</CRITICAL> Next steps: teamleader_get_subscription to verify.",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -221,9 +221,9 @@ export function registerSubscriptionTools(
   // ── Update Subscription ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_subscription",
-    "Update an existing subscription. Only provided fields are updated. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types).",
+    "Update an existing subscription. Only provided fields are updated. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types). Next steps: teamleader_get_subscription to verify the update.",
     {
-      id: z.string().describe("The subscription ID to update"),
+      id: z.string().describe("The subscription ID to update. Use teamleader_list_subscriptions to find valid IDs."),
       title: z.string().optional().describe("Subscription title"),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
@@ -312,9 +312,9 @@ export function registerSubscriptionTools(
   // ── Deactivate Subscription ──────────────────────────────────────────────
   server.tool(
     "teamleader_deactivate_subscription",
-    "Deactivate an active subscription. This stops future invoice generation. The subscription remains visible with status 'deactivated'.",
+    "Deactivate an active subscription. This stops future invoice generation. The subscription remains visible with status 'deactivated'. Returns {success: true} on success. Next steps: teamleader_get_subscription to verify the new status.",
     {
-      id: z.string().describe("The subscription ID to deactivate"),
+      id: z.string().describe("The subscription ID to deactivate. Use teamleader_list_subscriptions to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
