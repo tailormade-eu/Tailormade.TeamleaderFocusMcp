@@ -174,15 +174,16 @@ async function scrapeEndpoint(page: Page, endpoint: Endpoint, td: TurndownServic
   return `# ${result.title}\n\n> Source: ${endpoint.url}\n\n${markdown}`;
 }
 
-function writeLastScrapeReport(total: number, written: number, skipped: number, removed: string[]): void {
+function writeLastScrapeReport(preScrapeCount: number, total: number, written: number, skipped: number, removed: string[]): void {
   const now = new Date().toISOString().replace("T", " ").slice(0, 16);
   const removedSection =
     removed.length > 0
-      ? `- **Removed (obsolete): ${removed.length}**\n${removed.map((f) => `  - ${f}`).join("\n")}`
-      : `- Removed (obsolete): 0`;
+      ? `- **Obsolete deleted: ${removed.length}**\n${removed.map((f) => `  - ${f}`).join("\n")}`
+      : `- Obsolete deleted: 0`;
   const lines = [
     `# Last scrape — ${now}`,
     ``,
+    `- Pre-scrape files: ${preScrapeCount}`,
     `- Endpoints scraped: ${total}`,
     `- New/updated files: ${written}`,
     `- Skipped (--diff): ${skipped}`,
@@ -291,7 +292,7 @@ async function main(): Promise<void> {
       console.log("--no-delete: skipping obsolete file cleanup.");
     }
 
-    writeLastScrapeReport(endpoints.length, written, skipped, removed);
+    writeLastScrapeReport(preScrapeCount, endpoints.length, written, skipped, removed);
   } finally {
     await browser.close();
   }
