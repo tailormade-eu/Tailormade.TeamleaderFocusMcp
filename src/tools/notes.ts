@@ -42,11 +42,11 @@ export function registerNoteTools(
   // ── List Notes ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_notes",
-    "List notes attached to a Teamleader entity (contact, company, deal, project). Returns note content, creator, and timestamps.",
+    "List notes attached to a Teamleader entity (contact, company, deal, project). Returns note content, creator, and timestamps. Next step: teamleader_update_note to edit a note.",
     {
       subject_type: z
         .enum(SUBJECT_TYPES)
-        .describe("Type of entity to list notes for"),
+        .describe("Type of entity to list notes for ('company' | 'contact' | 'creditNote' | 'deal' | 'invoice' | 'nextgenProject' | 'product' | 'project' | 'quotation' | 'subscription')"),
       subject_id: z.string().describe("ID of the entity"),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z
@@ -109,11 +109,11 @@ export function registerNoteTools(
   // ── Create Note ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_note",
-    "Create a new note on a Teamleader entity (contact, company, deal, invoice, quotation, etc.). Notes are free-text content attached to the entity.",
+    "Create a new note on a Teamleader entity (contact, company, deal, invoice, quotation, etc.). Notes are free-text content attached to the entity. Returns note ID. Next steps: teamleader_list_notes to verify.",
     {
       subject_type: z
         .enum(CREATE_SUBJECT_TYPES)
-        .describe("Type of entity to attach the note to"),
+        .describe("Type of entity to attach the note to ('company' | 'contact' | 'creditNote' | 'deal' | 'invoice' | 'nextgenProject' | 'product' | 'quotation' | 'subscription')"),
       subject_id: z.string().describe("ID of the entity"),
       content: z.string().describe("Note content (free text)"),
     },
@@ -140,9 +140,9 @@ export function registerNoteTools(
   // ── Update Note ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_note",
-    "Update the content of an existing note in Teamleader Focus.",
+    "Update the content of an existing note in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_list_notes to verify.",
     {
-      id: z.string().describe("The note ID to update"),
+      id: z.string().describe("The note ID to update. Use teamleader_list_notes to find valid IDs."),
       content: z.string().describe("New note content (replaces existing)"),
     },
     async (params) => {

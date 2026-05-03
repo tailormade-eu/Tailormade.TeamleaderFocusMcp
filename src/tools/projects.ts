@@ -95,7 +95,7 @@ export function registerProjectTools(
     "teamleader_get_project_v2",
     "Get full details of a project including title, status, customers, owners, starts_on, due_on, description. Next steps: teamleader_list_project_groups for phases, teamleader_list_project_tasks_v2 for tasks, teamleader_add_project_customer to add customers.",
     {
-      id: z.string().describe("Project ID"),
+      id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: Project }>({
@@ -117,7 +117,7 @@ export function registerProjectTools(
   // ── Create Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_v2",
-    "Create a new project. Returns {id, type}. NOTE: API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on'). To assign users, use teamleader_assign_project after creation. To add owners, use teamleader_add_project_owner. Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams.",
+    "Create a new project. Returns {id, type}. <NOTE>API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on'). To assign users, use teamleader_assign_project after creation. To add owners, use teamleader_add_project_owner.</NOTE> Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams.",
     {
       title: z.string().describe("Project title"),
       description: z.string().optional().describe("Project description"),
@@ -170,13 +170,13 @@ export function registerProjectTools(
   // ── Update Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_project_v2",
-    "Update an existing project. Only provided fields are changed. Returns {id, type}. NOTE: To change status, use teamleader_close_project_v2 or teamleader_reopen_project_v2.",
+    "Update an existing project. Only provided fields are changed. Returns {id, type}. <NOTE>To change status, use teamleader_close_project_v2 or teamleader_reopen_project_v2.</NOTE> Next steps: teamleader_get_project_v2 to verify the update.",
     {
-      id: z.string().describe("Project ID"),
+      id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
       title: z.string().optional().describe("New project title"),
       description: z.string().optional().describe("New description"),
-      start_date: z.string().optional().describe("New start date (YYYY-MM-DD)"),
-      end_date: z.string().optional().describe("New end date (YYYY-MM-DD)"),
+      start_date: z.string().optional().describe("New start date (YYYY-MM-DD, e.g. '2026-06-01')"),
+      end_date: z.string().optional().describe("New end date (YYYY-MM-DD, e.g. '2026-12-31')"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -317,7 +317,7 @@ export function registerProjectTools(
   // ── Create Project Group (Phase) ─────────────────────────────────────────
   server.tool(
     "teamleader_create_project_group",
-    "Create a new project group (phase) within a project. Returns {id, type}. Next step: teamleader_create_project_task_v2 to add tasks to this group. CRITICAL: the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.",
+    "Create a new project group (phase) within a project. Returns {id, type}. <CRITICAL>the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.</CRITICAL> Next steps: teamleader_create_project_task_v2 to add tasks to this group.",
     {
       project_id: z.string().describe("Parent project ID"),
       title: z.string().describe("Group/phase title"),
@@ -370,9 +370,9 @@ export function registerProjectTools(
   // ── Close Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_close_project_v2",
-    "Close a project. CRITICAL: requires closing_strategy parameter — without it the API returns an error. Options: 'mark_tasks_and_materials_as_done' (marks all open tasks done) or 'none' (leaves tasks as-is). To reopen later: use teamleader_reopen_project_v2.",
+    "Close a project. <CRITICAL>requires closing_strategy parameter — without it the API returns an error. Options: 'mark_tasks_and_materials_as_done' (marks all open tasks done) or 'none' (leaves tasks as-is).</CRITICAL> To reopen later: use teamleader_reopen_project_v2. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
-      id: z.string().describe("Project ID"),
+      id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
       closing_strategy: z
         .enum(["mark_tasks_and_materials_as_done", "none"])
         .default("mark_tasks_and_materials_as_done")
@@ -392,9 +392,9 @@ export function registerProjectTools(
   // ── Reopen Project (v2) ────────────────────────────────────────────────
   server.tool(
     "teamleader_reopen_project_v2",
-    "Reopen a previously closed project. Sets status back to active.",
+    "Reopen a previously closed project. Sets status back to active. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
-      id: z.string().describe("Project ID"),
+      id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -410,9 +410,9 @@ export function registerProjectTools(
   // ── Delete Project (v2) ────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_v2",
-    "Delete a project. This action is irreversible. CRITICAL: requires delete_strategy — without it the API returns an error. Options: 'unlink_tasks_and_time_trackings' (keeps tasks/time), 'delete_tasks_and_time_trackings' (deletes all), 'delete_tasks_unlink_time_trackings'.",
+    "Delete a project. This action is irreversible. <CRITICAL>requires delete_strategy — without it the API returns an error. Options: 'unlink_tasks_and_time_trackings' (keeps tasks/time), 'delete_tasks_and_time_trackings' (deletes all), 'delete_tasks_unlink_time_trackings'.</CRITICAL> Returns {success: true} on success.",
     {
-      id: z.string().describe("Project ID"),
+      id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
       delete_strategy: z
         .enum(["unlink_tasks_and_time_trackings", "delete_tasks_and_time_trackings", "delete_tasks_unlink_time_trackings"])
         .default("unlink_tasks_and_time_trackings")
@@ -432,9 +432,9 @@ export function registerProjectTools(
   // ── Duplicate Project (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_project_v2",
-    "Duplicate a project with a new title. Copies all groups, tasks, and structure. Returns {id, type} of the new project.",
+    "Duplicate a project with a new title. Copies all groups, tasks, and structure. Returns {id, type} of the new project. Next steps: teamleader_get_project_v2 to verify.",
     {
-      id: z.string().describe("Source project ID to duplicate"),
+      id: z.string().describe("Source project ID to duplicate. Use teamleader_list_projects_v2 to find valid IDs."),
       title: z.string().describe("Title for the duplicated project"),
     },
     async (params) => {
@@ -451,7 +451,7 @@ export function registerProjectTools(
   // ── Add Customer to Project ────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_customer",
-    "Add a customer (company or contact) to a project. NOTE: the API uses a nested {type, id} object for the customer — this tool handles that automatically.",
+    "Add a customer (company or contact) to a project. <NOTE>the API uses a nested {type, id} object for the customer — this tool handles that automatically.</NOTE> Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       id: z.string().describe("Project ID"),
       customer_type: z.enum(["company", "contact"]).describe("Customer type"),
@@ -471,7 +471,7 @@ export function registerProjectTools(
   // ── Remove Customer from Project ───────────────────────────────────────
   server.tool(
     "teamleader_remove_project_customer",
-    "Remove a customer (company or contact) from a project.",
+    "Remove a customer (company or contact) from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       id: z.string().describe("Project ID"),
       customer_type: z.enum(["company", "contact"]).describe("Customer type"),
@@ -510,7 +510,7 @@ export function registerProjectTools(
   // ── Remove Deal from Project ───────────────────────────────────────────
   server.tool(
     "teamleader_remove_project_deal",
-    "Remove a deal link from a project.",
+    "Remove a deal link from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       id: z.string().describe("Project ID"),
       deal_id: z.string().describe("Deal ID to unlink"),
@@ -548,7 +548,7 @@ export function registerProjectTools(
   // ── Remove Owner from Project ──────────────────────────────────────────
   server.tool(
     "teamleader_remove_project_owner",
-    "Remove an owner (user) from a project.",
+    "Remove an owner (user) from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       id: z.string().describe("Project ID"),
       user_id: z.string().describe("User ID to remove as owner"),
@@ -567,7 +567,7 @@ export function registerProjectTools(
   // ── Assign User/Team to Project ────────────────────────────────────────
   server.tool(
     "teamleader_assign_project",
-    "Assign a user or team to a project. NOTE: the API uses a nested {type, id} object for the assignee — this tool handles that automatically. Use teamleader_list_users or teamleader_list_teams to find IDs.",
+    "Assign a user or team to a project. <NOTE>the API uses a nested {type, id} object for the assignee — this tool handles that automatically.</NOTE> Use teamleader_list_users or teamleader_list_teams to find IDs. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       id: z.string().describe("Project ID"),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type: user or team"),
@@ -587,7 +587,7 @@ export function registerProjectTools(
   // ── Unassign User/Team from Project ────────────────────────────────────
   server.tool(
     "teamleader_unassign_project",
-    "Unassign a user or team from a project.",
+    "Unassign a user or team from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       id: z.string().describe("Project ID"),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type: user or team"),
@@ -607,9 +607,9 @@ export function registerProjectTools(
   // ── Update Project Group (Phase) ───────────────────────────────────────
   server.tool(
     "teamleader_update_project_group",
-    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. Returns success confirmation. Next steps: teamleader_get_project_group to verify changes, teamleader_list_project_groups to see all phases. CRITICAL: the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.",
+    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. <CRITICAL>the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.</CRITICAL> Next steps: teamleader_get_project_group to verify changes.",
     {
-      id: z.string().describe("Project group ID"),
+      id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
       title: z.string().optional().describe("New group title"),
       description: z.string().nullable().optional().describe("New description (null to clear)"),
       color: z.enum(["#00B2B2", "#008A8C", "#992600", "#ED9E00", "#D157D3", "#A400B2", "#0071F2", "#004DA6", "#64788F", "#C0C0C4", "#82828C", "#1A1C20"]).optional().describe("Group color"),
@@ -649,9 +649,9 @@ export function registerProjectTools(
   // ── Complete Project Task (v2) ─────────────────────────────────────────
   server.tool(
     "teamleader_complete_project_task",
-    "Mark a project task as complete (sets status to 'done'). Use teamleader_reopen_project_task to undo.",
+    "Mark a project task as complete (sets status to 'done'). Use teamleader_reopen_project_task to undo. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -667,9 +667,9 @@ export function registerProjectTools(
   // ── Reopen Project Task (v2) ───────────────────────────────────────────
   server.tool(
     "teamleader_reopen_project_task",
-    "Reopen a completed project task.",
+    "Reopen a completed project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -685,9 +685,9 @@ export function registerProjectTools(
   // ── Delete Project Task (v2) ───────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_task",
-    "Delete a project task. This action is irreversible. CRITICAL: requires delete_strategy — 'unlink_time_tracking' keeps time entries, 'delete_time_tracking' removes them.",
+    "Delete a project task. This action is irreversible. <CRITICAL>requires delete_strategy — 'unlink_time_tracking' keeps time entries, 'delete_time_tracking' removes them.</CRITICAL> Returns {success: true} on success.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       delete_strategy: z
         .enum(["unlink_time_tracking", "delete_time_tracking"])
         .default("unlink_time_tracking")
@@ -707,7 +707,7 @@ export function registerProjectTools(
   // ── Remove Task from Group ─────────────────────────────────────────────
   server.tool(
     "teamleader_remove_task_from_group",
-    "Remove a task or material from the group it is currently in.",
+    "Remove a task or material from the group it is currently in. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
     {
       line_id: z.string().describe("Task or material ID to remove from its group"),
     },
@@ -725,7 +725,7 @@ export function registerProjectTools(
   // ── Create Project Task (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_task_v2",
-    "Create a new task within a project or project group (phase). Returns {id, type}. CRITICAL: API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically. Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id). ERROR: Silent ignore on tasks.create → CAUSE: Using assignee_id directly instead of assignees array → FIX: Use assignee_id param — this tool maps to assignees:[{type,id}] automatically.",
+    "Create a new task within a project or project group (phase). Returns {id, type}. <CRITICAL>API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically.</CRITICAL> Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id). <NOTE>ERROR: Silent ignore on tasks.create → CAUSE: Using assignee_id directly instead of assignees array → FIX: Use assignee_id param — this tool maps to assignees:[{type,id}] automatically.</NOTE> Next steps: teamleader_get_project_task to verify.",
     {
       project_id: z.string().describe("Parent project ID"),
       project_group_id: z.string().optional().describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
@@ -836,7 +836,7 @@ export function registerProjectTools(
     "teamleader_get_project_group",
     "Get full details of a project group (phase) including title, description, color, billing, assignees, start/end dates, time estimated/tracked, budgets, margins.",
     {
-      id: z.string().describe("Project group ID"),
+      id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: ProjectGroup }>({
@@ -852,9 +852,9 @@ export function registerProjectTools(
   // ── Assign User/Team to Project Group ───────────────────────────────────
   server.tool(
     "teamleader_assign_project_group",
-    "Assign a user or team to a project group (phase). Use to set responsibility for a phase. Returns success confirmation. Next steps: teamleader_get_project_group to verify assignees, teamleader_unassign_project_group to remove.",
+    "Assign a user or team to a project group (phase). Returns {success: true} on success. Next steps: teamleader_get_project_group to verify assignees.",
     {
-      id: z.string().describe("Project group ID"),
+      id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
       assignee_id: z.string().describe("User or team ID to assign"),
     },
@@ -872,9 +872,9 @@ export function registerProjectTools(
   // ── Unassign User/Team from Project Group ───────────────────────────────
   server.tool(
     "teamleader_unassign_project_group",
-    "Unassign a user or team from a project group (phase).",
+    "Unassign a user or team from a project group (phase). Returns {success: true} on success. Next steps: teamleader_get_project_group to verify.",
     {
-      id: z.string().describe("Project group ID"),
+      id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
       assignee_id: z.string().describe("User or team ID to unassign"),
     },
@@ -912,7 +912,7 @@ export function registerProjectTools(
     "teamleader_get_project_task",
     "Get full details of a project task including title, status, description, billing, assignees, dates, time estimated/tracked, budgets, custom fields.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: unknown }>({
@@ -928,9 +928,9 @@ export function registerProjectTools(
   // ── Update Project Task ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_project_task",
-    "Update a project task. All fields except id are optional. Providing null clears nullable fields.",
+    "Update a project task. All fields except id are optional. Providing null clears nullable fields. Next steps: teamleader_get_project_task to verify the update.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       title: z.string().optional().describe("New task title"),
       description: z.string().nullable().optional().describe("New description (null to clear)"),
       status: z.enum(["to_do", "in_progress", "on_hold", "done"]).optional().describe("Task status"),
@@ -995,9 +995,9 @@ export function registerProjectTools(
   // ── Assign User/Team to Project Task ────────────────────────────────────
   server.tool(
     "teamleader_assign_project_task",
-    "Assign a user or team to a project task.",
+    "Assign a user or team to a project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
       assignee_id: z.string().describe("User or team ID to assign"),
     },
@@ -1015,9 +1015,9 @@ export function registerProjectTools(
   // ── Unassign User/Team from Project Task ────────────────────────────────
   server.tool(
     "teamleader_unassign_project_task",
-    "Unassign a user or team from a project task.",
+    "Unassign a user or team from a project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
     {
-      id: z.string().describe("Project task ID"),
+      id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
       assignee_id: z.string().describe("User or team ID to unassign"),
     },
@@ -1054,7 +1054,7 @@ export function registerProjectTools(
   // ── Remove Quotation from Project ───────────────────────────────────────
   server.tool(
     "teamleader_remove_project_quotation",
-    "Remove a quotation from a project. Idempotent: does not fail if the quotation was already removed.",
+    "Remove a quotation from a project. Idempotent: does not fail if the quotation was already removed. Returns {success: true} on success.",
     {
       id: z.string().describe("Project ID"),
       quotation_id: z.string().describe("Quotation ID to unlink"),

@@ -87,10 +87,10 @@ export function registerTaskTools(
   // ── Create Task ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_task",
-    "Create a new standalone task (NOT a project task — use teamleader_create_project_task_v2 for those). Requires title, due_on, and work_type_id. Returns {id, type}. Lookup: teamleader_list_work_types (work_type_id).",
+    "Create a new standalone task (NOT a project task — use teamleader_create_project_task_v2 for those). Requires title, due_on, and work_type_id. Returns {id, type}. Lookup: teamleader_list_work_types (work_type_id). Next steps: teamleader_get_task to verify, teamleader_schedule_task to plan time.",
     {
       title: z.string().describe("Task title"),
-      due_on: z.string().describe("Due date (YYYY-MM-DD)"),
+      due_on: z.string().describe("Due date (YYYY-MM-DD, e.g. '2026-06-15')"),
       work_type_id: z.string().describe("Work type ID (use teamleader_list_work_types to find)"),
       description: z.string().optional().describe("Task description"),
       assignee_type: z
@@ -167,7 +167,7 @@ export function registerTaskTools(
     "teamleader_get_task",
     "Get full details of a standalone task (v1 API — type: todo). IMPORTANT: Returns a todo ID — this is NOT the same as a nextgenTask ID from projects-v2. Todo IDs cannot be used in projects-v2 endpoints (add_project_line_to_group, etc.) — use teamleader_load_tasks to get the correct nextgenTask ID instead.",
     {
-      id: z.string().describe("Task ID"),
+      id: z.string().describe("Task ID. Use teamleader_list_tasks to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: Task }>({
@@ -189,12 +189,12 @@ export function registerTaskTools(
   // ── Update Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_task",
-    "Update a standalone task in Teamleader Focus. Only provided fields are updated.",
+    "Update a standalone task in Teamleader Focus. Only provided fields are updated. Next steps: teamleader_get_task to verify the update.",
     {
-      id: z.string().describe("Task ID"),
+      id: z.string().describe("Task ID. Use teamleader_list_tasks to find valid IDs."),
       title: z.string().optional().describe("New task title"),
       description: z.string().optional().describe("New task description"),
-      due_on: z.string().optional().describe("New due date (YYYY-MM-DD)"),
+      due_on: z.string().optional().describe("New due date (YYYY-MM-DD, e.g. '2026-06-15')"),
       work_type_id: z.string().optional().describe("New work type ID (use teamleader_list_work_types to find)"),
       assignee_type: z
         .enum(["user", "team"])
@@ -261,9 +261,9 @@ export function registerTaskTools(
   // ── Delete Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_task",
-    "Delete a standalone task from Teamleader Focus. This action is irreversible.",
+    "Delete a standalone task from Teamleader Focus. This action is irreversible. Returns {success: true} on success.",
     {
-      id: z.string().describe("Task ID to delete"),
+      id: z.string().describe("Task ID to delete. Use teamleader_list_tasks to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -285,9 +285,9 @@ export function registerTaskTools(
   // ── Complete Task ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_complete_task",
-    "Mark a standalone task as completed in Teamleader Focus.",
+    "Mark a standalone task as completed in Teamleader Focus. Returns {success: true} on success.",
     {
-      id: z.string().describe("Task ID to complete"),
+      id: z.string().describe("Task ID to complete. Use teamleader_list_tasks to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -309,9 +309,9 @@ export function registerTaskTools(
   // ── Reopen Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_reopen_task",
-    "Reopen a previously completed standalone task in Teamleader Focus.",
+    "Reopen a previously completed standalone task in Teamleader Focus. Returns {success: true} on success.",
     {
-      id: z.string().describe("Task ID to reopen"),
+      id: z.string().describe("Task ID to reopen. Use teamleader_list_tasks to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -333,9 +333,9 @@ export function registerTaskTools(
   // ── Schedule Task ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_schedule_task",
-    "Schedule a standalone task by creating a calendar event for it. Returns the created event {id, type}. The task remains in its current status — this only creates a time block.",
+    "Schedule a standalone task by creating a calendar event for it. Returns the created event {id, type}. The task remains in its current status — this only creates a time block. Next steps: teamleader_get_task to verify.",
     {
-      id: z.string().describe("Task ID to schedule"),
+      id: z.string().describe("Task ID to schedule. Use teamleader_list_tasks to find valid IDs."),
       starts_at: z.string().describe("Start datetime (ISO 8601, e.g. 2026-03-04T09:00:00+01:00)"),
       ends_at: z.string().describe("End datetime (ISO 8601, e.g. 2026-03-04T10:00:00+01:00)"),
     },

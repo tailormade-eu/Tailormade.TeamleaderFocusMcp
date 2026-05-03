@@ -192,7 +192,7 @@ export function registerTimeTrackingTools(
     "teamleader_get_timetracking",
     "Get full details of a specific time tracking entry. Returns id, subject (type + id), user, started_on, ended_on, duration, description, work_type, invoiceable. Use when you need exact start/end times or to verify an entry before updating.",
     {
-      id: z.string().describe("Time tracking entry ID"),
+      id: z.string().describe("Time tracking entry ID. Use teamleader_list_timetracking to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: TimeTracking }>({
@@ -215,11 +215,11 @@ export function registerTimeTrackingTools(
   server.tool(
     "teamleader_add_timetracking",
     [
-      "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}.",
-      "NOTE: prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.",
-      "NOTE: You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().",
-      "NOTE: Milliseconds in started_on (e.g. 2024-01-15T09:00:00.000+00:00) → CAUSE: dedup logic treats ms-precision as unique → FIX: always use second-precision (2024-01-15T09:00:00+00:00).",
-      "ERROR: Invalid subject 400 → CAUSE: subject.id does not match subject.type (e.g. passing a v1 todo ID as a nextgenTask) → FIX: verify subject.type matches the ID source — use load_tasks to get correct IDs.",
+      "Add a new time tracking entry. Use teamleader_log_time instead for smart resolution (cache, dedup). Use this low-level tool only when you already have all IDs. Returns {id, type}. Next steps: teamleader_get_timetracking to verify.",
+      "<NOTE>prefer teamleader_log_time for daily time logging — it handles dedup and caching automatically.</NOTE>",
+      "<NOTE>You can provide either ended_on (datetime) OR duration (seconds), not both. subject_type enum differs between endpoints — check describe().</NOTE>",
+      "<NOTE>Milliseconds in started_on (e.g. 2024-01-15T09:00:00.000+00:00) → CAUSE: dedup logic treats ms-precision as unique → FIX: always use second-precision (2024-01-15T09:00:00+00:00).</NOTE>",
+      "<NOTE>ERROR: Invalid subject 400 → CAUSE: subject.id does not match subject.type (e.g. passing a v1 todo ID as a nextgenTask) → FIX: verify subject.type matches the ID source — use load_tasks to get correct IDs.</NOTE>",
     ].join("\n"),
     {
       started_on: z
@@ -290,9 +290,9 @@ export function registerTimeTrackingTools(
   // ── Update Time Tracking ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_timetracking",
-    "Update an existing time tracking entry. CRITICAL: When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds). Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed. WARNING: Changing subject type (e.g. todo → nextgenTask) silently fails — returns {} but subject is unchanged. To move a time entry to a different task type: delete + re-log on the correct task. ERROR: 400 'started_at must be present' → CAUSE: Sending only duration without started_on → FIX: Always send both started_on + duration together.",
+    "Update an existing time tracking entry. <CRITICAL>When updating duration, always send started_on together with duration — sending duration alone returns 400. The API body uses started_at + duration (seconds).</CRITICAL> Returns 204 on success. Use teamleader_get_timetracking first to retrieve the current started_on value if needed. <WARNING>Changing subject type (e.g. todo → nextgenTask) silently fails — returns {} but subject is unchanged. To move a time entry to a different task type: delete + re-log on the correct task.</WARNING> <NOTE>ERROR: 400 'started_at must be present' → CAUSE: Sending only duration without started_on → FIX: Always send both started_on + duration together.</NOTE> Next steps: teamleader_get_timetracking to verify.",
     {
-      id: z.string().describe("Time tracking entry ID"),
+      id: z.string().describe("Time tracking entry ID. Use teamleader_list_timetracking to find valid IDs."),
       work_type_id: z
         .string()
         .optional()
@@ -386,7 +386,7 @@ export function registerTimeTrackingTools(
   // ── Start Timer ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_start_timer",
-    "Start a running timer for time tracking. Only one timer can run per user — starting a new timer does NOT stop the previous one (use teamleader_stop_timer first). Returns {id, type}. Next step: use teamleader_stop_timer to stop it, or teamleader_get_current_timer to check status. NOTE: No user_id parameter — always starts timer for the authenticated user.",
+    "Start a running timer for time tracking. Only one timer can run per user — starting a new timer does NOT stop the previous one (use teamleader_stop_timer first). Returns {id, type}. Next steps: teamleader_stop_timer to stop it, or teamleader_get_current_timer to check status. <NOTE>No user_id parameter — always starts timer for the authenticated user.</NOTE>",
     {
       work_type_id: z
         .string()
@@ -885,9 +885,9 @@ export function registerTimeTrackingTools(
   // ── Resume Time Tracking ───────────────────────────────────────────────
   server.tool(
     "teamleader_resume_timetracking",
-    "Start a new timer based on a previously tracked time entry. Copies the subject and work type from the existing entry. Only one timer can run per user — any running timer will be stopped first.",
+    "Start a new timer based on a previously tracked time entry. Copies the subject and work type from the existing entry. Only one timer can run per user — any running timer will be stopped first. Next steps: teamleader_stop_timer to stop, teamleader_get_current_timer to verify.",
     {
-      id: z.string().describe("ID of the existing time tracking entry to resume from"),
+      id: z.string().describe("ID of the existing time tracking entry to resume from. Use teamleader_list_timetracking to find valid IDs."),
       started_at: z
         .string()
         .optional()

@@ -89,7 +89,7 @@ export function registerCompanyTools(
     "teamleader_get_company",
     "Get full company details including name, emails, phones, addresses, VAT number, tags, and custom fields. Next steps: teamleader_list_projects_v2(company_id=...) for projects, teamleader_list_contacts to find linked people.",
     {
-      id: z.string().describe("The company ID"),
+      id: z.string().describe("The company ID. Use teamleader_list_companies to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Company>>({
@@ -111,7 +111,7 @@ export function registerCompanyTools(
   // ── Create Company ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_company",
-    "Create a new company. Returns {id, type}. Next steps: teamleader_link_contact_to_company to associate people, teamleader_create_project_v2 to create a project for this company. NOTE: Company telephones only support 'phone' and 'fax' types (no 'mobile').",
+    "Create a new company. Returns {id, type}. <NOTE>Company telephones only support 'phone' and 'fax' types (no 'mobile').</NOTE> Next steps: teamleader_get_company to verify, teamleader_create_contact to add contacts.",
     {
       name: z.string().describe("Company name"),
       email: z.string().optional().describe("Primary email address"),
@@ -178,9 +178,9 @@ export function registerCompanyTools(
   // ── Update Company ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_company",
-    "Update an existing company. Only provided fields are changed. WARNING: the `tags` param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_company / teamleader_untag_company for incremental changes.",
+    "Update an existing company. Only provided fields are changed. <WARNING>the tags param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_company / teamleader_untag_company for incremental changes.</WARNING> Next steps: teamleader_get_company to verify the update.",
     {
-      id: z.string().describe("The company ID to update"),
+      id: z.string().describe("The company ID to update. Use teamleader_list_companies to find valid IDs."),
       name: z.string().optional().describe("Company name"),
       email: z.string().optional().describe("Primary email address"),
       phone: z.string().optional().describe("Phone number"),
@@ -243,9 +243,9 @@ export function registerCompanyTools(
   // ── Delete Company ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_company",
-    "Delete a company from Teamleader Focus. This is irreversible.",
+    "Delete a company from Teamleader Focus. This is irreversible. Returns {success: true} on success.",
     {
-      id: z.string().describe("The company ID to delete"),
+      id: z.string().describe("The company ID to delete. Use teamleader_list_companies to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -267,9 +267,9 @@ export function registerCompanyTools(
   // ── Tag Company ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_tag_company",
-    "Add one or more tags to a company. Tags that don't exist yet will be created automatically.",
+    "Add one or more tags to a company. Tags that don't exist yet will be created automatically. Returns {success: true} on success.",
     {
-      id: z.string().describe("The company ID to tag"),
+      id: z.string().describe("The company ID to tag. Use teamleader_list_companies to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to add to the company"),
     },
     async (params) => {
@@ -292,9 +292,9 @@ export function registerCompanyTools(
   // ── Untag Company ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_untag_company",
-    "Remove one or more tags from a company.",
+    "Remove one or more tags from a company. Returns {success: true} on success.",
     {
-      id: z.string().describe("The company ID to untag"),
+      id: z.string().describe("The company ID to untag. Use teamleader_list_companies to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to remove from the company"),
     },
     async (params) => {

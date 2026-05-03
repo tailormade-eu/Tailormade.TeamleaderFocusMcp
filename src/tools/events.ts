@@ -136,7 +136,7 @@ export function registerEventTools(
     "teamleader_get_event",
     "Get full event details including title, description, activity_type, times, location, attendees, and linked entities.",
     {
-      id: z.string().describe("The event ID"),
+      id: z.string().describe("The event ID. Use teamleader_list_events to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Event>>({
@@ -158,13 +158,13 @@ export function registerEventTools(
   // ── Create Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_event",
-    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id), teamleader_list_work_types (work_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead.",
+    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id), teamleader_list_work_types (work_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead. Next steps: teamleader_get_event to verify.",
     {
       title: z.string().describe("Event title"),
       description: z.string().optional().describe("Event description"),
       activity_type_id: z.string().describe("Activity type ID (use teamleader_list_activity_types to find)"),
-      starts_at: z.string().describe("Start datetime (ISO 8601)"),
-      ends_at: z.string().describe("End datetime (ISO 8601)"),
+      starts_at: z.string().describe("Start datetime (ISO 8601, e.g. '2026-06-15T09:00:00+02:00')"),
+      ends_at: z.string().describe("End datetime (ISO 8601, e.g. '2026-06-15T10:00:00+02:00')"),
       location: z.string().optional().describe("Event location"),
       work_type_id: z.string().optional().describe("Work type ID (use teamleader_list_work_types to find)"),
       attendees: z
@@ -219,13 +219,13 @@ export function registerEventTools(
   // ── Update Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_event",
-    "Update an existing calendar event. All fields except id are optional — only provided fields are updated. Attendees and links arrays replace the full list when provided.",
+    "Update an existing calendar event. All fields except id are optional — only provided fields are updated. Attendees and links arrays replace the full list when provided. Next steps: teamleader_get_event to verify the update.",
     {
-      id: z.string().describe("The event ID to update"),
+      id: z.string().describe("The event ID to update. Use teamleader_list_events to find valid IDs."),
       title: z.string().optional().describe("New event title"),
       description: z.string().nullable().optional().describe("New event description (null to clear)"),
-      starts_at: z.string().optional().describe("New start datetime (ISO 8601)"),
-      ends_at: z.string().optional().describe("New end datetime (ISO 8601)"),
+      starts_at: z.string().optional().describe("New start datetime (ISO 8601, e.g. '2026-06-15T09:00:00+02:00')"),
+      ends_at: z.string().optional().describe("New end datetime (ISO 8601, e.g. '2026-06-15T10:00:00+02:00')"),
       location: z.string().optional().describe("New event location"),
       work_type_id: z.string().optional().describe("Work type ID (use teamleader_list_work_types to find)"),
       attendees: z
@@ -278,9 +278,9 @@ export function registerEventTools(
   // ── Cancel Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_cancel_event",
-    "Cancel a calendar event for all attendees. This action cannot be undone.",
+    "Cancel a calendar event for all attendees. This action cannot be undone. Returns {success: true} on success.",
     {
-      id: z.string().describe("The event ID to cancel"),
+      id: z.string().describe("The event ID to cancel. Use teamleader_list_events to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({

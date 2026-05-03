@@ -22,7 +22,7 @@ export function registerLookupTools(
   // ── Activity Types ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_activity_types",
-    "List all activity types. Returns numbered list with name and ID. Use the IDs when creating events (teamleader_create_event activity_type_id param).",
+    "List all activity types. Returns numbered list: 'N. name (id)'. Use the IDs when creating events (teamleader_create_event activity_type_id param).",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
@@ -46,7 +46,7 @@ export function registerLookupTools(
   // ── Tax Rates ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tax_rates",
-    "List all tax rates with description and percentage. Returns numbered list with rate and ID. Use the IDs for invoice line items (teamleader_create_invoice, teamleader_credit_invoice_partially).",
+    "List all tax rates with description and percentage. Returns numbered list: 'N. description — rate% (id)'. Use the IDs for invoice line items (teamleader_create_invoice, teamleader_credit_invoice_partially).",
     {
       department_id: z.string().optional().describe("Filter by department ID (use teamleader_list_departments to find)"),
       page: z.number().optional().describe("Page number (default: 1)"),
@@ -81,7 +81,7 @@ export function registerLookupTools(
   // ── Payment Terms ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_payment_terms",
-    "List all payment term types (cash, end_of_month, after_invoice_date, etc.). Returns the type strings needed for teamleader_create_invoice and teamleader_update_invoice (payment_term_type param).",
+    "List all payment term types (cash, end_of_month, after_invoice_date, etc.). Returns numbered list: 'N. type (days)'. Pass the type string to teamleader_create_invoice and teamleader_update_invoice (payment_term_type param).",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{
@@ -102,7 +102,7 @@ export function registerLookupTools(
   // ── Ticket Statuses ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_ticket_statuses",
-    "List all ticket statuses with label and status type. Returns IDs needed for teamleader_create_ticket, teamleader_update_ticket, and teamleader_list_tickets (exclude_status_ids).",
+    "List all ticket statuses with label and status type. Returns numbered list: 'N. label [status] (id)'. Use IDs for teamleader_create_ticket, teamleader_update_ticket, and teamleader_list_tickets (exclude_status_ids).",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{
@@ -152,7 +152,7 @@ export function registerLookupTools(
   // ── Teams ───────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_teams",
-    "List all teams. Returns team IDs needed for tickets (team_id param in tickets.create/update).",
+    "List all teams. Returns numbered list: 'N. name (id) — M member(s)'. Use team IDs for tickets (team_id param in tickets.create/update) and project assignments.",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{
@@ -262,7 +262,7 @@ export function registerLookupTools(
   // ── Work Types ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_work_types",
-    "List all work types. Returns numbered list with name and ID. Use the IDs for time tracking (teamleader_add_timetracking, teamleader_start_timer), task creation (teamleader_create_task, teamleader_create_project_task_v2), and teamleader_log_time. Uses cache (7-day TTL).",
+    "List all work types. Returns numbered list: 'N. name (id)'. Use IDs for time tracking (teamleader_add_timetracking, teamleader_start_timer), task creation (teamleader_create_task, teamleader_create_project_task_v2), and teamleader_log_time. Uses cache (7-day TTL).",
     {},
     async () => {
       // Try cache first
@@ -319,7 +319,7 @@ export function registerLookupTools(
   // ── Business Types ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_business_types",
-    "List business types (legal structures) for companies in a given country. Returns IDs usable when creating/updating companies.",
+    "List business types (legal structures) for companies in a given country. Returns numbered list: 'N. name (id)'. Use IDs for teamleader_create_company and teamleader_update_company (business_type_id param).",
     {
       country: z.string().describe("Country code (e.g. 'BE', 'NL', 'FR')"),
     },
@@ -368,7 +368,7 @@ export function registerLookupTools(
   // ── Commercial Discounts ────────────────────────────────────────────────
   server.tool(
     "teamleader_list_commercial_discounts",
-    "List commercial discounts. Returns discount names and department references.",
+    "List commercial discounts. Returns numbered list: 'N. name — dept: id'. Use for pricing decisions and quotation discounts.",
     {
       department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
     },
@@ -461,7 +461,7 @@ export function registerLookupTools(
   // ── Units of Measure ────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_units_of_measure",
-    "List all units of measure. Returns IDs for use in products (teamleader_add_product unit_of_measure_id param).",
+    "List all units of measure. Returns numbered list: 'N. name (id)'. Use IDs for products (teamleader_add_product unit_of_measure_id) and invoice line items (unit_of_measure_id).",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{
@@ -480,7 +480,7 @@ export function registerLookupTools(
   // ── Withholding Tax Rates ───────────────────────────────────────────────
   server.tool(
     "teamleader_list_withholding_tax_rates",
-    "List withholding tax rates. Returns IDs for use in invoices.",
+    "List withholding tax rates. Returns numbered list: 'N. description — rate% (id)'. Use IDs for invoice line items (withholding_tax_rate_id param).",
     {
       department_id: z.string().optional().describe("Filter by department ID. Use teamleader_list_departments to find valid IDs."),
     },
@@ -510,7 +510,7 @@ export function registerLookupTools(
   // ── Currencies (Exchange Rates) ─────────────────────────────────────────
   server.tool(
     "teamleader_list_currencies",
-    "List currencies with exchange rates relative to a base currency. Returns currency codes, names, symbols, and exchange rates.",
+    "List currencies with exchange rates relative to a base currency. Returns numbered list: 'N. name (code) symbol — rate: X'. Use currency codes in invoices and deals.",
     {
       base: z.enum(["BAM","CAD","CHF","CLP","CNY","COP","CZK","DKK","EUR","GBP","INR","ISK","JPY","MAD","MXN","NOK","PEN","PLN","RON","SEK","TRY","USD","ZAR"])
         .describe("Base currency code (e.g. 'EUR')"),

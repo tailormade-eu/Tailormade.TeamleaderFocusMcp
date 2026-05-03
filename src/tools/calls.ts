@@ -117,7 +117,7 @@ export function registerCallTools(
     "teamleader_get_call",
     "Get detailed information about a specific CRM call in Teamleader Focus by its ID. Returns all fields including participant, outcome, custom fields, and deal link.",
     {
-      id: z.string().describe("The call ID"),
+      id: z.string().describe("The call ID. Use teamleader_list_calls to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: CallData }>({
@@ -170,7 +170,7 @@ export function registerCallTools(
   // ── Add Call ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_call",
-    "Add a new CRM call in Teamleader Focus. Requires a customer (contact or company), due date, and assignee. Optionally link to a deal.",
+    "Add a new CRM call in Teamleader Focus. Requires a customer (contact or company), due date, and assignee. Optionally link to a deal. Returns {id, type}. Next steps: teamleader_get_call to verify, teamleader_complete_call when done.",
     {
       customer_type: z
         .enum(["contact", "company"])
@@ -231,9 +231,9 @@ export function registerCallTools(
   // ── Update Call ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_call",
-    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated.",
+    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Next steps: teamleader_get_call to verify the update.",
     {
-      id: z.string().describe("The call ID to update"),
+      id: z.string().describe("The call ID to update. Use teamleader_list_calls to find valid IDs."),
       description: z.string().optional().describe("New description"),
       customer_type: z
         .enum(["contact", "company"])
@@ -297,9 +297,9 @@ export function registerCallTools(
   // ── Complete Call ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_complete_call",
-    "Mark a CRM call as complete in Teamleader Focus. Optionally provide a call outcome and summary.",
+    "Mark a CRM call as complete in Teamleader Focus. Optionally provide a call outcome and summary. Returns {success: true} on success. Next steps: teamleader_get_call to verify.",
     {
-      id: z.string().describe("The call ID to complete"),
+      id: z.string().describe("The call ID to complete. Use teamleader_list_calls to find valid IDs."),
       call_outcome_id: z
         .string()
         .optional()

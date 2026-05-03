@@ -87,7 +87,7 @@ export function registerMeetingTools(
     "teamleader_get_meeting",
     "Get detailed information about a specific meeting, including location, attendees, custom fields, and optionally tracked time.",
     {
-      id: z.string().describe("The meeting ID"),
+      id: z.string().describe("The meeting ID. Use teamleader_list_meetings to find valid IDs."),
       include_tracked_time: z
         .boolean()
         .optional()
@@ -118,11 +118,11 @@ export function registerMeetingTools(
   // ── Schedule Meeting ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_schedule_meeting",
-    "Schedule a new meeting. Returns {id, type}. Requires title, start/end times, and at least one attendee (user). Optionally link to a customer, deal, or milestone. For simple calendar events without meeting features, use teamleader_create_event instead.",
+    "Schedule a new meeting. Returns {id, type}. Requires title, start/end times, and at least one attendee (user). Optionally link to a customer, deal, or milestone. For simple calendar events without meeting features, use teamleader_create_event instead. Next steps: teamleader_get_meeting to verify, teamleader_complete_meeting when done.",
     {
       title: z.string().describe("Meeting title"),
-      starts_at: z.string().describe("Start datetime (ISO 8601)"),
-      ends_at: z.string().describe("End datetime (ISO 8601)"),
+      starts_at: z.string().describe("Start datetime (ISO 8601, e.g. '2026-06-15T09:00:00+02:00')"),
+      ends_at: z.string().describe("End datetime (ISO 8601, e.g. '2026-06-15T10:00:00+02:00')"),
       attendees: z
         .array(
           z.object({
@@ -195,12 +195,12 @@ export function registerMeetingTools(
   // ── Update Meeting ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_meeting",
-    "Update an existing meeting. Only provided fields are changed. When updating attendees, the full list must be provided (at least one user).",
+    "Update an existing meeting. Only provided fields are changed. When updating attendees, the full list must be provided (at least one user). Next steps: teamleader_get_meeting to verify the update.",
     {
-      id: z.string().describe("The meeting ID to update"),
+      id: z.string().describe("The meeting ID to update. Use teamleader_list_meetings to find valid IDs."),
       title: z.string().optional().describe("New meeting title"),
-      starts_at: z.string().optional().describe("New start datetime (ISO 8601)"),
-      ends_at: z.string().optional().describe("New end datetime (ISO 8601)"),
+      starts_at: z.string().optional().describe("New start datetime (ISO 8601, e.g. '2026-06-15T09:00:00+02:00')"),
+      ends_at: z.string().optional().describe("New end datetime (ISO 8601, e.g. '2026-06-15T10:00:00+02:00')"),
       description: z
         .string()
         .nullable()
@@ -271,9 +271,9 @@ export function registerMeetingTools(
   // ── Complete Meeting ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_complete_meeting",
-    "Mark a meeting as completed. Next step: teamleader_create_meeting_report to attach a summary to a contact, company, or deal.",
+    "Mark a meeting as completed. Returns {success: true} on success. Next steps: teamleader_create_meeting_report to attach a summary to a contact, company, or deal.",
     {
-      id: z.string().describe("The meeting ID to complete"),
+      id: z.string().describe("The meeting ID to complete. Use teamleader_list_meetings to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -295,9 +295,9 @@ export function registerMeetingTools(
   // ── Delete Meeting ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_meeting",
-    "Delete a meeting from Teamleader Focus. This action cannot be undone.",
+    "Delete a meeting from Teamleader Focus. This action cannot be undone. Returns {success: true} on success.",
     {
-      id: z.string().describe("The meeting ID to delete"),
+      id: z.string().describe("The meeting ID to delete. Use teamleader_list_meetings to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -319,9 +319,9 @@ export function registerMeetingTools(
   // ── Create Meeting Report ────────────────────────────────────────────────
   server.tool(
     "teamleader_create_meeting_report",
-    "Create a report for a meeting and attach it to a contact, company, or deal. The summary is stored as a note on the linked entity.",
+    "Create a report for a meeting and attach it to a contact, company, or deal. The summary is stored as a note on the linked entity. Returns {id, type} of the report. Next steps: teamleader_list_notes on the linked entity to verify.",
     {
-      id: z.string().describe("The meeting ID to create a report for"),
+      id: z.string().describe("The meeting ID to create a report for. Use teamleader_list_meetings to find valid IDs."),
       attach_to_type: z
         .enum(["contact", "company", "deal"])
         .describe("Type of entity to attach the report to"),

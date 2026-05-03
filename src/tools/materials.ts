@@ -108,7 +108,7 @@ export function registerMaterialTools(
     "teamleader_get_material",
     "Get detailed information about a single material in Teamleader Focus. Returns all fields including pricing, budgets, margins, assignees, and dates.",
     {
-      id: z.string().describe("The material ID"),
+      id: z.string().describe("The material ID. Use teamleader_list_materials to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{
@@ -195,7 +195,7 @@ export function registerMaterialTools(
   // ── Create Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_create_material",
-    "Create a new material in a Teamleader Focus project. Only project_id and title are required. Supports pricing, budgets, dates, assignees, and product linking.",
+    "Create a new material in a Teamleader Focus project. Only project_id and title are required. Supports pricing, budgets, dates, assignees, and product linking. Returns {id, type}. Next steps: teamleader_get_material to verify.",
     {
       project_id: z.string().describe("Project ID to add the material to"),
       title: z.string().describe("Material title"),
@@ -301,9 +301,9 @@ export function registerMaterialTools(
   // ── Update Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_update_material",
-    "Update an existing material in Teamleader Focus. Only id is required. All other fields are optional. Pass null to clear nullable fields.",
+    "Update an existing material in Teamleader Focus. Only id is required. All other fields are optional. Pass null to clear nullable fields. Next steps: teamleader_get_material to verify the update.",
     {
-      id: z.string().describe("The material ID to update"),
+      id: z.string().describe("The material ID to update. Use teamleader_list_materials to find valid IDs."),
       title: z.string().optional().describe("Optional: new title"),
       description: z
         .string()
@@ -406,9 +406,9 @@ export function registerMaterialTools(
   // ── Delete Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_material",
-    "Delete a material from a Teamleader Focus project.",
+    "Delete a material from a Teamleader Focus project. Returns {success: true} on success.",
     {
-      id: z.string().describe("The material ID to delete"),
+      id: z.string().describe("The material ID to delete. Use teamleader_list_materials to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -423,9 +423,9 @@ export function registerMaterialTools(
   // ── Assign Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_assign_material",
-    "Assign a user or team to a material in Teamleader Focus.",
+    "Assign a user or team to a material in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_get_material to verify.",
     {
-      id: z.string().describe("The material ID"),
+      id: z.string().describe("The material ID. Use teamleader_list_materials to find valid IDs."),
       assignee_type: z
         .enum(["team", "user"])
         .describe("Type of assignee"),
@@ -452,9 +452,9 @@ export function registerMaterialTools(
   // ── Unassign Material ─────────────────────────────────────────────────
   server.tool(
     "teamleader_unassign_material",
-    "Unassign a user or team from a material in Teamleader Focus.",
+    "Unassign a user or team from a material in Teamleader Focus. Returns {success: true} on success.",
     {
-      id: z.string().describe("The material ID"),
+      id: z.string().describe("The material ID. Use teamleader_list_materials to find valid IDs."),
       assignee_type: z
         .enum(["team", "user"])
         .describe("Type of assignee to remove"),
@@ -483,7 +483,7 @@ export function registerMaterialTools(
   // ── Duplicate Material ────────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_material",
-    "Duplicate an existing material in Teamleader Focus. Creates a copy of the material with the same properties.",
+    "Duplicate an existing material in Teamleader Focus. Creates a copy of the material with the same properties. Returns {id, type} of the new material. Next steps: teamleader_get_material to verify.",
     {
       origin_id: z
         .string()
@@ -498,8 +498,4 @@ export function registerMaterialTools(
       });
 
       return respond(
-        `Material duplicated. New material ID: ${result.data.id}.`
-      );
-    }
-  );
-}
+  

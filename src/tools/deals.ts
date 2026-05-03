@@ -27,7 +27,7 @@ export function registerDealTools(
   // ── List Deals ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_deals",
-    "List deals/opportunities from Teamleader Focus. Returns array with id, title, phase, estimated_value, customer. Use to find deal IDs. Next steps: teamleader_get_deal for details, teamleader_move_deal to change phase, teamleader_win_deal / teamleader_lose_deal to close. NOTE: `customer` filter is object {type, id}, not flat customer_id — this tool maps customer_type+customer_id automatically. `responsible_user_id` also supports string array for multi-user filter. Valid status values: 'open', 'won', 'lost'.",
+    "List deals/opportunities from Teamleader Focus. Returns array with id, title, phase, estimated_value, customer. Use to find deal IDs. Next steps: teamleader_get_deal for details, teamleader_move_deal to change phase, teamleader_win_deal / teamleader_lose_deal to close. <NOTE>customer filter is object {type, id}, not flat customer_id — this tool maps customer_type+customer_id automatically. responsible_user_id also supports string array for multi-user filter. Valid status values: 'open', 'won', 'lost'.</NOTE>",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
@@ -103,7 +103,7 @@ export function registerDealTools(
     "teamleader_get_deal",
     "Get full deal details including title, phase, customer, estimated value, probability, responsible user, and custom fields. Next steps: teamleader_move_deal to change phase, teamleader_update_deal to edit.",
     {
-      id: z.string().describe("The deal ID"),
+      id: z.string().describe("The deal ID. Use teamleader_list_deals to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Deal>>({
@@ -125,7 +125,7 @@ export function registerDealTools(
   // ── Create Deal ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal",
-    "Create a new deal/opportunity. Returns {id, type}. Lookup IDs first: teamleader_list_deal_phases (phase_id), teamleader_list_deal_sources (source_id), teamleader_list_departments (department_id). Next steps: teamleader_move_deal to advance through pipeline. NOTE: phase_id is required in this tool but optional in the API (defaults to first phase).",
+    "Create a new deal/opportunity. Returns {id, type}. Lookup IDs first: teamleader_list_deal_phases (phase_id), teamleader_list_deal_sources (source_id), teamleader_list_departments (department_id). <NOTE>phase_id is required in this tool but optional in the API (defaults to first phase).</NOTE> Next steps: teamleader_get_deal to verify, teamleader_move_deal to place in pipeline.",
     {
       title: z.string().describe("Deal title"),
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
@@ -217,9 +217,9 @@ export function registerDealTools(
   // ── Update Deal ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal",
-    "Update an existing deal. Only provided fields are changed. NOTE: To change the deal's phase, use teamleader_move_deal instead. source_id and department_id are nullable — pass null to clear.",
+    "Update an existing deal. Only provided fields are changed. <NOTE>To change the deal's phase, use teamleader_move_deal instead. source_id and department_id are nullable — pass null to clear.</NOTE> Next steps: teamleader_get_deal to verify the update.",
     {
-      id: z.string().describe("The deal ID to update"),
+      id: z.string().describe("The deal ID to update. Use teamleader_list_deals to find valid IDs."),
       title: z.string().optional().describe("Deal title"),
       summary: z.string().nullable().optional().describe("Free text summary (pass null to clear)"),
       estimated_value_amount: z.number().optional().describe("Estimated value amount"),
@@ -298,9 +298,9 @@ export function registerDealTools(
   // ── Delete Deal ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_deal",
-    "Delete a deal from Teamleader Focus. This action is irreversible.",
+    "Delete a deal from Teamleader Focus. This action is irreversible. Returns {success: true} on success.",
     {
-      id: z.string().describe("The deal ID to delete"),
+      id: z.string().describe("The deal ID to delete. Use teamleader_list_deals to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -314,9 +314,9 @@ export function registerDealTools(
   // ── Lose Deal ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_lose_deal",
-    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs.",
+    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status.",
     {
-      id: z.string().describe("The deal ID to mark as lost"),
+      id: z.string().describe("The deal ID to mark as lost. Use teamleader_list_deals to find valid IDs."),
       reason_id: z.string().optional().describe("Lost reason ID (use teamleader_list_lost_reasons to find IDs)"),
       extra_info: z.string().optional().describe("Additional info about why the deal was lost"),
     },
@@ -336,9 +336,9 @@ export function registerDealTools(
   // ── Win Deal ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_win_deal",
-    "Mark a deal as won. This is irreversible — the deal moves to the 'won' state.",
+    "Mark a deal as won. This is irreversible — the deal moves to the 'won' state. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status.",
     {
-      id: z.string().describe("The deal ID to mark as won"),
+      id: z.string().describe("The deal ID to mark as won. Use teamleader_list_deals to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -352,9 +352,9 @@ export function registerDealTools(
   // ── Move Deal ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_move_deal",
-    "Move a deal to a different phase in its pipeline. Use teamleader_list_deal_phases to get available phase IDs.",
+    "Move a deal to a different phase in its pipeline. Use teamleader_list_deal_phases to get available phase IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new phase.",
     {
-      id: z.string().describe("The deal ID to move"),
+      id: z.string().describe("The deal ID to move. Use teamleader_list_deals to find valid IDs."),
       phase_id: z.string().describe("Target phase ID (use teamleader_list_deal_phases to find IDs)"),
     },
     async (params) => {
@@ -463,7 +463,7 @@ export function registerDealTools(
   // ── Create Deal Phase ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal_phase",
-    "Create a new deal phase in a pipeline. Returns the new phase ID. Use teamleader_list_deal_pipelines to find the pipeline ID.",
+    "Create a new deal phase in a pipeline. Returns the new phase ID. Use teamleader_list_deal_pipelines to find the pipeline ID. Next steps: teamleader_list_deal_phases to verify.",
     {
       name: z.string().describe("Phase name"),
       deal_pipeline_id: z.string().describe("Pipeline ID to add the phase to"),
@@ -496,9 +496,9 @@ export function registerDealTools(
   // ── Update Deal Phase ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal_phase",
-    "Update an existing deal phase. requires_attention_after is always required by the API.",
+    "Update an existing deal phase. requires_attention_after is always required by the API. Next steps: teamleader_list_deal_phases to verify.",
     {
-      id: z.string().describe("The deal phase ID to update"),
+      id: z.string().describe("The deal phase ID to update. Use teamleader_list_deal_phases to find valid IDs."),
       name: z.string().optional().describe("New phase name"),
       requires_attention_after_amount: z.number().describe("Amount of time after which a deal requires attention"),
       requires_attention_after_unit: z.enum(["days", "weeks"]).describe("Unit for requires_attention_after (days or weeks)"),
@@ -525,9 +525,9 @@ export function registerDealTools(
   // ── Delete Deal Phase ──────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_deal_phase",
-    "Delete a deal phase. Optionally migrate existing deals to another phase.",
+    "Delete a deal phase. Optionally migrate existing deals to another phase. Returns {success: true} on success.",
     {
-      id: z.string().describe("The deal phase ID to delete"),
+      id: z.string().describe("The deal phase ID to delete. Use teamleader_list_deal_phases to find valid IDs."),
       new_phase_id: z.string().optional().describe("Phase ID to migrate existing deals to (optional)"),
     },
     async (params) => {
@@ -542,9 +542,9 @@ export function registerDealTools(
   // ── Duplicate Deal Phase ───────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_deal_phase",
-    "Create a new deal phase by duplicating an existing one. Returns the new phase ID.",
+    "Create a new deal phase by duplicating an existing one. Returns the new phase ID. Next steps: teamleader_list_deal_phases to verify.",
     {
-      id: z.string().describe("Source deal phase ID to duplicate"),
+      id: z.string().describe("Source deal phase ID to duplicate. Use teamleader_list_deal_phases to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: { id: string; type: string } }>({
@@ -559,9 +559,9 @@ export function registerDealTools(
   // ── Move Deal Phase ────────────────────────────────────────────────────
   server.tool(
     "teamleader_move_deal_phase",
-    "Move a deal phase to a new position in the pipeline (reorder). The phase is placed after the specified phase.",
+    "Move a deal phase to a new position in the pipeline (reorder). The phase is placed after the specified phase. Returns {success: true} on success.",
     {
-      id: z.string().describe("The deal phase ID to move"),
+      id: z.string().describe("The deal phase ID to move. Use teamleader_list_deal_phases to find valid IDs."),
       after_phase_id: z.string().describe("The phase ID after which to place this phase"),
     },
     async (params) => {
@@ -593,9 +593,9 @@ export function registerDealTools(
   // ── Update Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal_pipeline",
-    "Update a deal pipeline name.",
+    "Update a deal pipeline name. Next steps: teamleader_list_deal_pipelines to verify.",
     {
-      id: z.string().describe("The deal pipeline ID to update"),
+      id: z.string().describe("The deal pipeline ID to update. Use teamleader_list_deal_pipelines to find valid IDs."),
       name: z.string().describe("New pipeline name"),
     },
     async (params) => {
@@ -610,9 +610,9 @@ export function registerDealTools(
   // ── Delete Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_delete_deal_pipeline",
-    "Delete a deal pipeline. Optionally migrate deals from old phases to new phases in another pipeline via migrate_phases array.",
+    "Delete a deal pipeline. Optionally migrate deals from old phases to new phases in another pipeline via migrate_phases array. Returns {success: true} on success.",
     {
-      id: z.string().describe("The deal pipeline ID to delete"),
+      id: z.string().describe("The deal pipeline ID to delete. Use teamleader_list_deal_pipelines to find valid IDs."),
       migrate_phases: z.array(z.object({
         old_phase_id: z.string().describe("Phase ID in the pipeline being deleted"),
         new_phase_id: z.string().describe("Phase ID in another pipeline to migrate deals to"),
@@ -630,9 +630,9 @@ export function registerDealTools(
   // ── Duplicate Deal Pipeline ────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_deal_pipeline",
-    "Create a new deal pipeline by duplicating an existing one (including its phases). Returns the new pipeline ID.",
+    "Create a new deal pipeline by duplicating an existing one (including its phases). Returns the new pipeline ID. Next steps: teamleader_list_deal_pipelines to verify.",
     {
-      id: z.string().describe("Source deal pipeline ID to duplicate"),
+      id: z.string().describe("Source deal pipeline ID to duplicate. Use teamleader_list_deal_pipelines to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{ data: { id: string; type: string } }>({
@@ -647,9 +647,9 @@ export function registerDealTools(
   // ── Mark Deal Pipeline as Default ──────────────────────────────────────
   server.tool(
     "teamleader_mark_deal_pipeline_default",
-    "Mark a deal pipeline as the default pipeline.",
+    "Mark a deal pipeline as the default pipeline. Returns {success: true} on success.",
     {
-      id: z.string().describe("The deal pipeline ID to mark as default"),
+      id: z.string().describe("The deal pipeline ID to mark as default. Use teamleader_list_deal_pipelines to find valid IDs."),
     },
     async (params) => {
       await client.request({

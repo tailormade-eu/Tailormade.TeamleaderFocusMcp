@@ -24,7 +24,7 @@ export function registerTicketTools(
   // ── List Tickets ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_tickets",
-    "List tickets from Teamleader Focus. Returns array with id, subject, status, customer, assignee. CRITICAL: customer filter uses 'relates_to: {type, id}' internally (NOT 'customer_id') — this tool handles that automatically. WARNING: Status filtering is exclusion-based only (exclude_status_ids) — there is no direct status include filter. Use teamleader_list_ticket_statuses to find status IDs. Next steps: teamleader_get_ticket for details, teamleader_reply_ticket to respond. ERROR: Empty/wrong results on tickets.list → CAUSE: Using customer_id directly instead of relates_to → FIX: Use customer_type + customer_id params — this tool maps to relates_to automatically.",
+    "List tickets from Teamleader Focus. Returns array with id, subject, status, customer, assignee. <CRITICAL>customer filter uses 'relates_to: {type, id}' internally (NOT 'customer_id') — this tool handles that automatically.</CRITICAL> <WARNING>Status filtering is exclusion-based only (exclude_status_ids) — there is no direct status include filter.</WARNING> Use teamleader_list_ticket_statuses to find status IDs. Next steps: teamleader_get_ticket for details, teamleader_reply_ticket to respond. <NOTE>ERROR: Empty/wrong results on tickets.list → CAUSE: Using customer_id directly instead of relates_to → FIX: Use customer_type + customer_id params — this tool maps to relates_to automatically.</NOTE>",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),
@@ -94,7 +94,7 @@ export function registerTicketTools(
     "teamleader_get_ticket",
     "Get full ticket details including subject, status, assignee, customer, description, custom fields, and timestamps. Next steps: teamleader_list_ticket_messages for conversation, teamleader_reply_ticket to respond, teamleader_update_ticket to change status/assignee.",
     {
-      id: z.string().describe("The ticket ID"),
+      id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Ticket>>({
@@ -116,7 +116,7 @@ export function registerTicketTools(
   // ── Create Ticket ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_ticket",
-    "Create a new ticket. Requires subject, customer, and ticket_status_id. Returns {id, type}. Lookup IDs: teamleader_list_ticket_statuses (ticket_status_id), teamleader_list_users (assignee_id). Next step: teamleader_reply_ticket to add the first reply.",
+    "Create a new ticket. Requires subject, customer, and ticket_status_id. Returns {id, type}. Lookup IDs: teamleader_list_ticket_statuses (ticket_status_id), teamleader_list_users (assignee_id). Next steps: teamleader_reply_ticket to add the first reply, teamleader_get_ticket to verify.",
     {
       subject: z.string().describe("Ticket subject/title"),
       customer_type: z
@@ -185,9 +185,9 @@ export function registerTicketTools(
   // ── Update Ticket ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_ticket",
-    "Update an existing ticket. Only provided fields are changed. Can change subject, description, status, assignee, and customer.",
+    "Update an existing ticket. Only provided fields are changed. Can change subject, description, status, assignee, and customer. Next steps: teamleader_get_ticket to verify the update.",
     {
-      id: z.string().describe("The ticket ID to update"),
+      id: z.string().describe("The ticket ID to update. Use teamleader_list_tickets to find valid IDs."),
       subject: z.string().optional().describe("New ticket subject"),
       description: z
         .string()
@@ -334,9 +334,9 @@ export function registerTicketTools(
   // ── Reply to Ticket ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_reply_ticket",
-    "Add a customer-visible reply to a ticket. The message body should be HTML formatted. Optionally change ticket status in the same call. For internal notes not visible to customer, use teamleader_internal_message_ticket instead.",
+    "Add a customer-visible reply to a ticket. The message body should be HTML formatted. Optionally change ticket status in the same call. For internal notes not visible to customer, use teamleader_internal_message_ticket instead. Returns {id, type} of the message. Next steps: teamleader_list_ticket_messages to verify.",
     {
-      id: z.string().describe("The ticket ID"),
+      id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Reply message body (HTML formatted)"),
       ticket_status_id: z
         .string()
@@ -378,9 +378,9 @@ export function registerTicketTools(
   // ── Internal Message on Ticket ───────────────────────────────────────────
   server.tool(
     "teamleader_internal_message_ticket",
-    "Add an internal (private) message to a ticket. NOT visible to the customer. Use for internal notes between team members. For customer-visible replies, use teamleader_reply_ticket instead.",
+    "Add an internal (private) message to a ticket. NOT visible to the customer. Use for internal notes between team members. For customer-visible replies, use teamleader_reply_ticket instead. Returns {id, type} of the message.",
     {
-      id: z.string().describe("The ticket ID"),
+      id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Internal message body (HTML formatted)"),
       ticket_status_id: z
         .string()
@@ -422,9 +422,9 @@ export function registerTicketTools(
   // ── Import Ticket Message ────────────────────────────────────────────────
   server.tool(
     "teamleader_import_ticket_message",
-    "Import an external message into a ticket (e.g. for migration). Unlike addReply, this allows setting the sender and timestamp. The body should be HTML formatted.",
+    "Import an external message into a ticket (e.g. for migration). Unlike addReply, this allows setting the sender and timestamp. The body should be HTML formatted. Returns {id, type} of the imported message. Next steps: teamleader_list_ticket_messages to verify.",
     {
-      id: z.string().describe("The ticket ID"),
+      id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Message body (HTML formatted)"),
       sent_by_type: z.enum(["company", "contact", "user"]).describe("Sender entity type"),
       sent_by_id: z.string().describe("Sender entity ID"),

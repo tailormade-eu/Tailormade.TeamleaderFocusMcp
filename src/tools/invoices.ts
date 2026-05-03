@@ -383,7 +383,7 @@ export function registerInvoiceTools(
     "teamleader_get_invoice",
     "Get full details of an invoice including line items, payment status, customer, totals, and payment term. Next steps: teamleader_book_invoice (if draft), teamleader_register_payment (if outstanding), teamleader_credit_invoice (to credit).",
     {
-      id: z.string().describe("The invoice ID"),
+      id: z.string().describe("The invoice ID. Use teamleader_list_invoices to find valid IDs."),
       includes: z.literal("late_fees").optional().describe("Pass 'late_fees' to include late fee totals in response"),
     },
     async (params) => {
@@ -555,10 +555,10 @@ export function registerInvoiceTools(
   // ── Book Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_book_invoice",
-    "Book a draft invoice. Changes status from draft to outstanding and assigns an invoice number. Prerequisites: invoice must be in draft status. Next steps: teamleader_send_invoice to email it, or teamleader_register_payment when paid.",
+    "Book a draft invoice. Changes status from draft to outstanding and assigns an invoice number. Prerequisites: invoice must be in draft status. Returns {success: true} on success. Next steps: teamleader_send_invoice to email it, or teamleader_register_payment when paid.",
     {
-      id: z.string().describe("The invoice ID to book"),
-      on: z.string().describe("Booking date (YYYY-MM-DD)"),
+      id: z.string().describe("The invoice ID to book. Use teamleader_list_invoices to find valid IDs."),
+      on: z.string().describe("Booking date (YYYY-MM-DD, e.g. '2026-06-01')"),
     },
     async (params) => {
       await client.request<void>({
@@ -572,9 +572,9 @@ export function registerInvoiceTools(
   // ── Send Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_send_invoice",
-    "Send an invoice by email. Requires at least one recipient email address.",
+    "Send an invoice by email. Requires at least one recipient email address. Returns {success: true} on success.",
     {
-      id: z.string().describe("The invoice ID to send"),
+      id: z.string().describe("The invoice ID to send. Use teamleader_list_invoices to find valid IDs."),
       to: z
         .array(
           z.object({
@@ -672,9 +672,9 @@ export function registerInvoiceTools(
   // ── Delete Invoice ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_invoice",
-    "Delete an invoice. Only draft invoices or the last booked invoice can be deleted.",
+    "Delete an invoice. Only draft invoices or the last booked invoice can be deleted. Returns {success: true} on success.",
     {
-      id: z.string().describe("The invoice ID to delete"),
+      id: z.string().describe("The invoice ID to delete. Use teamleader_list_invoices to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({
@@ -722,9 +722,9 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Next steps: teamleader_get_invoice to verify, teamleader_book_invoice to finalize. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
     {
-      id: z.string().describe("The invoice ID to update"),
+      id: z.string().describe("The invoice ID to update. Use teamleader_list_invoices to find valid IDs."),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
       for_attention_of: z
@@ -850,9 +850,9 @@ export function registerInvoiceTools(
   // ── Update Booked Invoice ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_booked_invoice",
-    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project, custom_fields).",
+    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project, custom_fields). Next steps: teamleader_get_invoice to verify.",
     {
-      id: z.string().describe("The booked invoice ID to update"),
+      id: z.string().describe("The booked invoice ID to update. Use teamleader_list_invoices to find valid IDs."),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
       customer_id: z.string().optional().describe("Customer ID"),
       for_attention_of: z
@@ -922,7 +922,7 @@ export function registerInvoiceTools(
   // ── Register Payment ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_register_payment",
-    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. NOTE: the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params. ERROR: 422 on invoices.registerPayment → CAUSE: Using wrong field name 'payment_date' → FIX: Use 'paid_at' param — this tool maps it correctly.",
+    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. Returns {success: true} on success. <NOTE>the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params. ERROR: 422 on invoices.registerPayment → CAUSE: Using wrong field name 'payment_date' → FIX: Use 'paid_at' param — this tool maps it correctly.</NOTE>",
     {
       id: z.string().describe("The invoice ID"),
       amount: z.number().describe("Payment amount"),
@@ -946,9 +946,9 @@ export function registerInvoiceTools(
   // ── Remove Payments ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_remove_payments",
-    "Remove all registered payments from an invoice. This reverts the invoice payment status. Use when a payment was registered incorrectly.",
+    "Remove all registered payments from an invoice. This reverts the invoice payment status. Use when a payment was registered incorrectly. Returns {success: true} on success.",
     {
-      id: z.string().describe("The invoice ID to remove payments from"),
+      id: z.string().describe("The invoice ID to remove payments from. Use teamleader_list_invoices to find valid IDs."),
     },
     async (params) => {
       await client.request<void>({

@@ -133,19 +133,19 @@ export function registerContactTools(
   // ── List Contacts ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_contacts",
-    "List contacts (people) from Teamleader Focus. Returns array with id, first_name, last_name, emails, tags. Use to find contact IDs. Next steps: teamleader_get_contact for full details, teamleader_link_contact_to_company to associate with a company. NOTE: `tags` filter uses AND logic — contacts must have ALL specified tags. List returns primary_address (flat), NOT full addresses[]. Use teamleader_get_contact for full details.",
+    "List contacts (people) from Teamleader Focus. Returns array with id, first_name, last_name, emails, tags. Use to find contact IDs. Next steps: teamleader_get_contact for full details, teamleader_link_contact_to_company to associate with a company. <NOTE>tags filter uses AND logic — contacts must have ALL specified tags. List returns primary_address (flat), NOT full addresses[]. Use teamleader_get_contact for full details.</NOTE>",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20, max: 100)"),
       term: z.string().optional().describe("Search term to filter contacts"),
       tags: z.array(z.string()).optional().describe("Filter by tags"),
       ids: z.array(z.string()).optional().describe("Filter by specific contact IDs"),
-      company_id: z.string().optional().describe("Filter by linked company ID"),
-      status: z.enum(["active", "deactivated"]).optional().describe("Filter by status: 'active' or 'deactivated'"),
+      company_id: z.string().optional().describe("Filter by linked company ID. Use teamleader_list_companies to find valid IDs."),
+      status: z.enum(["active", "deactivated"]).optional().describe("Filter by status ('active' | 'deactivated')"),
       updated_since: z
         .string()
         .optional()
-        .describe("ISO 8601 date - only contacts updated after this date"),
+        .describe("ISO 8601 date - only contacts updated after this date (e.g. '2026-03-15')"),
     },
     async (params) => {
       const body = buildListContactsBody(params);
@@ -171,7 +171,7 @@ export function registerContactTools(
     "teamleader_get_contact",
     "Get full contact details including name, emails, phones, addresses, tags, linked companies, and custom fields. Next steps: teamleader_update_contact to edit, teamleader_link_contact_to_company to associate.",
     {
-      id: z.string().describe("The contact ID"),
+      id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<TeamleaderInfoResponse<Contact>>({
@@ -193,7 +193,7 @@ export function registerContactTools(
   // ── Create Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_contact",
-    "Create a new contact (person). Returns {id, type}. Next step: teamleader_link_contact_to_company to associate with a company. NOTE: only `last_name` is required by the API — first_name is optional.",
+    "Create a new contact (person). Returns {id, type}. <NOTE>only last_name is required by the API — first_name is optional.</NOTE> Next steps: teamleader_get_contact to verify, teamleader_link_contact_to_company to link.",
     {
       first_name: z.string().optional().describe("First name"),
       last_name: z.string().describe("Last name"),
@@ -236,9 +236,9 @@ export function registerContactTools(
   // ── Update Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_contact",
-    "Update an existing contact. Only provided fields are changed. WARNING: the `tags` param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_contact / teamleader_untag_contact for incremental changes.",
+    "Update an existing contact. Only provided fields are changed. <WARNING>the tags param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_contact / teamleader_untag_contact for incremental changes.</WARNING> Next steps: teamleader_get_contact to verify the update.",
     {
-      id: z.string().describe("The contact ID to update"),
+      id: z.string().describe("The contact ID to update. Use teamleader_list_contacts to find valid IDs."),
       first_name: z.string().nullable().optional().describe("First name"),
       last_name: z.string().optional().describe("Last name"),
       email: z.string().optional().describe("Primary email address"),
@@ -305,9 +305,9 @@ export function registerContactTools(
   // ── Delete Contact ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_contact",
-    "Delete a contact. This action is irreversible and removes all linked data.",
+    "Delete a contact. This action is irreversible and removes all linked data. Returns {success: true} on success.",
     {
-      id: z.string().describe("The contact ID to delete"),
+      id: z.string().describe("The contact ID to delete. Use teamleader_list_contacts to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -329,10 +329,10 @@ export function registerContactTools(
   // ── Link Contact to Company ─────────────────────────────────────────────
   server.tool(
     "teamleader_link_contact_to_company",
-    "Link a contact to a company. Optionally set their position and decision maker flag. A contact can be linked to multiple companies.",
+    "Link a contact to a company. Optionally set their position and decision maker flag. A contact can be linked to multiple companies. Next steps: teamleader_get_contact to verify the link.",
     {
-      id: z.string().describe("The contact ID"),
-      company_id: z.string().describe("The company ID to link to"),
+      id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
+      company_id: z.string().describe("The company ID to link to. Use teamleader_list_companies to find valid IDs."),
       position: z.string().optional().describe("Position/role at the company (e.g. 'CEO')"),
       decision_maker: z.boolean().optional().describe("Whether this contact is a decision maker"),
     },
@@ -363,10 +363,10 @@ export function registerContactTools(
   // ── Unlink Contact from Company ─────────────────────────────────────────
   server.tool(
     "teamleader_unlink_contact_from_company",
-    "Remove the link between a contact and a company. Does not delete either entity.",
+    "Remove the link between a contact and a company. Does not delete either entity. Returns {success: true} on success.",
     {
-      id: z.string().describe("The contact ID"),
-      company_id: z.string().describe("The company ID to unlink from"),
+      id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
+      company_id: z.string().describe("The company ID to unlink from. Use teamleader_list_companies to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -422,9 +422,9 @@ export function registerContactTools(
   // ── Tag Contact ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_tag_contact",
-    "Add one or more tags to a contact. Use teamleader_list_tags to see existing tags.",
+    "Add one or more tags to a contact. Use teamleader_list_tags to see existing tags. Returns {success: true} on success.",
     {
-      id: z.string().describe("The contact ID"),
+      id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to add (e.g. ['prospect', 'expo'])"),
     },
     async (params) => {
@@ -447,9 +447,9 @@ export function registerContactTools(
   // ── Untag Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_untag_contact",
-    "Remove one or more tags from a contact.",
+    "Remove one or more tags from a contact. Returns {success: true} on success.",
     {
-      id: z.string().describe("The contact ID"),
+      id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to remove (e.g. ['prospect', 'expo'])"),
     },
     async (params) => {

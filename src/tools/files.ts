@@ -44,7 +44,7 @@ export function registerFileTools(
     {
       subject_type: z
         .enum(SUBJECT_TYPES)
-        .describe("Type of entity to list files for"),
+        .describe("Type of entity to list files for ('company' | 'contact' | 'deal' | 'invoice' | 'creditNote' | 'nextgenProject' | 'product' | 'project' | 'ticket')"),
       subject_id: z.string().describe("ID of the entity"),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z
@@ -106,7 +106,7 @@ export function registerFileTools(
     "teamleader_get_file",
     "Get details for a single file in Teamleader Focus (name, size, mime type, folder, subject).",
     {
-      id: z.string().describe("The file ID"),
+      id: z.string().describe("The file ID. Use teamleader_list_files to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{
@@ -150,7 +150,7 @@ export function registerFileTools(
     "teamleader_download_file",
     "Get a temporary download URL for a file in Teamleader Focus. The URL expires after a short period.",
     {
-      id: z.string().describe("The file ID"),
+      id: z.string().describe("The file ID. Use teamleader_list_files to find valid IDs."),
     },
     async (params) => {
       const result = await client.request<{
@@ -172,9 +172,9 @@ export function registerFileTools(
   // ── Delete File ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_file",
-    "Delete a file from Teamleader Focus. This action is irreversible.",
+    "Delete a file from Teamleader Focus. This action is irreversible. Returns {success: true} on success.",
     {
-      id: z.string().describe("The file ID to delete"),
+      id: z.string().describe("The file ID to delete. Use teamleader_list_files to find valid IDs."),
     },
     async (params) => {
       await client.request({
@@ -189,7 +189,7 @@ export function registerFileTools(
   // ── Upload File ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_upload_file",
-    "Upload a file to a Teamleader entity. Two-step process: requests an upload URL from the API, then uploads the binary content to that URL. Returns the upload URL and expiry if no content is provided (for manual upload).",
+    "Upload a file to a Teamleader entity. Two-step process: requests an upload URL from the API, then uploads the binary content to that URL. Returns the upload URL and expiry if no content is provided (for manual upload). Next steps: teamleader_list_files to verify the upload.",
     {
       name: z
         .string()
@@ -199,7 +199,7 @@ export function registerFileTools(
       subject_type: z
         .enum(UPLOAD_SUBJECT_TYPES)
         .describe(
-          "Type of entity to attach file to. Use 'temporary' for unlinked files (auto-deleted after 24h)"
+          "Type of entity to attach file to ('company' | 'contact' | 'deal' | 'invoice' | 'creditNote' | 'nextgenProject' | 'product' | 'project' | 'ticket' | 'temporary'). Use 'temporary' for unlinked files (auto-deleted after 24h)"
         ),
       subject_id: z
         .string()
