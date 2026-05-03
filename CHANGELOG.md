@@ -4,7 +4,7 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
-## [3.5.2] - 2026-05-03
+## [3.6.0] - 2026-05-03
 
 ### Added (B7.2 — 5 Zod drift fixes uit round-2 audit)
 - [B7.2.1] `teamleader_list_deals`: added `created_before` filter (ISO 8601 datetime)
