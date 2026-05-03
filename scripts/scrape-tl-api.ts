@@ -223,6 +223,14 @@ async function main(): Promise<void> {
 
     fs.mkdirSync(DOCS_DIR, { recursive: true });
 
+    // Bewaar pre-scrape file count voor safety-drempel (B5.4 fix)
+    const preScrapeFiles = fs.existsSync(DOCS_DIR)
+      ? fs.readdirSync(DOCS_DIR).filter(
+          (f) => f.endsWith(".md") && !PROTECTED_FILES.has(f) && f !== "INDEX.md"
+        )
+      : [];
+    const preScrapeCount = preScrapeFiles.length;
+
     const td = buildTurndown();
     let written = 0;
     let skipped = 0;
@@ -265,9 +273,10 @@ async function main(): Promise<void> {
 
       const obsolete = existingFiles.filter((f) => !scrapedFilenames.has(f));
 
-      // Safety: don't mass-delete if scraped result is less than 50% of existing
-      if (endpoints.length < existingFiles.length * 0.5) {
-        console.warn(`\nSafety: scraped ${endpoints.length} endpoints but ${existingFiles.length} files exist. Skipping auto-delete to prevent mass-delete on scrape failure.`);
+      // Safety: don't mass-delete if scraped result is less than 50% of PRE-scrape file count.
+      // B5.4 fix: gebruik preScrapeCount (vooraf gemeten) ipv existingFiles.length (post-scrape, bevat oude+nieuwe samen).
+      if (preScrapeCount > 0 && endpoints.length < preScrapeCount * 0.5) {
+        console.warn(`\nSafety: scraped ${endpoints.length} endpoints but ${preScrapeCount} files existed pre-scrape. Skipping auto-delete to prevent mass-delete on scrape failure.`);
       } else {
         for (const f of obsolete) {
           fs.unlinkSync(path.join(DOCS_DIR, f));
