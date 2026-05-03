@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.4.2] - 2026-05-03
+
+### Fixed
+- **scrape-tl-api safety-drempel** — pre-scrape baseline (`preScrapeCount` bewaard vóór scrape-fase) ipv post-scrape file count. Voorkomt false-positive safety-trigger waar oude+nieuwe files samen werden geteld.
+
+### Cleaned
+- 359 obsolete docs/api/*.md files (legacy naming uit eerdere ad-hoc scrape) handmatig verwijderd. Nu schoon: 358 endpoints + INDEX + .method + .last-scrape.
+
 ## [3.4.1] - 2026-05-03
 
 ### Changed
