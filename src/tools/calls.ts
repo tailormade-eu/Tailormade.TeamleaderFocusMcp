@@ -5,10 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 interface CallData {
   id: string;
@@ -170,7 +167,7 @@ export function registerCallTools(
   // ── Add Call ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_add_call",
-    "Add a new CRM call in Teamleader Focus. Requires a customer (contact or company), due date, and assignee. Optionally link to a deal. Returns {id, type}. Next steps: teamleader_get_call to verify, teamleader_complete_call when done.",
+    "Add a new CRM call in Teamleader Focus. Requires a customer (contact or company), due date, and assignee. Optionally link to a deal. Returns {id, type}. Next steps: teamleader_get_call to verify, teamleader_complete_call when done. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       customer_type: z
         .enum(["contact", "company"])
@@ -231,7 +228,7 @@ export function registerCallTools(
   // ── Update Call ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_call",
-    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_call to verify the update.",
+    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_call to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The call ID to update. Use teamleader_list_calls to find valid IDs."),
       description: z.string().optional().describe("New description"),
@@ -297,7 +294,7 @@ export function registerCallTools(
   // ── Complete Call ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_complete_call",
-    "Mark a CRM call as complete in Teamleader Focus. Optionally provide a call outcome and summary. Returns {success: true} on success. Next steps: teamleader_get_call to verify.",
+    "Mark a CRM call as complete in Teamleader Focus. Optionally provide a call outcome and summary. Returns {success: true} on success. Next steps: teamleader_get_call to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The call ID to complete. Use teamleader_list_calls to find valid IDs."),
       call_outcome_id: z

@@ -27,6 +27,8 @@ Inspired by [globodai-group/mcp-teamleader](https://github.com/globodai-group/mc
 - **Calls** — List, get, add, update, complete
 - **Smart Resolution** — Cache-first Company > Project > Group > Task navigation + time logging
 - **OAuth2** — Browser-based login flow + automatic token refresh with rotation
+- **Resilience** — Automatic retry on rate limits (429, exponential backoff) and mid-flight token expiry (401 force-refresh + 1 retry)
+- **Output cap** — Responses exceeding 50 KB are written to a temp file; the tool returns an excerpt + path
 
 ---
 

@@ -117,7 +117,7 @@ export function registerProjectTools(
   // ── Create Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_v2",
-    "Create a new project. Returns {id, type}. <NOTE>API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on'). To assign users, use teamleader_assign_project after creation. To add owners, use teamleader_add_project_owner.</NOTE> Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams.",
+    "Create a new project. Returns {id, type}. <NOTE>API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on'). To assign users, use teamleader_assign_project after creation. To add owners, use teamleader_add_project_owner.</NOTE> Next steps: teamleader_create_project_group to add phases, teamleader_create_project_task_v2 to add tasks, teamleader_assign_project to assign users/teams. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       title: z.string().describe("Project title"),
       description: z.string().optional().describe("Project description"),
@@ -170,7 +170,7 @@ export function registerProjectTools(
   // ── Update Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_project_v2",
-    "Update an existing project. Only provided fields are changed. Returns {id, type}. <NOTE>To change status, use teamleader_close_project_v2 or teamleader_reopen_project_v2.</NOTE> Next steps: teamleader_get_project_v2 to verify the update.",
+    "Update an existing project. Only provided fields are changed. Returns {id, type}. <NOTE>To change status, use teamleader_close_project_v2 or teamleader_reopen_project_v2.</NOTE> Next steps: teamleader_get_project_v2 to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
       title: z.string().optional().describe("New project title"),
@@ -317,7 +317,7 @@ export function registerProjectTools(
   // ── Create Project Group (Phase) ─────────────────────────────────────────
   server.tool(
     "teamleader_create_project_group",
-    "Create a new project group (phase) within a project. Returns {id, type}. <CRITICAL>the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.</CRITICAL> Next steps: teamleader_create_project_task_v2 to add tasks to this group.",
+    "Create a new project group (phase) within a project. Returns {id, type}. <CRITICAL>the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.</CRITICAL> Next steps: teamleader_create_project_task_v2 to add tasks to this group. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       project_id: z.string().describe("Parent project ID"),
       title: z.string().describe("Group/phase title"),
@@ -370,7 +370,7 @@ export function registerProjectTools(
   // ── Close Project (v2) ──────────────────────────────────────────────────
   server.tool(
     "teamleader_close_project_v2",
-    "Close a project. <CRITICAL>requires closing_strategy parameter — without it the API returns an error. Options: 'mark_tasks_and_materials_as_done' (marks all open tasks done) or 'none' (leaves tasks as-is).</CRITICAL> To reopen later: use teamleader_reopen_project_v2. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Close a project. <CRITICAL>requires closing_strategy parameter — without it the API returns an error. Options: 'mark_tasks_and_materials_as_done' (marks all open tasks done) or 'none' (leaves tasks as-is).</CRITICAL> To reopen later: use teamleader_reopen_project_v2. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
       closing_strategy: z
@@ -392,7 +392,7 @@ export function registerProjectTools(
   // ── Reopen Project (v2) ────────────────────────────────────────────────
   server.tool(
     "teamleader_reopen_project_v2",
-    "Reopen a previously closed project. Sets status back to active. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Reopen a previously closed project. Sets status back to active. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
     },
@@ -410,7 +410,7 @@ export function registerProjectTools(
   // ── Delete Project (v2) ────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_v2",
-    "Delete a project. This action is irreversible. <CRITICAL>requires delete_strategy — without it the API returns an error. Options: 'unlink_tasks_and_time_trackings' (keeps tasks/time), 'delete_tasks_and_time_trackings' (deletes all), 'delete_tasks_unlink_time_trackings'.</CRITICAL> Returns {success: true} on success.",
+    "Delete a project. This action is irreversible. <CRITICAL>requires delete_strategy — without it the API returns an error. Options: 'unlink_tasks_and_time_trackings' (keeps tasks/time), 'delete_tasks_and_time_trackings' (deletes all), 'delete_tasks_unlink_time_trackings'.</CRITICAL> Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID. Use teamleader_list_projects_v2 to find valid IDs."),
       delete_strategy: z
@@ -432,7 +432,7 @@ export function registerProjectTools(
   // ── Duplicate Project (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_project_v2",
-    "Duplicate a project with a new title. Copies all groups, tasks, and structure. Returns {id, type} of the new project. Next steps: teamleader_get_project_v2 to verify.",
+    "Duplicate a project with a new title. Copies all groups, tasks, and structure. Returns {id, type} of the new project. Next steps: teamleader_get_project_v2 to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("Source project ID to duplicate. Use teamleader_list_projects_v2 to find valid IDs."),
       title: z.string().describe("Title for the duplicated project"),
@@ -451,7 +451,7 @@ export function registerProjectTools(
   // ── Add Customer to Project ────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_customer",
-    "Add a customer (company or contact) to a project. <NOTE>the API uses a nested {type, id} object for the customer — this tool handles that automatically.</NOTE> Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Add a customer (company or contact) to a project. <NOTE>the API uses a nested {type, id} object for the customer — this tool handles that automatically.</NOTE> Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project ID"),
       customer_type: z.enum(["company", "contact"]).describe("Customer type"),
@@ -471,7 +471,7 @@ export function registerProjectTools(
   // ── Remove Customer from Project ───────────────────────────────────────
   server.tool(
     "teamleader_remove_project_customer",
-    "Remove a customer (company or contact) from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Remove a customer (company or contact) from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID"),
       customer_type: z.enum(["company", "contact"]).describe("Customer type"),
@@ -491,7 +491,7 @@ export function registerProjectTools(
   // ── Add Deal to Project ────────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_deal",
-    "Link a deal to a project. Use when a deal should be associated with project work. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify, teamleader_remove_project_deal to unlink.",
+    "Link a deal to a project. Use when a deal should be associated with project work. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify, teamleader_remove_project_deal to unlink. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project ID"),
       deal_id: z.string().describe("Deal ID to link"),
@@ -510,7 +510,7 @@ export function registerProjectTools(
   // ── Remove Deal from Project ───────────────────────────────────────────
   server.tool(
     "teamleader_remove_project_deal",
-    "Remove a deal link from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Remove a deal link from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID"),
       deal_id: z.string().describe("Deal ID to unlink"),
@@ -529,7 +529,7 @@ export function registerProjectTools(
   // ── Add Owner to Project ───────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_owner",
-    "Add an owner (user) to a project. Use to grant ownership responsibility. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify owners, teamleader_remove_project_owner to remove.",
+    "Add an owner (user) to a project. Use to grant ownership responsibility. Returns success confirmation. Next steps: teamleader_get_project_v2 to verify owners, teamleader_remove_project_owner to remove. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project ID"),
       user_id: z.string().describe("User ID to add as owner"),
@@ -548,7 +548,7 @@ export function registerProjectTools(
   // ── Remove Owner from Project ──────────────────────────────────────────
   server.tool(
     "teamleader_remove_project_owner",
-    "Remove an owner (user) from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Remove an owner (user) from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID"),
       user_id: z.string().describe("User ID to remove as owner"),
@@ -567,7 +567,7 @@ export function registerProjectTools(
   // ── Assign User/Team to Project ────────────────────────────────────────
   server.tool(
     "teamleader_assign_project",
-    "Assign a user or team to a project. <NOTE>the API uses a nested {type, id} object for the assignee — this tool handles that automatically.</NOTE> Use teamleader_list_users or teamleader_list_teams to find IDs. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Assign a user or team to a project. <NOTE>the API uses a nested {type, id} object for the assignee — this tool handles that automatically.</NOTE> Use teamleader_list_users or teamleader_list_teams to find IDs. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project ID"),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type: user or team"),
@@ -587,7 +587,7 @@ export function registerProjectTools(
   // ── Unassign User/Team from Project ────────────────────────────────────
   server.tool(
     "teamleader_unassign_project",
-    "Unassign a user or team from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Unassign a user or team from a project. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID"),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type: user or team"),
@@ -607,7 +607,7 @@ export function registerProjectTools(
   // ── Update Project Group (Phase) ───────────────────────────────────────
   server.tool(
     "teamleader_update_project_group",
-    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. <CRITICAL>the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.</CRITICAL> Next steps: teamleader_get_project_group to verify changes.",
+    "Update a project group (phase). All fields except id are optional — providing null clears nullable fields. <CRITICAL>the API uses 'start_date'/'end_date' (NOT 'starts_on'/'due_on') — this tool uses the correct field names.</CRITICAL> Next steps: teamleader_get_project_group to verify changes. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
       title: z.string().optional().describe("New group title"),
@@ -649,7 +649,7 @@ export function registerProjectTools(
   // ── Complete Project Task (v2) ─────────────────────────────────────────
   server.tool(
     "teamleader_complete_project_task",
-    "Mark a project task as complete (sets status to 'done'). Use teamleader_reopen_project_task to undo. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
+    "Mark a project task as complete (sets status to 'done'). Use teamleader_reopen_project_task to undo. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
     },
@@ -667,7 +667,7 @@ export function registerProjectTools(
   // ── Reopen Project Task (v2) ───────────────────────────────────────────
   server.tool(
     "teamleader_reopen_project_task",
-    "Reopen a completed project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
+    "Reopen a completed project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
     },
@@ -685,7 +685,7 @@ export function registerProjectTools(
   // ── Delete Project Task (v2) ───────────────────────────────────────────
   server.tool(
     "teamleader_delete_project_task",
-    "Delete a project task. This action is irreversible. <CRITICAL>requires delete_strategy — 'unlink_time_tracking' keeps time entries, 'delete_time_tracking' removes them.</CRITICAL> Returns {success: true} on success.",
+    "Delete a project task. This action is irreversible. <CRITICAL>requires delete_strategy — 'unlink_time_tracking' keeps time entries, 'delete_time_tracking' removes them.</CRITICAL> Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       delete_strategy: z
@@ -707,7 +707,7 @@ export function registerProjectTools(
   // ── Remove Task from Group ─────────────────────────────────────────────
   server.tool(
     "teamleader_remove_task_from_group",
-    "Remove a task or material from the group it is currently in. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify.",
+    "Remove a task or material from the group it is currently in. Returns {success: true} on success. Next steps: teamleader_get_project_v2 to verify. <NOTE>Idempotent</NOTE>",
     {
       line_id: z.string().describe("Task or material ID to remove from its group"),
     },
@@ -725,7 +725,7 @@ export function registerProjectTools(
   // ── Create Project Task (v2) ─────────────────────────────────────────────
   server.tool(
     "teamleader_create_project_task_v2",
-    "Create a new task within a project or project group (phase). Returns {id, type}. <CRITICAL>API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically.</CRITICAL> Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id). <NOTE>ERROR: Silent ignore on tasks.create → CAUSE: Using assignee_id directly instead of assignees array → FIX: Use assignee_id param — this tool maps to assignees:[{type,id}] automatically.</NOTE> Next steps: teamleader_get_project_task to verify.",
+    "Create a new task within a project or project group (phase). Returns {id, type}. <CRITICAL>API uses 'group_id' (NOT 'project_group_id') and 'assignees: [{type,id}]' array (NOT 'assignee_id') — this tool maps the params automatically.</CRITICAL> Lookup IDs: teamleader_list_work_types (work_type_id), teamleader_list_users (assignee_id). <NOTE>ERROR: Silent ignore on tasks.create → CAUSE: Using assignee_id directly instead of assignees array → FIX: Use assignee_id param — this tool maps to assignees:[{type,id}] automatically.</NOTE> Next steps: teamleader_get_project_task to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       project_id: z.string().describe("Parent project ID"),
       project_group_id: z.string().optional().describe("Optional: parent group (phase) ID. Mapped to API field 'group_id' automatically."),
@@ -852,7 +852,7 @@ export function registerProjectTools(
   // ── Assign User/Team to Project Group ───────────────────────────────────
   server.tool(
     "teamleader_assign_project_group",
-    "Assign a user or team to a project group (phase). Returns {success: true} on success. Next steps: teamleader_get_project_group to verify assignees.",
+    "Assign a user or team to a project group (phase). Returns {success: true} on success. Next steps: teamleader_get_project_group to verify assignees. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
@@ -872,7 +872,7 @@ export function registerProjectTools(
   // ── Unassign User/Team from Project Group ───────────────────────────────
   server.tool(
     "teamleader_unassign_project_group",
-    "Unassign a user or team from a project group (phase). Returns {success: true} on success. Next steps: teamleader_get_project_group to verify.",
+    "Unassign a user or team from a project group (phase). Returns {success: true} on success. Next steps: teamleader_get_project_group to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project group ID. Use teamleader_list_project_groups to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
@@ -892,7 +892,7 @@ export function registerProjectTools(
   // ── Duplicate Project Group ─────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_project_group",
-    "Duplicate a project group and its entities (without time trackings). Returns {id, type} of the new group.",
+    "Duplicate a project group and its entities (without time trackings). Returns {id, type} of the new group. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       origin_id: z.string().describe("ID of the group to duplicate"),
     },
@@ -928,7 +928,7 @@ export function registerProjectTools(
   // ── Update Project Task ─────────────────────────────────────────────────
   server.tool(
     "teamleader_update_project_task",
-    "Update a project task. All fields except id are optional. Providing null clears nullable fields. Next steps: teamleader_get_project_task to verify the update.",
+    "Update a project task. All fields except id are optional. Providing null clears nullable fields. Next steps: teamleader_get_project_task to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       title: z.string().optional().describe("New task title"),
@@ -977,7 +977,7 @@ export function registerProjectTools(
   // ── Duplicate Project Task ──────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_project_task",
-    "Duplicate a project task (without time trackings). Returns {id, type} of the new task.",
+    "Duplicate a project task (without time trackings). Returns {id, type} of the new task. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       origin_id: z.string().describe("ID of the task to duplicate"),
     },
@@ -995,7 +995,7 @@ export function registerProjectTools(
   // ── Assign User/Team to Project Task ────────────────────────────────────
   server.tool(
     "teamleader_assign_project_task",
-    "Assign a user or team to a project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
+    "Assign a user or team to a project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
@@ -1015,7 +1015,7 @@ export function registerProjectTools(
   // ── Unassign User/Team from Project Task ────────────────────────────────
   server.tool(
     "teamleader_unassign_project_task",
-    "Unassign a user or team from a project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify.",
+    "Unassign a user or team from a project task. Returns {success: true} on success. Next steps: teamleader_get_project_task to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project task ID. Use teamleader_list_project_tasks_v2 to find valid IDs."),
       assignee_type: z.enum(["user", "team"]).default("user").describe("Assignee type"),
@@ -1035,7 +1035,7 @@ export function registerProjectTools(
   // ── Add Quotation to Project ────────────────────────────────────────────
   server.tool(
     "teamleader_add_project_quotation",
-    "Add a quotation to a project. Idempotent: does not fail if the quotation was already added.",
+    "Add a quotation to a project. Idempotent: does not fail if the quotation was already added. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID"),
       quotation_id: z.string().describe("Quotation ID to link"),
@@ -1054,7 +1054,7 @@ export function registerProjectTools(
   // ── Remove Quotation from Project ───────────────────────────────────────
   server.tool(
     "teamleader_remove_project_quotation",
-    "Remove a quotation from a project. Idempotent: does not fail if the quotation was already removed. Returns {success: true} on success.",
+    "Remove a quotation from a project. Idempotent: does not fail if the quotation was already removed. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Project ID"),
       quotation_id: z.string().describe("Quotation ID to unlink"),

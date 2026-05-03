@@ -50,6 +50,15 @@ export class TeamleaderAuth {
     return this.config.refreshToken;
   }
 
+  /**
+   * Force an immediate token refresh regardless of current token validity.
+   * Used by the HTTP client on 401 mid-flight to recover from server-side revocation.
+   */
+  async forceRefresh(): Promise<void> {
+    this.config.tokenExpiresAt = 0; // invalidate so refreshAccessToken always runs
+    await this.refreshAccessToken();
+  }
+
   private isTokenValid(): boolean {
     if (!this.config.accessToken || !this.config.tokenExpiresAt) {
       return false;

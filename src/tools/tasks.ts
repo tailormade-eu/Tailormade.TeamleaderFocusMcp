@@ -95,7 +95,7 @@ export function registerTaskTools(
   // ── Create Task ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_task",
-    "Create a new standalone task (NOT a project task — use teamleader_create_project_task_v2 for those). Requires title, due_on, and work_type_id. Returns {id, type}. Lookup: teamleader_list_work_types (work_type_id). Next steps: teamleader_get_task to verify, teamleader_schedule_task to plan time.",
+    "Create a new standalone task (NOT a project task — use teamleader_create_project_task_v2 for those). Requires title, due_on, and work_type_id. Returns {id, type}. Lookup: teamleader_list_work_types (work_type_id). Next steps: teamleader_get_task to verify, teamleader_schedule_task to plan time. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       title: z.string().describe("Task title"),
       due_on: z.string().describe("Due date (YYYY-MM-DD, e.g. '2026-06-15')"),
@@ -197,7 +197,7 @@ export function registerTaskTools(
   // ── Update Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_task",
-    "Update a standalone task in Teamleader Focus. Only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_task to verify the update.",
+    "Update a standalone task in Teamleader Focus. Only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_task to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Task ID. Use teamleader_list_tasks to find valid IDs."),
       title: z.string().optional().describe("New task title"),
@@ -269,7 +269,7 @@ export function registerTaskTools(
   // ── Delete Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_task",
-    "Delete a standalone task from Teamleader Focus. This action is irreversible. Returns {success: true} on success.",
+    "Delete a standalone task from Teamleader Focus. This action is irreversible. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Task ID to delete. Use teamleader_list_tasks to find valid IDs."),
     },
@@ -293,7 +293,7 @@ export function registerTaskTools(
   // ── Complete Task ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_complete_task",
-    "Mark a standalone task as completed in Teamleader Focus. Returns {success: true} on success.",
+    "Mark a standalone task as completed in Teamleader Focus. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Task ID to complete. Use teamleader_list_tasks to find valid IDs."),
     },
@@ -317,7 +317,7 @@ export function registerTaskTools(
   // ── Reopen Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_reopen_task",
-    "Reopen a previously completed standalone task in Teamleader Focus. Returns {success: true} on success.",
+    "Reopen a previously completed standalone task in Teamleader Focus. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("Task ID to reopen. Use teamleader_list_tasks to find valid IDs."),
     },
@@ -341,7 +341,7 @@ export function registerTaskTools(
   // ── Schedule Task ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_schedule_task",
-    "Schedule a standalone task by creating a calendar event for it. Returns the created event {id, type}. The task remains in its current status — this only creates a time block. Next steps: teamleader_get_task to verify.",
+    "Schedule a standalone task by creating a calendar event for it. Returns the created event {id, type}. The task remains in its current status — this only creates a time block. Next steps: teamleader_get_task to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("Task ID to schedule. Use teamleader_list_tasks to find valid IDs."),
       starts_at: z.string().describe("Start datetime (ISO 8601, e.g. 2026-03-04T09:00:00+01:00)"),

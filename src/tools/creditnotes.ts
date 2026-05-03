@@ -5,10 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 export function registerCreditNoteTools(
   server: McpServer,
@@ -105,7 +102,7 @@ export function registerCreditNoteTools(
   // ── Send Credit Note via Peppol ─────────────────────────────────────────
   server.tool(
     "teamleader_send_credit_note_peppol",
-    "Send a credit note via the Peppol e-invoicing network. The credit note must be booked and the customer must have a valid Peppol identifier configured. Returns {success: true} on success. Next steps: teamleader_get_credit_note to verify peppol status.",
+    "Send a credit note via the Peppol e-invoicing network. The credit note must be booked and the customer must have a valid Peppol identifier configured. Returns {success: true} on success. Next steps: teamleader_get_credit_note to verify peppol status. <WARNING>Not idempotent: calling twice sends duplicate emails/messages.</WARNING>",
     {
       id: z.string().describe("The credit note ID to send via Peppol. Use teamleader_list_credit_notes to find valid IDs."),
     },

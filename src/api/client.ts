@@ -41,10 +41,12 @@ export class TeamleaderClient {
 
   /**
    * Make an authenticated POST request to the Teamleader Focus API.
-   * Retries up to 3 times on HTTP 429, respecting Retry-After header.
+   * Retries up to 3 times on HTTP 429 (respecting Retry-After header).
+   * Retries once on HTTP 401 after a forced token refresh.
    */
   async request<T = unknown>(options: ApiRequestOptions): Promise<T> {
     const url = `${BASE_URL}/${options.endpoint}`;
+    let has401Retried = false;
 
     for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
       const accessToken = await this.auth.getAccessToken();
@@ -57,6 +59,15 @@ export class TeamleaderClient {
         },
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
+
+      // 401: force token refresh and retry once (doesn't consume a 429 retry slot)
+      if (response.status === 401 && !has401Retried) {
+        has401Retried = true;
+        console.warn(`Teamleader 401 [${options.endpoint}]: forcing token refresh and retrying`);
+        await this.auth.forceRefresh();
+        attempt = 0; // reset to 1 on next iteration
+        continue;
+      }
 
       if (response.status === 429 && attempt <= MAX_RETRIES) {
         const delay = getRetryDelay(attempt, response.headers.get("Retry-After"));

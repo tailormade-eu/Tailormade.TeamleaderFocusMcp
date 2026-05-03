@@ -158,7 +158,7 @@ export function registerEventTools(
   // ── Create Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_event",
-    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id), teamleader_list_work_types (work_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead. Next steps: teamleader_get_event to verify.",
+    "Create a new calendar event. Returns {id, type}. Lookup: teamleader_list_activity_types (activity_type_id), teamleader_list_work_types (work_type_id). For meetings with reports and completion tracking, use teamleader_schedule_meeting instead. Next steps: teamleader_get_event to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       title: z.string().describe("Event title"),
       description: z.string().optional().describe("Event description"),
@@ -219,7 +219,7 @@ export function registerEventTools(
   // ── Update Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_event",
-    "Update an existing calendar event. All fields except id are optional — only provided fields are updated. Attendees and links arrays replace the full list when provided. Next steps: teamleader_get_event to verify the update.",
+    "Update an existing calendar event. All fields except id are optional — only provided fields are updated. Attendees and links arrays replace the full list when provided. Next steps: teamleader_get_event to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The event ID to update. Use teamleader_list_events to find valid IDs."),
       title: z.string().optional().describe("New event title"),
@@ -278,7 +278,7 @@ export function registerEventTools(
   // ── Cancel Event ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_cancel_event",
-    "Cancel a calendar event for all attendees. This action cannot be undone. Returns {success: true} on success.",
+    "Cancel a calendar event for all attendees. This action cannot be undone. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The event ID to cancel. Use teamleader_list_events to find valid IDs."),
     },

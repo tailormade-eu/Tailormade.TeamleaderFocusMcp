@@ -122,7 +122,7 @@ export function registerCompanyTools(
   // ── Create Company ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_company",
-    "Create a new company. Returns {id, type}. <NOTE>Company telephones only support 'phone' and 'fax' types (no 'mobile').</NOTE> Next steps: teamleader_get_company to verify, teamleader_create_contact to add contacts.",
+    "Create a new company. Returns {id, type}. <NOTE>Company telephones only support 'phone' and 'fax' types (no 'mobile').</NOTE> Next steps: teamleader_get_company to verify, teamleader_create_contact to add contacts. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       name: z.string().describe("Company name"),
       email: z.string().optional().describe("Primary email address"),
@@ -189,7 +189,7 @@ export function registerCompanyTools(
   // ── Update Company ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_company",
-    "Update an existing company. Only provided fields are changed. <WARNING>the tags param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_company / teamleader_untag_company for incremental changes.</WARNING> Next steps: teamleader_get_company to verify the update.",
+    "Update an existing company. Only provided fields are changed. <WARNING>the tags param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_company / teamleader_untag_company for incremental changes.</WARNING> Next steps: teamleader_get_company to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The company ID to update. Use teamleader_list_companies to find valid IDs."),
       name: z.string().optional().describe("Company name"),
@@ -254,7 +254,7 @@ export function registerCompanyTools(
   // ── Delete Company ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_company",
-    "Delete a company from Teamleader Focus. This is irreversible. Returns {success: true} on success.",
+    "Delete a company from Teamleader Focus. This is irreversible. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The company ID to delete. Use teamleader_list_companies to find valid IDs."),
     },
@@ -278,7 +278,7 @@ export function registerCompanyTools(
   // ── Tag Company ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_tag_company",
-    "Add one or more tags to a company. Tags that don't exist yet will be created automatically. Returns {success: true} on success.",
+    "Add one or more tags to a company. Tags that don't exist yet will be created automatically. Returns {success: true} on success. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("The company ID to tag. Use teamleader_list_companies to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to add to the company"),
@@ -303,7 +303,7 @@ export function registerCompanyTools(
   // ── Untag Company ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_untag_company",
-    "Remove one or more tags from a company. Returns {success: true} on success.",
+    "Remove one or more tags from a company. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The company ID to untag. Use teamleader_list_companies to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to remove from the company"),

@@ -116,7 +116,7 @@ export function registerTicketTools(
   // ── Create Ticket ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_ticket",
-    "Create a new ticket. Requires subject, customer, and ticket_status_id. Returns {id, type}. Lookup IDs: teamleader_list_ticket_statuses (ticket_status_id), teamleader_list_users (assignee_id). Next steps: teamleader_reply_ticket to add the first reply, teamleader_get_ticket to verify.",
+    "Create a new ticket. Requires subject, customer, and ticket_status_id. Returns {id, type}. Lookup IDs: teamleader_list_ticket_statuses (ticket_status_id), teamleader_list_users (assignee_id). Next steps: teamleader_reply_ticket to add the first reply, teamleader_get_ticket to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       subject: z.string().describe("Ticket subject/title"),
       customer_type: z
@@ -185,7 +185,7 @@ export function registerTicketTools(
   // ── Update Ticket ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_ticket",
-    "Update an existing ticket. Only provided fields are changed. Can change subject, description, status, assignee, and customer. Next steps: teamleader_get_ticket to verify the update.",
+    "Update an existing ticket. Only provided fields are changed. Can change subject, description, status, assignee, and customer. Next steps: teamleader_get_ticket to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The ticket ID to update. Use teamleader_list_tickets to find valid IDs."),
       subject: z.string().optional().describe("New ticket subject"),
@@ -334,7 +334,7 @@ export function registerTicketTools(
   // ── Reply to Ticket ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_reply_ticket",
-    "Add a customer-visible reply to a ticket. The message body should be HTML formatted. Optionally change ticket status in the same call. For internal notes not visible to customer, use teamleader_internal_message_ticket instead. Returns {id, type} of the message. Next steps: teamleader_list_ticket_messages to verify.",
+    "Add a customer-visible reply to a ticket. The message body should be HTML formatted. Optionally change ticket status in the same call. For internal notes not visible to customer, use teamleader_internal_message_ticket instead. Returns {id, type} of the message. Next steps: teamleader_list_ticket_messages to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Reply message body (HTML formatted)"),
@@ -378,7 +378,7 @@ export function registerTicketTools(
   // ── Internal Message on Ticket ───────────────────────────────────────────
   server.tool(
     "teamleader_internal_message_ticket",
-    "Add an internal (private) message to a ticket. NOT visible to the customer. Use for internal notes between team members. For customer-visible replies, use teamleader_reply_ticket instead. Returns {id, type} of the message.",
+    "Add an internal (private) message to a ticket. NOT visible to the customer. Use for internal notes between team members. For customer-visible replies, use teamleader_reply_ticket instead. Returns {id, type} of the message. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Internal message body (HTML formatted)"),
@@ -422,7 +422,7 @@ export function registerTicketTools(
   // ── Import Ticket Message ────────────────────────────────────────────────
   server.tool(
     "teamleader_import_ticket_message",
-    "Import an external message into a ticket (e.g. for migration). Unlike addReply, this allows setting the sender and timestamp. The body should be HTML formatted. Returns {id, type} of the imported message. Next steps: teamleader_list_ticket_messages to verify.",
+    "Import an external message into a ticket (e.g. for migration). Unlike addReply, this allows setting the sender and timestamp. The body should be HTML formatted. Returns {id, type} of the imported message. Next steps: teamleader_list_ticket_messages to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("The ticket ID. Use teamleader_list_tickets to find valid IDs."),
       body: z.string().describe("Message body (HTML formatted)"),

@@ -10,10 +10,7 @@ import type {
   TeamleaderListResponse,
   TeamleaderInfoResponse,
 } from "../types/index.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 // ── Body Builders (exported for testing) ─────────────────────────────────────
 
@@ -402,7 +399,7 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Supports custom_fields[] for mandatory or optional custom field values on the invoice — pass [{ id, value }] when the invoice type requires custom fields. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Supports delivery_date (YYYY-MM-DD) to record when goods/services were delivered — distinct from invoice_date and required for Belgian VAT compliance on certain invoices. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id), teamleader_list_document_templates (document_template_id).",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Supports custom_fields[] for mandatory or optional custom field values on the invoice — pass [{ id, value }] when the invoice type requires custom fields. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Supports delivery_date (YYYY-MM-DD) to record when goods/services were delivered — distinct from invoice_date and required for Belgian VAT compliance on certain invoices. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id), teamleader_list_document_templates (document_template_id). <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -555,7 +552,7 @@ export function registerInvoiceTools(
   // ── Book Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_book_invoice",
-    "Book a draft invoice. Changes status from draft to outstanding and assigns an invoice number. Prerequisites: invoice must be in draft status. Returns {success: true} on success. Next steps: teamleader_send_invoice to email it, or teamleader_register_payment when paid.",
+    "Book a draft invoice. Changes status from draft to outstanding and assigns an invoice number. Prerequisites: invoice must be in draft status. Returns {success: true} on success. Next steps: teamleader_send_invoice to email it, or teamleader_register_payment when paid. <NOTE>Can only be booked once per invoice.</NOTE>",
     {
       id: z.string().describe("The invoice ID to book. Use teamleader_list_invoices to find valid IDs."),
       on: z.string().describe("Booking date (YYYY-MM-DD, e.g. '2026-06-01')"),
@@ -572,7 +569,7 @@ export function registerInvoiceTools(
   // ── Send Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_send_invoice",
-    "Send an invoice by email. Requires at least one recipient email address. Returns {success: true} on success.",
+    "Send an invoice by email. Requires at least one recipient email address. Returns {success: true} on success. <WARNING>Not idempotent: calling twice sends duplicate emails/messages.</WARNING>",
     {
       id: z.string().describe("The invoice ID to send. Use teamleader_list_invoices to find valid IDs."),
       to: z
@@ -656,7 +653,7 @@ export function registerInvoiceTools(
   // ── Send Invoice via Peppol ──────────────────────────────────────────────
   server.tool(
     "teamleader_send_invoice_peppol",
-    "Send an invoice via the Peppol e-invoicing network. Prerequisites: invoice must be booked first (use teamleader_book_invoice). The customer must have a valid Peppol identifier configured.",
+    "Send an invoice via the Peppol e-invoicing network. Prerequisites: invoice must be booked first (use teamleader_book_invoice). The customer must have a valid Peppol identifier configured. <WARNING>Not idempotent: calling twice sends duplicate emails/messages.</WARNING>",
     {
       id: z.string().describe("The invoice ID to send via Peppol"),
     },
@@ -672,7 +669,7 @@ export function registerInvoiceTools(
   // ── Delete Invoice ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_invoice",
-    "Delete an invoice. Only draft invoices or the last booked invoice can be deleted. Returns {success: true} on success.",
+    "Delete an invoice. Only draft invoices or the last booked invoice can be deleted. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The invoice ID to delete. Use teamleader_list_invoices to find valid IDs."),
     },
@@ -722,7 +719,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Next steps: teamleader_get_invoice to verify, teamleader_book_invoice to finalize. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }.",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Next steps: teamleader_get_invoice to verify, teamleader_book_invoice to finalize. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The invoice ID to update. Use teamleader_list_invoices to find valid IDs."),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -850,7 +847,7 @@ export function registerInvoiceTools(
   // ── Update Booked Invoice ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_booked_invoice",
-    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project, custom_fields). Next steps: teamleader_get_invoice to verify.",
+    "Update a booked invoice. Only limited fields can be changed on booked invoices (invoicee customer, for_attention_of, payment term, invoice date, note, grouped lines, project, custom_fields). Next steps: teamleader_get_invoice to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The booked invoice ID to update. Use teamleader_list_invoices to find valid IDs."),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -922,7 +919,7 @@ export function registerInvoiceTools(
   // ── Register Payment ─────────────────────────────────────────────────────
   server.tool(
     "teamleader_register_payment",
-    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. Returns {success: true} on success. <NOTE>the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params. ERROR: 422 on invoices.registerPayment → CAUSE: Using wrong field name 'payment_date' → FIX: Use 'paid_at' param — this tool maps it correctly.</NOTE>",
+    "Register a payment for an invoice. Use teamleader_list_payment_methods to find valid payment method IDs. Returns {success: true} on success. <NOTE>the API field is 'paid_at' (NOT 'payment_date'). The payment structure is nested: {payment: {amount, currency}, paid_at}. This tool handles the structure — just pass flat params. ERROR: 422 on invoices.registerPayment → CAUSE: Using wrong field name 'payment_date' → FIX: Use 'paid_at' param — this tool maps it correctly.</NOTE> <WARNING>Not idempotent: calling twice registers two payments.</WARNING>",
     {
       id: z.string().describe("The invoice ID"),
       amount: z.number().describe("Payment amount"),
@@ -962,7 +959,7 @@ export function registerInvoiceTools(
   // ── Copy Invoice ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_copy_invoice",
-    "Copy an existing invoice to create a new draft invoice with the same details. Returns the new draft invoice ID. Next step: teamleader_update_invoice to modify, then teamleader_book_invoice to finalize.",
+    "Copy an existing invoice to create a new draft invoice with the same details. Returns the new draft invoice ID. Next step: teamleader_update_invoice to modify, then teamleader_book_invoice to finalize. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("The invoice ID to copy"),
     },
@@ -980,7 +977,7 @@ export function registerInvoiceTools(
   // ── Credit Invoice (Full) ───────────────────────────────────────────────
   server.tool(
     "teamleader_credit_invoice",
-    "Create a full credit note for a booked invoice. Credits all line items. Returns {id, type} of the credit note. For partial credits, use teamleader_credit_invoice_partially instead.",
+    "Create a full credit note for a booked invoice. Credits all line items. Returns {id, type} of the credit note. For partial credits, use teamleader_credit_invoice_partially instead. <WARNING>Not idempotent: calling twice creates two credit notes.</WARNING>",
     {
       id: z.string().describe("The invoice ID to credit"),
       credit_note_date: z
@@ -1005,7 +1002,7 @@ export function registerInvoiceTools(
   // ── Credit Invoice Partially ────────────────────────────────────────────
   server.tool(
     "teamleader_credit_invoice_partially",
-    "Create a partial credit note for a booked invoice. Specify which line items to credit. <NOTE>the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically.</NOTE> Returns {id, type} of the created credit note. ERROR: 400 on invoices.creditPartially → CAUSE: Wrong unit_price.tax value (e.g. currency instead of 'excluding') → FIX: This tool sets tax:'excluding' automatically — just provide unit_price_amount.",
+    "Create a partial credit note for a booked invoice. Specify which line items to credit. <NOTE>the API uses unit_price.tax = 'excluding' (a string, NOT a currency field) — this tool handles that automatically.</NOTE> Returns {id, type} of the created credit note. ERROR: 400 on invoices.creditPartially → CAUSE: Wrong unit_price.tax value (e.g. currency instead of 'excluding') → FIX: This tool sets tax:'excluding' automatically — just provide unit_price_amount. <WARNING>Not idempotent: calling twice creates two credit notes.</WARNING>",
     {
       id: z.string().describe("The invoice ID to partially credit"),
       credit_note_date: z

@@ -5,10 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 const SUBJECT_TYPES = [
   "company",

@@ -5,10 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 const SUBJECT_TYPES = [
   "company",
@@ -109,7 +106,7 @@ export function registerNoteTools(
   // ── Create Note ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_note",
-    "Create a new note on a Teamleader entity (contact, company, deal, invoice, quotation, etc.). Notes are free-text content attached to the entity. Returns note ID. Next steps: teamleader_list_notes to verify.",
+    "Create a new note on a Teamleader entity (contact, company, deal, invoice, quotation, etc.). Notes are free-text content attached to the entity. Returns note ID. Next steps: teamleader_list_notes to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       subject_type: z
         .enum(CREATE_SUBJECT_TYPES)
@@ -140,7 +137,7 @@ export function registerNoteTools(
   // ── Update Note ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_note",
-    "Update the content of an existing note in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_list_notes to verify.",
+    "Update the content of an existing note in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_list_notes to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The note ID to update. Use teamleader_list_notes to find valid IDs."),
       content: z.string().describe("New note content (replaces existing)"),

@@ -31,10 +31,7 @@ import {
   clearCache, getCacheStats,
   type TaskTreeProject, type TaskTreeGroup, type TaskTreeTask,
 } from "../api/cache.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 export type YamlTaskEntry = { id: string; title: string; task_type: string; project_id: string; project_title: string; group_id?: string; group_title?: string };
 
@@ -538,6 +535,7 @@ export function registerResolveTools(server: McpServer, client: TeamleaderClient
       "<CRITICAL>Never guess or invent a task_id. An invalid task_id returns '400 Invalid subject' — not a 'not found' error, making it hard to diagnose. Always get task_id from load_tasks + task_selection=N first.</CRITICAL>",
       "<CRITICAL>If task_id comes from teamleader_list_timetracking subject.id — do NOT use it directly. That ID is a todo/standalone reference, not a nextgenTask ID. Run teamleader_load_tasks first to get the correct project task ID.</CRITICAL>",
       "PAST DATES: Always use started_on='HH:MM' + date='YYYY-MM-DD' for historical entries. Do NOT pass ISO datetime string (e.g. '2026-03-17T16:00:00') — TL API rejects ISO without timezone offset for past dates.",
+      "<WARNING>Not idempotent: calling twice logs duplicate time.</WARNING>",
     ].join("\n"),
     {
       company_name: z.string().describe("Company name (partial match)"),

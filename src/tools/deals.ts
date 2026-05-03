@@ -10,10 +10,7 @@ import type {
   TeamleaderListResponse,
   TeamleaderInfoResponse,
 } from "../types/index.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 const customFieldSchema = z.object({
   id: z.string().describe("Custom field definition ID"),
@@ -130,7 +127,7 @@ export function registerDealTools(
   // ── Create Deal ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal",
-    "Create a new deal/opportunity. Returns {id, type}. Lookup IDs first: teamleader_list_deal_phases (phase_id), teamleader_list_deal_sources (source_id), teamleader_list_departments (department_id). <NOTE>phase_id is required in this tool but optional in the API (defaults to first phase).</NOTE> Next steps: teamleader_get_deal to verify, teamleader_move_deal to place in pipeline.",
+    "Create a new deal/opportunity. Returns {id, type}. Lookup IDs first: teamleader_list_deal_phases (phase_id), teamleader_list_deal_sources (source_id), teamleader_list_departments (department_id). <NOTE>phase_id is required in this tool but optional in the API (defaults to first phase).</NOTE> Next steps: teamleader_get_deal to verify, teamleader_move_deal to place in pipeline. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       title: z.string().describe("Deal title"),
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
@@ -222,7 +219,7 @@ export function registerDealTools(
   // ── Update Deal ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal",
-    "Update an existing deal. Only provided fields are changed. <NOTE>To change the deal's phase, use teamleader_move_deal instead. source_id and department_id are nullable — pass null to clear.</NOTE> Next steps: teamleader_get_deal to verify the update.",
+    "Update an existing deal. Only provided fields are changed. <NOTE>To change the deal's phase, use teamleader_move_deal instead. source_id and department_id are nullable — pass null to clear.</NOTE> Next steps: teamleader_get_deal to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to update. Use teamleader_list_deals to find valid IDs."),
       title: z.string().optional().describe("Deal title"),
@@ -303,7 +300,7 @@ export function registerDealTools(
   // ── Delete Deal ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_deal",
-    "Delete a deal from Teamleader Focus. This action is irreversible. Returns {success: true} on success.",
+    "Delete a deal from Teamleader Focus. This action is irreversible. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to delete. Use teamleader_list_deals to find valid IDs."),
     },
@@ -319,7 +316,7 @@ export function registerDealTools(
   // ── Lose Deal ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_lose_deal",
-    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status.",
+    "Mark a deal as lost. Use teamleader_list_lost_reasons to get available reason IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to mark as lost. Use teamleader_list_deals to find valid IDs."),
       reason_id: z.string().optional().describe("Lost reason ID (use teamleader_list_lost_reasons to find IDs)"),
@@ -341,7 +338,7 @@ export function registerDealTools(
   // ── Win Deal ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_win_deal",
-    "Mark a deal as won. This is irreversible — the deal moves to the 'won' state. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status.",
+    "Mark a deal as won. This is irreversible — the deal moves to the 'won' state. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new status. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to mark as won. Use teamleader_list_deals to find valid IDs."),
     },
@@ -357,7 +354,7 @@ export function registerDealTools(
   // ── Move Deal ───────────────────────────────────────────────────────────
   server.tool(
     "teamleader_move_deal",
-    "Move a deal to a different phase in its pipeline. Use teamleader_list_deal_phases to get available phase IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new phase.",
+    "Move a deal to a different phase in its pipeline. Use teamleader_list_deal_phases to get available phase IDs. Returns {success: true} on success. Next steps: teamleader_get_deal to verify the new phase. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal ID to move. Use teamleader_list_deals to find valid IDs."),
       phase_id: z.string().describe("Target phase ID (use teamleader_list_deal_phases to find IDs)"),
@@ -468,7 +465,7 @@ export function registerDealTools(
   // ── Create Deal Phase ──────────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal_phase",
-    "Create a new deal phase in a pipeline. Returns the new phase ID. Use teamleader_list_deal_pipelines to find the pipeline ID. Next steps: teamleader_list_deal_phases to verify.",
+    "Create a new deal phase in a pipeline. Returns the new phase ID. Use teamleader_list_deal_pipelines to find the pipeline ID. Next steps: teamleader_list_deal_phases to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       name: z.string().describe("Phase name"),
       deal_pipeline_id: z.string().describe("Pipeline ID to add the phase to"),
@@ -501,7 +498,7 @@ export function registerDealTools(
   // ── Update Deal Phase ──────────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal_phase",
-    "Update an existing deal phase. requires_attention_after is always required by the API. Next steps: teamleader_list_deal_phases to verify.",
+    "Update an existing deal phase. requires_attention_after is always required by the API. Next steps: teamleader_list_deal_phases to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal phase ID to update. Use teamleader_list_deal_phases to find valid IDs."),
       name: z.string().optional().describe("New phase name"),
@@ -530,7 +527,7 @@ export function registerDealTools(
   // ── Delete Deal Phase ──────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_deal_phase",
-    "Delete a deal phase. Optionally migrate existing deals to another phase. Returns {success: true} on success.",
+    "Delete a deal phase. Optionally migrate existing deals to another phase. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal phase ID to delete. Use teamleader_list_deal_phases to find valid IDs."),
       new_phase_id: z.string().optional().describe("Phase ID to migrate existing deals to (optional)"),
@@ -547,7 +544,7 @@ export function registerDealTools(
   // ── Duplicate Deal Phase ───────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_deal_phase",
-    "Create a new deal phase by duplicating an existing one. Returns the new phase ID. Next steps: teamleader_list_deal_phases to verify.",
+    "Create a new deal phase by duplicating an existing one. Returns the new phase ID. Next steps: teamleader_list_deal_phases to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("Source deal phase ID to duplicate. Use teamleader_list_deal_phases to find valid IDs."),
     },
@@ -564,7 +561,7 @@ export function registerDealTools(
   // ── Move Deal Phase ────────────────────────────────────────────────────
   server.tool(
     "teamleader_move_deal_phase",
-    "Move a deal phase to a new position in the pipeline (reorder). The phase is placed after the specified phase. Returns {success: true} on success.",
+    "Move a deal phase to a new position in the pipeline (reorder). The phase is placed after the specified phase. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal phase ID to move. Use teamleader_list_deal_phases to find valid IDs."),
       after_phase_id: z.string().describe("The phase ID after which to place this phase"),
@@ -581,7 +578,7 @@ export function registerDealTools(
   // ── Create Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_deal_pipeline",
-    "Create a new deal pipeline. Returns the new pipeline ID.",
+    "Create a new deal pipeline. Returns the new pipeline ID. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       name: z.string().describe("Pipeline name"),
     },
@@ -598,7 +595,7 @@ export function registerDealTools(
   // ── Update Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_update_deal_pipeline",
-    "Update a deal pipeline name. Next steps: teamleader_list_deal_pipelines to verify.",
+    "Update a deal pipeline name. Next steps: teamleader_list_deal_pipelines to verify. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal pipeline ID to update. Use teamleader_list_deal_pipelines to find valid IDs."),
       name: z.string().describe("New pipeline name"),
@@ -615,7 +612,7 @@ export function registerDealTools(
   // ── Delete Deal Pipeline ───────────────────────────────────────────────
   server.tool(
     "teamleader_delete_deal_pipeline",
-    "Delete a deal pipeline. Optionally migrate deals from old phases to new phases in another pipeline via migrate_phases array. Returns {success: true} on success.",
+    "Delete a deal pipeline. Optionally migrate deals from old phases to new phases in another pipeline via migrate_phases array. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The deal pipeline ID to delete. Use teamleader_list_deal_pipelines to find valid IDs."),
       migrate_phases: z.array(z.object({
@@ -635,7 +632,7 @@ export function registerDealTools(
   // ── Duplicate Deal Pipeline ────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_deal_pipeline",
-    "Create a new deal pipeline by duplicating an existing one (including its phases). Returns the new pipeline ID. Next steps: teamleader_list_deal_pipelines to verify.",
+    "Create a new deal pipeline by duplicating an existing one (including its phases). Returns the new pipeline ID. Next steps: teamleader_list_deal_pipelines to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       id: z.string().describe("Source deal pipeline ID to duplicate. Use teamleader_list_deal_pipelines to find valid IDs."),
     },

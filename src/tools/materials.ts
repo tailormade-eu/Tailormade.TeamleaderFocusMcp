@@ -6,10 +6,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
-
-function respond(text: string) {
-  return { content: [{ type: "text" as const, text }] };
-}
+import { respond } from "./helpers.js";
 
 const moneySchema = z
   .object({
@@ -195,7 +192,7 @@ export function registerMaterialTools(
   // ── Create Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_create_material",
-    "Create a new material in a Teamleader Focus project. Only project_id and title are required. Supports pricing, budgets, dates, assignees, and product linking. Returns {id, type}. Next steps: teamleader_get_material to verify.",
+    "Create a new material in a Teamleader Focus project. Only project_id and title are required. Supports pricing, budgets, dates, assignees, and product linking. Returns {id, type}. Next steps: teamleader_get_material to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       project_id: z.string().describe("Project ID to add the material to"),
       title: z.string().describe("Material title"),
@@ -301,7 +298,7 @@ export function registerMaterialTools(
   // ── Update Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_update_material",
-    "Update an existing material in Teamleader Focus. Only id is required. All other fields are optional. Pass null to clear nullable fields. Next steps: teamleader_get_material to verify the update.",
+    "Update an existing material in Teamleader Focus. Only id is required. All other fields are optional. Pass null to clear nullable fields. Next steps: teamleader_get_material to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The material ID to update. Use teamleader_list_materials to find valid IDs."),
       title: z.string().optional().describe("Optional: new title"),
@@ -406,7 +403,7 @@ export function registerMaterialTools(
   // ── Delete Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_material",
-    "Delete a material from a Teamleader Focus project. Returns {success: true} on success.",
+    "Delete a material from a Teamleader Focus project. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The material ID to delete. Use teamleader_list_materials to find valid IDs."),
     },
@@ -423,7 +420,7 @@ export function registerMaterialTools(
   // ── Assign Material ───────────────────────────────────────────────────
   server.tool(
     "teamleader_assign_material",
-    "Assign a user or team to a material in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_get_material to verify.",
+    "Assign a user or team to a material in Teamleader Focus. Returns {success: true} on success. Next steps: teamleader_get_material to verify. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("The material ID. Use teamleader_list_materials to find valid IDs."),
       assignee_type: z
@@ -452,7 +449,7 @@ export function registerMaterialTools(
   // ── Unassign Material ─────────────────────────────────────────────────
   server.tool(
     "teamleader_unassign_material",
-    "Unassign a user or team from a material in Teamleader Focus. Returns {success: true} on success.",
+    "Unassign a user or team from a material in Teamleader Focus. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The material ID. Use teamleader_list_materials to find valid IDs."),
       assignee_type: z
@@ -483,7 +480,7 @@ export function registerMaterialTools(
   // ── Duplicate Material ────────────────────────────────────────────────
   server.tool(
     "teamleader_duplicate_material",
-    "Duplicate an existing material in Teamleader Focus. Creates a copy of the material with the same properties. Returns {id, type} of the new material. Next steps: teamleader_get_material to verify.",
+    "Duplicate an existing material in Teamleader Focus. Creates a copy of the material with the same properties. Returns {id, type} of the new material. Next steps: teamleader_get_material to verify. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       origin_id: z
         .string()

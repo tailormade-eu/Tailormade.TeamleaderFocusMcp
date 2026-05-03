@@ -133,4 +133,48 @@ describe("TeamleaderClient.request — retry behaviour", () => {
     await expect(client.request({ endpoint: "contacts.list" })).rejects.toThrow("400");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("retries once on 401 after forceRefresh, succeeds on 2nd attempt", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(makeResponse(401, { message: "unauthorized" }))
+      .mockResolvedValueOnce(makeResponse(200, { data: "refreshed" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mockAuth = { getAccessToken: vi.fn().mockResolvedValue("token"), forceRefresh: vi.fn().mockResolvedValue(undefined) };
+    const client = new TeamleaderClient(mockAuth as never);
+    const result = await client.request<{ data: string }>({ endpoint: "contacts.list" });
+
+    expect(result).toEqual({ data: "refreshed" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(mockAuth.forceRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws on 401 after forceRefresh still returns 401", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeResponse(401, { message: "unauthorized" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mockAuth = { getAccessToken: vi.fn().mockResolvedValue("token"), forceRefresh: vi.fn().mockResolvedValue(undefined) };
+    const client = new TeamleaderClient(mockAuth as never);
+
+    await expect(client.request({ endpoint: "contacts.list" })).rejects.toThrow("401");
+    // 1 original + 1 retry = 2 fetches, forceRefresh called once
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(mockAuth.forceRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry 401 a second time", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(makeResponse(401, {}))
+      .mockResolvedValueOnce(makeResponse(401, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mockAuth = { getAccessToken: vi.fn().mockResolvedValue("token"), forceRefresh: vi.fn().mockResolvedValue(undefined) };
+    const client = new TeamleaderClient(mockAuth as never);
+
+    await expect(client.request({ endpoint: "contacts.list" })).rejects.toThrow("401");
+    expect(mockAuth.forceRefresh).toHaveBeenCalledTimes(1); // only one forceRefresh
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

@@ -207,7 +207,7 @@ export function registerContactTools(
   // ── Create Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_create_contact",
-    "Create a new contact (person). Returns {id, type}. <NOTE>only last_name is required by the API — first_name is optional.</NOTE> Next steps: teamleader_get_contact to verify, teamleader_link_contact_to_company to link.",
+    "Create a new contact (person). Returns {id, type}. <NOTE>only last_name is required by the API — first_name is optional.</NOTE> Next steps: teamleader_get_contact to verify, teamleader_link_contact_to_company to link. <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       first_name: z.string().optional().describe("First name"),
       last_name: z.string().describe("Last name"),
@@ -250,7 +250,7 @@ export function registerContactTools(
   // ── Update Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_contact",
-    "Update an existing contact. Only provided fields are changed. <WARNING>the tags param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_contact / teamleader_untag_contact for incremental changes.</WARNING> Next steps: teamleader_get_contact to verify the update.",
+    "Update an existing contact. Only provided fields are changed. <WARNING>the tags param OVERWRITES all existing tags — it is not additive. Use teamleader_tag_contact / teamleader_untag_contact for incremental changes.</WARNING> Next steps: teamleader_get_contact to verify the update. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The contact ID to update. Use teamleader_list_contacts to find valid IDs."),
       first_name: z.string().nullable().optional().describe("First name"),
@@ -319,7 +319,7 @@ export function registerContactTools(
   // ── Delete Contact ──────────────────────────────────────────────────────
   server.tool(
     "teamleader_delete_contact",
-    "Delete a contact. This action is irreversible and removes all linked data. Returns {success: true} on success.",
+    "Delete a contact. This action is irreversible and removes all linked data. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The contact ID to delete. Use teamleader_list_contacts to find valid IDs."),
     },
@@ -343,7 +343,7 @@ export function registerContactTools(
   // ── Link Contact to Company ─────────────────────────────────────────────
   server.tool(
     "teamleader_link_contact_to_company",
-    "Link a contact to a company. Optionally set their position and decision maker flag. A contact can be linked to multiple companies. Next steps: teamleader_get_contact to verify the link.",
+    "Link a contact to a company. Optionally set their position and decision maker flag. A contact can be linked to multiple companies. Next steps: teamleader_get_contact to verify the link. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
       company_id: z.string().describe("The company ID to link to. Use teamleader_list_companies to find valid IDs."),
@@ -377,7 +377,7 @@ export function registerContactTools(
   // ── Unlink Contact from Company ─────────────────────────────────────────
   server.tool(
     "teamleader_unlink_contact_from_company",
-    "Remove the link between a contact and a company. Does not delete either entity. Returns {success: true} on success.",
+    "Remove the link between a contact and a company. Does not delete either entity. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
       company_id: z.string().describe("The company ID to unlink from. Use teamleader_list_companies to find valid IDs."),
@@ -402,7 +402,7 @@ export function registerContactTools(
   // ── Update Contact-Company Link ─────────────────────────────────────────
   server.tool(
     "teamleader_update_contact_company_link",
-    "Update the link between a contact and a company (position, decision maker)",
+    "Update the link between a contact and a company (position, decision maker) <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The contact ID"),
       company_id: z.string().describe("The company ID"),
@@ -436,7 +436,7 @@ export function registerContactTools(
   // ── Tag Contact ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_tag_contact",
-    "Add one or more tags to a contact. Use teamleader_list_tags to see existing tags. Returns {success: true} on success.",
+    "Add one or more tags to a contact. Use teamleader_list_tags to see existing tags. Returns {success: true} on success. <WARNING>Not idempotent: calling twice may create duplicate relationships.</WARNING>",
     {
       id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to add (e.g. ['prospect', 'expo'])"),
@@ -461,7 +461,7 @@ export function registerContactTools(
   // ── Untag Contact ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_untag_contact",
-    "Remove one or more tags from a contact. Returns {success: true} on success.",
+    "Remove one or more tags from a contact. Returns {success: true} on success. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The contact ID. Use teamleader_list_contacts to find valid IDs."),
       tags: z.array(z.string()).describe("Tags to remove (e.g. ['prospect', 'expo'])"),

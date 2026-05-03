@@ -4,6 +4,34 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.7.0] - 2026-05-03
+
+### Added (B6.4.3 — 401 mid-flight retry)
+- `auth.ts`: added `forceRefresh()` public method (invalidates token + calls refreshAccessToken)
+- `client.ts`: on HTTP 401, force-refreshes token and retries the request once; no infinite loop (max 1 per request); does not consume a 429 retry slot
+- `test/client.test.ts`: 3 new tests for 401 retry (success, double-401 fails, no second forceRefresh)
+
+### Added (B6.4.5 — README refresh)
+- Added Resilience and Output cap entries to Features section
+- README tool count already accurate at 112
+
+### Added (B6.4.6 — Idempotency docs)
+- 75 mutating tools annotated with idempotency XML markers:
+  - `<WARNING>Not idempotent: calling twice creates two resources.</WARNING>` on all `*_create_*`, `*_add_*`, `*_duplicate_*`, `*_copy_*`, link/assign/tag tools
+  - `<WARNING>Not idempotent: calling twice registers two payments.</WARNING>` on `teamleader_register_payment`
+  - `<WARNING>Not idempotent: calling twice creates two credit notes.</WARNING>` on `teamleader_credit_invoice` and `teamleader_credit_invoice_partially`
+  - `<WARNING>Not idempotent: calling twice sends duplicate emails/messages.</WARNING>` on send tools
+  - `<NOTE>Can only be booked once per invoice.</NOTE>` on `teamleader_book_invoice`
+  - `<NOTE>Idempotent</NOTE>` on all `*_update_*`, `*_delete_*`, `*_complete_*`, `*_close_*`, `*_reopen_*`, `*_cancel_*`, `*_deactivate_*`, `*_win_*`, `*_lose_*`, `*_move_*` tools
+
+### Added (B6.4.7 — Output-cap with truncate fallback)
+- New `src/tools/helpers.ts`: shared `respond()` helper with 50 KB output cap
+- On overflow: full response written to OS temp file, tool returns excerpt + path
+- All 15 tool files migrated from local `respond()` to import from helpers.ts
+- `test/helpers.test.ts`: 5 unit tests covering below-cap, above-cap, write failure, exact boundary
+
+---
+
 ## [3.6.0] - 2026-05-03
 
 ### Added (B7.2 — 5 Zod drift fixes uit round-2 audit)
