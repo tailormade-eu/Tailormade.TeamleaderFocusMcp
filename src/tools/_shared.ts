@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const moneySchema = z
+  .object({
+    amount: z.number().describe("Monetary amount"),
+    currency: z.string().describe("Currency code (e.g. EUR)"),
+  })
+  .describe("Money object with amount and currency");
+
 export const customFieldSchema = z.object({
   id: z.string().describe("Custom field definition ID"),
   value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),

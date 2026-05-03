@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.7.4] - 2026-05-03
+
+### Changed (B8 — Schema completeness)
+- B8.1: Extracted `moneySchema` to `src/tools/_shared.ts`; replaced inline definitions in `materials.ts` and `products.ts` (price_list_prices)
+- B8.2: Replaced `z.unknown()` custom_fields value in `products.ts` (add + update) with imported `customFieldSchema` from `_shared.ts` — consistent with all other tool files post-B6.5
+
+---
+
 ## [3.7.3] - 2026-05-03
 
 ### Fixed (roundup — PII fix completed)

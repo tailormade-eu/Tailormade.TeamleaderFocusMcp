@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
 import type { TeamleaderListResponse } from "../types/index.js";
 import { respond } from "./helpers.js";
+import { moneySchema, customFieldSchema } from "./_shared.js";
 
 export function registerProductTools(
   server: McpServer,
@@ -136,15 +137,9 @@ export function registerProductTools(
       }).optional().describe("Stock configuration (requires stock management feature)"),
       price_list_prices: z.array(z.object({
         price_list_id: z.string().describe("Price list ID. Use teamleader_list_price_lists to find valid IDs."),
-        price: z.object({
-          amount: z.number().describe("Price amount"),
-          currency: z.string().describe("Currency code (e.g. EUR)"),
-        }).describe("Price for this price list"),
+        price: moneySchema.describe("Price for this price list"),
       })).optional().describe("Price list prices"),
-      custom_fields: z.array(z.object({
-        id: z.string().describe("Custom field definition ID"),
-        value: z.unknown().describe("Custom field value"),
-      })).optional().describe("Custom field values"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = {};
@@ -204,15 +199,9 @@ export function registerProductTools(
       }).optional().describe("Stock configuration (requires stock management feature)"),
       price_list_prices: z.array(z.object({
         price_list_id: z.string().describe("Price list ID. Use teamleader_list_price_lists to find valid IDs."),
-        price: z.object({
-          amount: z.number().describe("Price amount"),
-          currency: z.string().describe("Currency code (e.g. EUR)"),
-        }).describe("Price for this price list"),
+        price: moneySchema.describe("Price for this price list"),
       })).optional().describe("Price list prices"),
-      custom_fields: z.array(z.object({
-        id: z.string().describe("Custom field definition ID"),
-        value: z.unknown().describe("Custom field value"),
-      })).optional().describe("Custom field values"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };

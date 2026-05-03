@@ -7,13 +7,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
 import { respond } from "./helpers.js";
-
-const moneySchema = z
-  .object({
-    amount: z.number().describe("Monetary amount"),
-    currency: z.string().describe("Currency code (e.g. EUR)"),
-  })
-  .describe("Money object with amount and currency");
+import { moneySchema } from "./_shared.js";
 
 const assigneeSchema = z.object({
   type: z.enum(["team", "user"]).describe("Assignee type"),
