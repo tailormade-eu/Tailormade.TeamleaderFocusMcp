@@ -4,6 +4,13 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.4.3] - 2026-05-03
+
+### Added
+- [B6] MCP-audit Q2-2026 Fase 1–4: API download verification (`audit-01-api-download.md`), Zod schema drift-check 26 gaps → BACKLOG B6.2.1–B6.2.26 (`audit-02-drift-check.md`), description/parameter quality audit 10 gaps → BACKLOG B6.3.1–B6.3.10 (`audit-03-quality.md`), test/type/PII/auth/idempotency review 7 gaps → BACKLOG B6.4.1–B6.4.7 (`audit-04-other.md`)
+
+---
+
 ## [3.4.2] - 2026-05-03
 
 ### Fixed
