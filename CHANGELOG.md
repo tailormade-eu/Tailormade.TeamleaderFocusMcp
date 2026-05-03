@@ -4,6 +4,13 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.7.5] - 2026-05-03
+
+### Chore (roundup)
+- B8.1 + B8.2 complete: `moneySchema` extracted to `_shared.ts`, `customFieldSchema` unified across all tool files
+
+---
+
 ## [3.7.4] - 2026-05-03
 
 ### Changed (B8 — Schema completeness)
