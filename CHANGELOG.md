@@ -4,6 +4,14 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.7.2] - 2026-05-03
+
+### Fixed (B7.4.1 — PII removal)
+- B7.4.1: Replaced 11+ client-specific examples (JaRa-Tailormade_*) with generic placeholders (Acme-Corp) in invoices.ts tool descriptions — privacy fix and npm publish prep
+- Removed internal GitHub repo reference from projects.ts comment
+
+---
+
 ## [3.7.1] - 2026-05-03
 
 ### Changed (B7.3.1-14 — Description quality polish)

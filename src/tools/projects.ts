@@ -1,7 +1,6 @@
 /**
  * Teamleader Projects-v2 Tools
  * 
- * Based on tailormade-eu/teamleader-focus-csv-importer C# implementation
  * Supports: Projects, ProjectGroups (Phases), and integration with Tasks
  */
 

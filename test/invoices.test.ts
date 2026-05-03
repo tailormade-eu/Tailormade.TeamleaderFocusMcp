@@ -169,11 +169,11 @@ describe("buildUpdateInvoiceBody", () => {
   it("grouped_lines with section title is passed as-is", () => {
     const body = buildUpdateInvoiceBody({
       id: "inv-1",
-      grouped_lines: [{ section: { title: "Service Agreement JaRa-Tailormade_202605 (70%)" }, line_items: [baseLine] }],
+      grouped_lines: [{ section: { title: "Service Agreement Acme-Corp_202605 (70%)" }, line_items: [baseLine] }],
     });
     const groups = body.grouped_lines as any[];
     expect(groups).toHaveLength(1);
-    expect(groups[0].section).toEqual({ title: "Service Agreement JaRa-Tailormade_202605 (70%)" });
+    expect(groups[0].section).toEqual({ title: "Service Agreement Acme-Corp_202605 (70%)" });
     expect(groups[0].line_items[0].description).toBe("Test");
   });
 
@@ -402,9 +402,9 @@ describe("buildUpdateInvoiceBody", () => {
   it("includes custom_fields with string value", () => {
     const body = buildUpdateInvoiceBody({
       id: "inv-1",
-      custom_fields: [{ id: "abc", value: "SA JaRa-Tailormade_202604" }],
+      custom_fields: [{ id: "abc", value: "SA Acme-Corp_202604" }],
     });
-    expect(body.custom_fields).toEqual([{ id: "abc", value: "SA JaRa-Tailormade_202604" }]);
+    expect(body.custom_fields).toEqual([{ id: "abc", value: "SA Acme-Corp_202604" }]);
   });
 
   it("includes custom_fields with object reference value", () => {
@@ -624,11 +624,11 @@ describe("buildCreateInvoiceBody", () => {
       customer_id: "comp-1",
       department_id: "dep-1",
       payment_term_type: "cash",
-      grouped_lines: [{ section: { title: "Service Agreement JaRa-Tailormade_202605 (70%)" }, line_items: [baseLine] }],
+      grouped_lines: [{ section: { title: "Service Agreement Acme-Corp_202605 (70%)" }, line_items: [baseLine] }],
     });
     const groups = body.grouped_lines as any[];
     expect(groups).toHaveLength(1);
-    expect(groups[0].section).toEqual({ title: "Service Agreement JaRa-Tailormade_202605 (70%)" });
+    expect(groups[0].section).toEqual({ title: "Service Agreement Acme-Corp_202605 (70%)" });
     expect(groups[0].line_items[0].description).toBe("Test");
   });
 
