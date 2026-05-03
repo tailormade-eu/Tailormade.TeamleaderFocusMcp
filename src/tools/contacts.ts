@@ -11,6 +11,23 @@ import type {
   TeamleaderInfoResponse,
 } from "../types/index.js";
 
+const addressSchema = z.object({
+  type: z.enum(["primary", "invoicing", "delivery", "visiting"]).describe("Address type"),
+  address: z.object({
+    line_1: z.string().nullable().describe("Street and number"),
+    postal_code: z.string().nullable().describe("Postal code"),
+    city: z.string().nullable().describe("City"),
+    country: z.string().describe("Country code (ISO 3166-1 alpha-2, e.g. 'BE')"),
+    area_level_two_id: z.string().optional().describe("Area level two ID"),
+    addressee: z.string().optional().describe("Addressee name"),
+  }).describe("Address details"),
+});
+
+const customFieldSchema = z.object({
+  id: z.string().describe("Custom field definition ID"),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
+});
+
 // ── Body Builders (exported for testing) ─────────────────────────────────────
 
 export interface ListContactsParams {
@@ -58,6 +75,23 @@ export interface CreateContactParams {
   website?: string;
   remarks?: string;
   tags?: string[];
+  birthdate?: string;
+  iban?: string;
+  bic?: string;
+  national_identification_number?: string;
+  marketing_mails_consent?: boolean;
+  addresses?: Array<{
+    type: "primary" | "invoicing" | "delivery" | "visiting";
+    address: {
+      line_1: string | null;
+      postal_code: string | null;
+      city: string | null;
+      country: string;
+      area_level_two_id?: string;
+      addressee?: string;
+    };
+  }>;
+  custom_fields?: Array<{ id: string; value: string | number | boolean | null }>;
 }
 
 export function buildCreateContactBody(params: CreateContactParams): Record<string, unknown> {
@@ -81,6 +115,13 @@ export function buildCreateContactBody(params: CreateContactParams): Record<stri
   if (params.website) body.website = params.website;
   if (params.remarks) body.remarks = params.remarks;
   if (params.tags) body.tags = params.tags;
+  if (params.birthdate) body.birthdate = params.birthdate;
+  if (params.iban) body.iban = params.iban;
+  if (params.bic) body.bic = params.bic;
+  if (params.national_identification_number) body.national_identification_number = params.national_identification_number;
+  if (params.marketing_mails_consent !== undefined) body.marketing_mails_consent = params.marketing_mails_consent;
+  if (params.addresses) body.addresses = params.addresses;
+  if (params.custom_fields) body.custom_fields = params.custom_fields;
 
   return body;
 }
@@ -165,6 +206,13 @@ export function registerContactTools(
       website: z.string().optional().describe("Website URL"),
       remarks: z.string().optional().describe("Remarks (markdown supported)"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
+      birthdate: z.string().optional().describe("Date of birth (YYYY-MM-DD)"),
+      iban: z.string().optional().describe("IBAN bank account number"),
+      bic: z.string().optional().describe("BIC/SWIFT code"),
+      national_identification_number: z.string().optional().describe("National identification number"),
+      marketing_mails_consent: z.boolean().optional().describe("Whether the contact consents to marketing emails"),
+      addresses: z.array(addressSchema).optional().describe("Addresses (invoicing, delivery, visiting, primary)"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body = buildCreateContactBody(params);
@@ -202,6 +250,13 @@ export function registerContactTools(
       website: z.string().nullable().optional().describe("Website URL"),
       remarks: z.string().nullable().optional().describe("Remarks (markdown supported)"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
+      birthdate: z.string().nullable().optional().describe("Date of birth (YYYY-MM-DD)"),
+      iban: z.string().nullable().optional().describe("IBAN bank account number"),
+      bic: z.string().nullable().optional().describe("BIC/SWIFT code"),
+      national_identification_number: z.string().nullable().optional().describe("National identification number"),
+      marketing_mails_consent: z.boolean().optional().describe("Whether the contact consents to marketing emails"),
+      addresses: z.array(addressSchema).optional().describe("Addresses — OVERWRITES all existing addresses"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
@@ -223,6 +278,13 @@ export function registerContactTools(
       if (params.website !== undefined) body.website = params.website;
       if (params.remarks !== undefined) body.remarks = params.remarks;
       if (params.tags) body.tags = params.tags;
+      if (params.birthdate !== undefined) body.birthdate = params.birthdate;
+      if (params.iban !== undefined) body.iban = params.iban;
+      if (params.bic !== undefined) body.bic = params.bic;
+      if (params.national_identification_number !== undefined) body.national_identification_number = params.national_identification_number;
+      if (params.marketing_mails_consent !== undefined) body.marketing_mails_consent = params.marketing_mails_consent;
+      if (params.addresses) body.addresses = params.addresses;
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       await client.request({
         endpoint: "contacts.update",

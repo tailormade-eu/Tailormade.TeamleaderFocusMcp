@@ -11,6 +11,23 @@ import type {
   TeamleaderInfoResponse,
 } from "../types/index.js";
 
+const addressSchema = z.object({
+  type: z.enum(["primary", "invoicing", "delivery", "visiting"]).describe("Address type"),
+  address: z.object({
+    line_1: z.string().nullable().describe("Street and number"),
+    postal_code: z.string().nullable().describe("Postal code"),
+    city: z.string().nullable().describe("City"),
+    country: z.string().describe("Country code (ISO 3166-1 alpha-2, e.g. 'BE')"),
+    area_level_two_id: z.string().optional().describe("Area level two ID"),
+    addressee: z.string().optional().describe("Addressee name"),
+  }).describe("Address details"),
+});
+
+const customFieldSchema = z.object({
+  id: z.string().describe("Custom field definition ID"),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
+});
+
 export function registerCompanyTools(
   server: McpServer,
   client: TeamleaderClient
@@ -105,6 +122,14 @@ export function registerCompanyTools(
       remarks: z.string().optional().describe("Remarks (markdown supported)"),
       responsible_user_id: z.string().optional().describe("Responsible user ID"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
+      business_type_id: z.string().optional().describe("Business type ID (use teamleader_list_business_types to find)"),
+      national_identification_number: z.string().optional().describe("National identification number"),
+      iban: z.string().optional().describe("IBAN bank account number"),
+      bic: z.string().optional().describe("BIC/SWIFT code"),
+      marketing_mails_consent: z.boolean().optional().describe("Whether the company consents to marketing emails"),
+      preferred_currency: z.string().optional().describe("Preferred currency code (e.g. 'EUR')"),
+      addresses: z.array(addressSchema).optional().describe("Addresses (invoicing, delivery, visiting, primary)"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -125,6 +150,14 @@ export function registerCompanyTools(
       if (params.remarks) body.remarks = params.remarks;
       if (params.responsible_user_id) body.responsible_user_id = params.responsible_user_id;
       if (params.tags) body.tags = params.tags;
+      if (params.business_type_id) body.business_type_id = params.business_type_id;
+      if (params.national_identification_number) body.national_identification_number = params.national_identification_number;
+      if (params.iban) body.iban = params.iban;
+      if (params.bic) body.bic = params.bic;
+      if (params.marketing_mails_consent !== undefined) body.marketing_mails_consent = params.marketing_mails_consent;
+      if (params.preferred_currency) body.preferred_currency = params.preferred_currency;
+      if (params.addresses) body.addresses = params.addresses;
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       const result = await client.request<TeamleaderInfoResponse<{ id: string; type: string }>>({
         endpoint: "companies.add",
@@ -157,6 +190,14 @@ export function registerCompanyTools(
       remarks: z.string().nullable().optional().describe("Remarks (markdown supported)"),
       responsible_user_id: z.string().nullable().optional().describe("Responsible user ID"),
       tags: z.array(z.string()).optional().describe("Tags to assign"),
+      business_type_id: z.string().optional().describe("Business type ID (use teamleader_list_business_types to find)"),
+      national_identification_number: z.string().optional().describe("National identification number"),
+      iban: z.string().optional().describe("IBAN bank account number"),
+      bic: z.string().optional().describe("BIC/SWIFT code"),
+      marketing_mails_consent: z.boolean().optional().describe("Whether the company consents to marketing emails"),
+      preferred_currency: z.string().optional().describe("Preferred currency code (e.g. 'EUR')"),
+      addresses: z.array(addressSchema).optional().describe("Addresses — OVERWRITES all existing addresses"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
@@ -174,6 +215,14 @@ export function registerCompanyTools(
       if (params.remarks !== undefined) body.remarks = params.remarks;
       if (params.responsible_user_id !== undefined) body.responsible_user_id = params.responsible_user_id;
       if (params.tags) body.tags = params.tags;
+      if (params.business_type_id) body.business_type_id = params.business_type_id;
+      if (params.national_identification_number) body.national_identification_number = params.national_identification_number;
+      if (params.iban) body.iban = params.iban;
+      if (params.bic) body.bic = params.bic;
+      if (params.marketing_mails_consent !== undefined) body.marketing_mails_consent = params.marketing_mails_consent;
+      if (params.preferred_currency) body.preferred_currency = params.preferred_currency;
+      if (params.addresses) body.addresses = params.addresses;
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       await client.request({
         endpoint: "companies.update",

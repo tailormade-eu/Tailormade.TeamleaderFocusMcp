@@ -5,6 +5,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
+
+const customFieldSchema = z.object({
+  id: z.string().describe("Custom field definition ID"),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
+});
 import type {
   Task,
   TeamleaderListResponse,
@@ -111,6 +116,7 @@ export function registerTaskTools(
       deal_id: z.string().optional().describe("Deal ID to link to"),
       ticket_id: z.string().optional().describe("Ticket ID to link to"),
       project_id: z.string().optional().describe("Link task to a project ID"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -138,6 +144,7 @@ export function registerTaskTools(
       if (params.deal_id) body.deal_id = params.deal_id;
       if (params.ticket_id) body.ticket_id = params.ticket_id;
       if (params.project_id) body.project_id = params.project_id;
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       const result = await client.request<{ data: { id: string; type: string } }>({
         endpoint: "tasks.create",
@@ -212,6 +219,7 @@ export function registerTaskTools(
       deal_id: z.string().nullable().optional().describe("Deal ID to link (null to unlink)"),
       ticket_id: z.string().nullable().optional().describe("Ticket ID to link (null to unlink)"),
       project_id: z.string().nullable().optional().describe("Project ID to link (null to unlink)"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
@@ -232,6 +240,7 @@ export function registerTaskTools(
       if (params.deal_id !== undefined) body.deal_id = params.deal_id;
       if (params.ticket_id !== undefined) body.ticket_id = params.ticket_id;
       if (params.project_id !== undefined) body.project_id = params.project_id;
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       await client.request<void>({
         endpoint: "tasks.update",

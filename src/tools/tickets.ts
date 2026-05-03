@@ -5,6 +5,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
+
+const customFieldSchema = z.object({
+  id: z.string().describe("Custom field definition ID"),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
+});
 import type {
   Ticket,
   TicketMessage,
@@ -135,6 +140,7 @@ export function registerTicketTools(
         .enum(["automatic", "disabled"])
         .optional()
         .describe("Initial reply behavior: 'automatic' or 'disabled'"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -156,6 +162,7 @@ export function registerTicketTools(
         };
       }
       if (params.initial_reply) body.initial_reply = params.initial_reply;
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       const result = await client.request<
         TeamleaderInfoResponse<{ id: string; type: string }>

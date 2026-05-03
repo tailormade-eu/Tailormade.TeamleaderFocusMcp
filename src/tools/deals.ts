@@ -15,6 +15,11 @@ function respond(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
+const customFieldSchema = z.object({
+  id: z.string().describe("Custom field definition ID"),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
+});
+
 export function registerDealTools(
   server: McpServer,
   client: TeamleaderClient
@@ -35,7 +40,7 @@ export function registerDealTools(
       pipeline_ids: z.array(z.string()).optional().describe("Filter by pipeline IDs"),
       estimated_closing_date_from: z.string().optional().describe("Estimated closing date range start (YYYY-MM-DD)"),
       estimated_closing_date_until: z.string().optional().describe("Estimated closing date range end (YYYY-MM-DD)"),
-      responsible_user_id: z.string().optional().describe("Filter by responsible user ID"),
+      responsible_user_id: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by responsible user ID (single ID or array of IDs)"),
       updated_since: z
         .string()
         .optional()
@@ -147,6 +152,9 @@ export function registerDealTools(
         .describe("Responsible user ID"),
       department_id: z.string().optional().describe("Department ID (use teamleader_list_departments to find)"),
       source_id: z.string().optional().describe("Source ID (use teamleader_list_deal_sources to find)"),
+      currency_code: z.string().optional().describe("Currency code for the deal (e.g. 'EUR'). Overrides company default."),
+      currency_exchange_rate: z.number().optional().describe("Exchange rate for the deal currency (optional)"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = {
@@ -181,6 +189,12 @@ export function registerDealTools(
         body.responsible_user_id = params.responsible_user_id;
       if (params.department_id) body.department_id = params.department_id;
       if (params.source_id) body.source_id = params.source_id;
+      if (params.currency_code) {
+        const currency: Record<string, unknown> = { code: params.currency_code };
+        if (params.currency_exchange_rate !== undefined) currency.exchange_rate = params.currency_exchange_rate;
+        body.currency = currency;
+      }
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       const result = await client.request<
         TeamleaderInfoResponse<{ id: string; type: string }>
@@ -227,7 +241,12 @@ export function registerDealTools(
         .describe("Responsible user ID"),
       source_id: z.string().nullable().optional().describe("Source ID (pass null to clear). Use teamleader_list_deal_sources to find valid IDs."),
       department_id: z.string().nullable().optional().describe("Department ID (pass null to clear). Use teamleader_list_departments to find valid IDs."),
-      contact_person_id: z.string().nullable().optional().describe("Contact person ID (pass null to clear)"),
+      lead_customer_type: z.enum(["contact", "company"]).optional().describe("New customer type for lead (use with lead_customer_id)"),
+      lead_customer_id: z.string().optional().describe("New customer ID for lead (use with lead_customer_type)"),
+      lead_contact_person_id: z.string().nullable().optional().describe("Contact person ID on company lead (null to clear)"),
+      currency_code: z.string().optional().describe("Currency code for the deal (e.g. 'EUR')"),
+      currency_exchange_rate: z.number().optional().describe("Exchange rate for the deal currency (optional)"),
+      custom_fields: z.array(customFieldSchema).optional().describe("Custom field values"),
     },
     async (params) => {
       const body: Record<string, unknown> = { id: params.id };
@@ -251,7 +270,21 @@ export function registerDealTools(
         body.responsible_user_id = params.responsible_user_id;
       if (params.source_id !== undefined) body.source_id = params.source_id;
       if (params.department_id !== undefined) body.department_id = params.department_id;
-      if (params.contact_person_id !== undefined) body.contact_person_id = params.contact_person_id;
+      if (params.lead_customer_type && params.lead_customer_id) {
+        const lead: Record<string, unknown> = {
+          customer: { type: params.lead_customer_type, id: params.lead_customer_id },
+        };
+        if (params.lead_contact_person_id !== undefined) lead.contact_person_id = params.lead_contact_person_id;
+        body.lead = lead;
+      } else if (params.lead_contact_person_id !== undefined) {
+        body.lead = { contact_person_id: params.lead_contact_person_id };
+      }
+      if (params.currency_code) {
+        const currency: Record<string, unknown> = { code: params.currency_code };
+        if (params.currency_exchange_rate !== undefined) currency.exchange_rate = params.currency_exchange_rate;
+        body.currency = currency;
+      }
+      if (params.custom_fields) body.custom_fields = params.custom_fields;
 
       await client.request({
         endpoint: "deals.update",

@@ -4,6 +4,32 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.4.4] - 2026-05-03
+
+### Added (B6.2 Zod schema drift batch — 26 gaps fixed)
+
+**Pattern A — `custom_fields` added to 9 tools:**
+`teamleader_create_company`, `teamleader_update_company`, `teamleader_create_contact`, `teamleader_update_contact`, `teamleader_create_deal`, `teamleader_update_deal`, `teamleader_create_task`, `teamleader_update_task`, `teamleader_create_ticket`
+
+**Pattern B — `addresses` added to 4 tools:**
+`teamleader_create_company`, `teamleader_update_company`, `teamleader_create_contact`, `teamleader_update_contact` — shared `addressSchema` (type + nested address object with line_1, postal_code, city, country, area_level_two_id, addressee)
+
+**Pattern C — Company/Contact scalar fields:**
+- Companies (create + update): `business_type_id`, `national_identification_number`, `iban`, `bic`, `marketing_mails_consent`, `preferred_currency`
+- Contacts (create + update): `birthdate`, `iban`, `bic`, `national_identification_number`, `marketing_mails_consent`
+
+**Pattern D — Currency object on deals:**
+`teamleader_create_deal` + `teamleader_update_deal`: `currency_code` + `currency_exchange_rate` → maps to `{ code, exchange_rate }` body
+
+**Pattern E — Type/filter fixes:**
+- B6.2.17: `teamleader_update_deal` — `contact_person_id` (flat, wrong) replaced by `lead_customer_type` + `lead_customer_id` + `lead_contact_person_id` (matches API `lead` object)
+- B6.2.18: `teamleader_list_deals` — `responsible_user_id` now accepts `string | string[]`
+- B6.2.25: `teamleader_list_projects_v2` — added `customers[]` array param + `customer_type`/`customer_id` for contact filter; `company_id` kept for backward compat
+
+Skipped per API doc verification: B6.2.22 (timers don't accept nextgenTask per doc), B6.2.23 (milestone IS valid filter per doc), B6.2.24 (quotations.list has no deal_id filter per doc), B6.2.26 (invoice_id confirmed valid — kept as-is)
+
+---
+
 ## [3.4.3] - 2026-05-03
 
 ### Added
