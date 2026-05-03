@@ -9,6 +9,7 @@ Status: ✅ Tested | ⚠️ Partial | ❌ Not tested | 🐛 Bug found | 📋 Pla
 | Item | Test | Status | Notes |
 |------|------|--------|-------|
 | Version | Matches package.json dynamically | ✅ | task-17 |
+| B6.3 XML markers | `<CRITICAL>/<WARNING>/<NOTE>` in tool descriptions (spot-check: invoices, projects, timetracking, tickets, resolve, materials, subscriptions) | ✅ | v3.5.0 — description-only changes, build + 297 tests green |
 
 ## Core Resolution Tools
 

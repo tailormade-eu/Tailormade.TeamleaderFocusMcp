@@ -4,6 +4,22 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.5.0] - 2026-05-03
+
+### Improved (B6.3 — description quality sweep, 10 sub-tasks)
+- [B6.3.1] Converted all plain-text `CRITICAL:` / `WARNING:` / `NOTE:` prefixes to XML semantic markers `<CRITICAL>`, `<WARNING>`, `<NOTE>` across 7 files: invoices.ts, projects.ts, timetracking.ts, tickets.ts, resolve.ts, materials.ts, subscriptions.ts
+- [B6.3.2] Added `Returns {success: true}` and `Returns {id, type}` to all action tools that were missing output format documentation
+- [B6.3.3] Added "Next steps: ..." guidance to all mutation tools (subscriptions, materials, resolve tools)
+- [B6.3.4] Added "Use teamleader_list_X to find valid IDs" lookup hints to subscription_id, material_id params
+- [B6.3.5] Format examples already present on date/datetime params (e.g. `'2026-03-15'`, ISO 8601)
+- [B6.3.6] Lookup tool descriptions already contain rich formatted output descriptions (numbered list format)
+- [B6.3.7] ID lookup hints applied to 7 tool files in prior batch (3.4.5)
+- [B6.3.8] Subject type enum values documented in files.ts and notes.ts
+- [B6.3.9] Deal action tool descriptions (win/lose/move) already updated
+- [B6.3.10] Project helper tool descriptions already updated
+
+---
+
 ## [3.4.5] - 2026-05-03
 
 ### Fixed / Improved
