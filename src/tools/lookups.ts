@@ -341,7 +341,7 @@ export function registerLookupTools(
   // ── Call Outcomes ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_call_outcomes",
-    "List all call outcomes. Returns IDs needed for CRM calls (teamleader_add_call outcome_id param).",
+    "List all call outcomes. Returns numbered list: 'N. name (id)'. Use IDs for CRM calls (teamleader_complete_call call_outcome_id param).",
     {
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z.number().optional().describe("Page size (default: 20)"),

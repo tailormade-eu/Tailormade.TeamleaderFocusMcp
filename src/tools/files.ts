@@ -40,12 +40,12 @@ export function registerFileTools(
   // ── List Files ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_list_files",
-    "List files attached to a Teamleader entity (company, contact, deal, invoice, project, ticket, etc.). Returns file names, sizes, and IDs.",
+    "List files attached to a Teamleader entity (company, contact, deal, invoice, project, ticket, etc.). Returns file names, sizes, and IDs. Next steps: teamleader_download_file to get download URL, teamleader_delete_file to remove.",
     {
       subject_type: z
         .enum(SUBJECT_TYPES)
         .describe("Type of entity to list files for ('company' | 'contact' | 'deal' | 'invoice' | 'creditNote' | 'nextgenProject' | 'product' | 'project' | 'ticket')"),
-      subject_id: z.string().describe("ID of the entity"),
+      subject_id: z.string().describe("ID of the entity. Use teamleader_list_companies / teamleader_list_contacts / teamleader_list_deals etc. to find valid IDs."),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z
         .number()
@@ -104,7 +104,7 @@ export function registerFileTools(
   // ── Get File Info ───────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_file",
-    "Get details for a single file in Teamleader Focus (name, size, mime type, folder, subject).",
+    "Get details for a single file in Teamleader Focus (name, size, mime type, folder, subject). Next steps: teamleader_download_file to get download URL, teamleader_delete_file to remove.",
     {
       id: z.string().describe("The file ID. Use teamleader_list_files to find valid IDs."),
     },

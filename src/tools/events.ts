@@ -134,7 +134,7 @@ export function registerEventTools(
   // ── Get Event ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_event",
-    "Get full event details including title, description, activity_type, times, location, attendees, and linked entities.",
+    "Get full event details including title, description, activity_type, times, location, attendees, and linked entities. Next steps: teamleader_update_event to edit, teamleader_cancel_event to cancel.",
     {
       id: z.string().describe("The event ID. Use teamleader_list_events to find valid IDs."),
     },

@@ -47,7 +47,7 @@ export function registerNoteTools(
       subject_type: z
         .enum(SUBJECT_TYPES)
         .describe("Type of entity to list notes for ('company' | 'contact' | 'creditNote' | 'deal' | 'invoice' | 'nextgenProject' | 'product' | 'project' | 'quotation' | 'subscription')"),
-      subject_id: z.string().describe("ID of the entity"),
+      subject_id: z.string().describe("ID of the entity. Use teamleader_list_companies / teamleader_list_contacts / teamleader_list_deals etc. to find valid IDs."),
       page: z.number().optional().describe("Page number (default: 1)"),
       page_size: z
         .number()

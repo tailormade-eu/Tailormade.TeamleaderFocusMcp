@@ -4,6 +4,22 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.5.1] - 2026-05-03
+
+### Improved (B6.3 quality-pass part 2 — 10 tool files)
+- [B6.3.1] No additional XML marker conversions needed in this batch (already applied in 3.5.0)
+- [B6.3.2] Added `Returns {success: true}` to `teamleader_update_task`, `teamleader_update_call`
+- [B6.3.3] Added "Next steps" guidance to `teamleader_get_event`, `teamleader_get_file`, `teamleader_get_call`, `teamleader_get_meeting`
+- [B6.3.4] Added ID lookup refs to `subject_id` in notes.ts (list_notes), `attach_to_id` in meetings.ts (create_meeting_report), `assignee_id` in calls.ts (update_call)
+- [B6.3.5] Added datetime format example `'2026-06-15T14:00:00+02:00'` to `due_at` in update_call
+- [B6.3.6] Added explicit "Returns numbered list: 'N. name (id)'" format to `teamleader_list_call_outcomes`, `teamleader_list_lost_reasons`, `teamleader_list_deal_sources`, `teamleader_list_payment_methods`
+- [B6.3.7] Already applied in prior batches
+- [B6.3.8] `subject_type` enum values already listed in files.ts and notes.ts (applied in 3.5.0)
+- [B6.3.9] Already applied in prior batch — move/win/lose_deal descriptions already correct
+- Added "Next steps" to `teamleader_list_files` (download_file, delete_file)
+
+---
+
 ## [3.5.0] - 2026-05-03
 
 ### Improved (B6.3 — description quality sweep, 10 sub-tasks)

@@ -85,7 +85,7 @@ export function registerMeetingTools(
   // ── Get Meeting ──────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_meeting",
-    "Get detailed information about a specific meeting, including location, attendees, custom fields, and optionally tracked time.",
+    "Get detailed information about a specific meeting, including location, attendees, custom fields, and optionally tracked time. Next steps: teamleader_update_meeting to edit, teamleader_complete_meeting when done.",
     {
       id: z.string().describe("The meeting ID. Use teamleader_list_meetings to find valid IDs."),
       include_tracked_time: z
@@ -327,7 +327,7 @@ export function registerMeetingTools(
         .describe("Type of entity to attach the report to"),
       attach_to_id: z
         .string()
-        .describe("ID of the entity to attach the report to"),
+        .describe("ID of the entity to attach the report to. Use teamleader_list_contacts / teamleader_list_companies / teamleader_list_deals to find valid IDs."),
       summary: z.string().describe("Report summary text"),
     },
     async (params) => {

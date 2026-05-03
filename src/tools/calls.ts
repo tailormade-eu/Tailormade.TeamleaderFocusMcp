@@ -115,7 +115,7 @@ export function registerCallTools(
   // ── Get Call ────────────────────────────────────────────────────────────
   server.tool(
     "teamleader_get_call",
-    "Get detailed information about a specific CRM call in Teamleader Focus by its ID. Returns all fields including participant, outcome, custom fields, and deal link.",
+    "Get detailed information about a specific CRM call in Teamleader Focus by its ID. Returns all fields including participant, outcome, custom fields, and deal link. Next steps: teamleader_update_call to edit, teamleader_complete_call when done.",
     {
       id: z.string().describe("The call ID. Use teamleader_list_calls to find valid IDs."),
     },
@@ -231,7 +231,7 @@ export function registerCallTools(
   // ── Update Call ─────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_call",
-    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Next steps: teamleader_get_call to verify the update.",
+    "Update an existing CRM call in Teamleader Focus. All fields except ID are optional — only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_call to verify the update.",
     {
       id: z.string().describe("The call ID to update. Use teamleader_list_calls to find valid IDs."),
       description: z.string().optional().describe("New description"),
@@ -246,11 +246,11 @@ export function registerCallTools(
       due_at: z
         .string()
         .optional()
-        .describe("New due date (ISO 8601 datetime)"),
+        .describe("New due date (ISO 8601 datetime, e.g. '2026-06-15T14:00:00+02:00')"),
       assignee_id: z
         .string()
         .optional()
-        .describe("New assignee user ID"),
+        .describe("New assignee user ID. Use teamleader_list_users to find valid IDs."),
       deal_id: z
         .string()
         .nullable()

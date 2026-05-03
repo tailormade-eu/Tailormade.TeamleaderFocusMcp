@@ -189,7 +189,7 @@ export function registerTaskTools(
   // ── Update Task ────────────────────────────────────────────────────────
   server.tool(
     "teamleader_update_task",
-    "Update a standalone task in Teamleader Focus. Only provided fields are updated. Next steps: teamleader_get_task to verify the update.",
+    "Update a standalone task in Teamleader Focus. Only provided fields are updated. Returns {success: true} on success. Next steps: teamleader_get_task to verify the update.",
     {
       id: z.string().describe("Task ID. Use teamleader_list_tasks to find valid IDs."),
       title: z.string().optional().describe("New task title"),

@@ -369,7 +369,7 @@ export function registerDealTools(
   // ── List Lost Reasons ──────────────────────────────────────────────────
   server.tool(
     "teamleader_list_lost_reasons",
-    "List available lost reasons for deals. Use the returned IDs with teamleader_lose_deal.",
+    "List available lost reasons for deals. Returns numbered list: 'N. name (id)'. Use the returned IDs with teamleader_lose_deal.",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{ id: string; name: string }>>({
@@ -416,7 +416,7 @@ export function registerDealTools(
   // ── List Deal Sources ──────────────────────────────────────────────────
   server.tool(
     "teamleader_list_deal_sources",
-    "List available deal sources. Use the returned IDs when creating deals.",
+    "List available deal sources. Returns numbered list: 'N. name (id)'. Use the returned IDs when creating deals (teamleader_create_deal source_id param).",
     {},
     async () => {
       const result = await client.request<TeamleaderListResponse<{ id: string; name: string }>>({
