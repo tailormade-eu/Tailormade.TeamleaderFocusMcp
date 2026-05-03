@@ -4,6 +4,16 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.5.2] - 2026-05-03
+
+### Added (B6.4.1 smoke-test coverage)
+- B6.4.1: smoke-test coverage voor 18 tool-files (~106 nieuwe tests)
+- New test files: calls, companies, creditnotes, deals, departments, events, files, login, lookups, materials, meetings, notes, orders, products, projects, quotations, tasks, tickets, users
+- Pattern: mock MCP server + mock client, tests registration + description + endpoint call
+- Total tests: 214 → 320
+
+---
+
 ## [3.5.1] - 2026-05-03
 
 ### Improved (B6.3 quality-pass part 2 — 10 tool files)
