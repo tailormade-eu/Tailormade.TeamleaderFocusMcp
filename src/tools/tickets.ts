@@ -6,10 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamleaderClient } from "../api/client.js";
 
-const customFieldSchema = z.object({
-  id: z.string().describe("Custom field definition ID"),
-  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
-});
+import { customFieldSchema } from "./_shared.js";
 import type {
   Ticket,
   TicketMessage,

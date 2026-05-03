@@ -11,11 +11,7 @@ import type {
   TeamleaderInfoResponse,
 } from "../types/index.js";
 import { respond } from "./helpers.js";
-
-const customFieldSchema = z.object({
-  id: z.string().describe("Custom field definition ID"),
-  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).describe("Custom field value"),
-});
+import { customFieldSchema } from "./_shared.js";
 
 export function registerDealTools(
   server: McpServer,

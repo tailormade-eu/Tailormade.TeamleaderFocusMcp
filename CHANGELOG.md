@@ -4,6 +4,15 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.7.1] - 2026-05-03
+
+### Refactored (B6.5 — Shared Zod schemas)
+- Extracted `customFieldSchema` and `addressSchema` to `src/tools/_shared.ts`
+- Removed 5 inline duplicate definitions from contacts.ts, companies.ts, deals.ts, tasks.ts, tickets.ts
+- No API behaviour change — pure DRY refactor to prevent schema drift
+
+---
+
 ## [3.7.0] - 2026-05-03
 
 ### Added (B6.4.3 — 401 mid-flight retry)
