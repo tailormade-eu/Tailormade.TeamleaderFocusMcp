@@ -399,7 +399,7 @@ export function registerInvoiceTools(
   // ── Create Invoice (Draft) ───────────────────────────────────────────────
   server.tool(
     "teamleader_create_invoice",
-    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Supports custom_fields[] for mandatory or optional custom field values on the invoice — pass [{ id, value }] when the invoice type requires custom fields. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Supports delivery_date (YYYY-MM-DD) to record when goods/services were delivered — distinct from invoice_date and required for Belgian VAT compliance on certain invoices. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id), teamleader_list_document_templates (document_template_id). <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
+    "Create a new draft invoice. Returns {id, type}. The invoice is created as draft — use teamleader_book_invoice to finalize and assign an invoice number. Supports for_attention_of to address invoice to a specific person or department (by name or contact_id). Supports currency for foreign-currency invoices (e.g. USD with exchange_rate). Supports invoice-level discounts via discounts[] (percentage applied to the whole invoice total, distinct from per-line discount_value). Supports expected_payment_method to indicate how the customer will pay — use { method: 'bank_transfer' } for standard wire transfers, or { method: 'sepa_direct_debit', reference: 'AB1234' } for direct debit with mandate reference. Supports custom_fields[] for mandatory or optional custom field values on the invoice — pass [{ id, value }] when the invoice type requires custom fields. Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement Acme-Corp_202605 (70%)' }, line_items: [...] }]. grouped_lines takes precedence over line_items when both are provided. Supports delivery_date (YYYY-MM-DD) to record when goods/services were delivered — distinct from invoice_date and required for Belgian VAT compliance on certain invoices. Lookup IDs first: teamleader_list_departments (department_id), teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_contacts (for_attention_of.contact_id), teamleader_list_currencies (currency codes), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_product_categories (product_category_id), teamleader_list_document_templates (document_template_id). <WARNING>Not idempotent: calling twice creates two resources.</WARNING>",
     {
       customer_type: z.enum(["contact", "company"]).describe("Customer type"),
       customer_id: z.string().describe("Customer ID"),
@@ -480,7 +480,7 @@ export function registerInvoiceTools(
         .array(
           z.object({
             section: z
-              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement Acme-Corp_202605 (70%)'") })
               .optional()
               .describe("Optional section header for this group of line items"),
             line_items: z.array(
@@ -500,7 +500,7 @@ export function registerInvoiceTools(
           })
         )
         .optional()
-        .describe("Line items grouped into sections with optional titles. Use instead of line_items when you need section headers. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."),
+        .describe("Line items grouped into sections with optional titles. Use instead of line_items when you need section headers. Example: [{ section: { title: 'Service Agreement Acme-Corp_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."),
       custom_fields: z
         .array(
           z.object({
@@ -523,7 +523,7 @@ export function registerInvoiceTools(
         )
         .optional()
         .describe(
-          "Custom field values to set on this invoice. Required when the invoice has mandatory custom fields. Example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
+          "Custom field values to set on this invoice. Required when the invoice has mandatory custom fields. Example: [{ id: '31d9c43d-...', value: 'SA Acme-Corp_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
         ),
       document_template_id: z
         .string()
@@ -719,7 +719,7 @@ export function registerInvoiceTools(
   // ── Update Invoice (Draft) ──────────────────────────────────────────────
   server.tool(
     "teamleader_update_invoice",
-    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Next steps: teamleader_get_invoice to verify, teamleader_book_invoice to finalize. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }. <NOTE>Idempotent</NOTE>",
+    "Update a draft invoice. All fields are optional — only provided fields are updated. For booked invoices use teamleader_update_booked_invoice instead. Next steps: teamleader_get_invoice to verify, teamleader_book_invoice to finalize. Lookup IDs: teamleader_list_tax_rates (tax_rate_id), teamleader_list_payment_terms (payment_term types), teamleader_list_products (product_id), teamleader_list_units_of_measure (unit_of_measure_id), teamleader_list_withholding_tax_rates (withholding_tax_rate_id), teamleader_list_document_templates (document_template_id). Line items: use line_items for a flat list (no section titles) or grouped_lines for multiple sections with optional titles — example: grouped_lines: [{ section: { title: 'Service Agreement Acme-Corp_202605 (70%)' }, line_items: [...] }]. Line items support optional discount_value (percentage, 0-100), unit_of_measure_id (e.g. hour, day, piece), and withholding_tax_rate_id (bedrijfsvoorheffing). Invoice-level discounts (applied to the whole invoice) use the top-level discounts array — distinct from line-level discount_value which applies per line item. expected_payment_method supports two forms: (1) with reference: { method: sepa_direct_debit|direct_debit|credit_card, reference?: string|null }; (2) without reference: { method: cash|cheque|bankers_draft|bank_transfer|payment_card }. Pass null to clear. custom_fields: array of { id, value } to set custom field values — example: [{ id: '31d9c43d-...', value: 'SA Acme-Corp_202604' }]. Value can be a string, number, boolean, array of strings (multiple selection), or object reference { id, type: company|contact|product|user }. <NOTE>Idempotent</NOTE>",
     {
       id: z.string().describe("The invoice ID to update. Use teamleader_list_invoices to find valid IDs."),
       customer_type: z.enum(["contact", "company"]).optional().describe("Customer type"),
@@ -747,7 +747,7 @@ export function registerInvoiceTools(
         .array(
           z.object({
             section: z
-              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement Acme-Corp_202605 (70%)'") })
               .optional()
               .describe("Optional section header for this group of line items"),
             line_items: z.array(updateLineItemSchema).describe("Line items in this section"),
@@ -755,7 +755,7 @@ export function registerInvoiceTools(
         )
         .optional()
         .describe(
-          "Replace all line items using explicit groups with optional section titles. Use this instead of line_items when you need section headers. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
+          "Replace all line items using explicit groups with optional section titles. Use this instead of line_items when you need section headers. Example: [{ section: { title: 'Service Agreement Acme-Corp_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
         ),
       discounts: z
         .array(
@@ -814,7 +814,7 @@ export function registerInvoiceTools(
         )
         .optional()
         .describe(
-          "Custom field values to set. Example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
+          "Custom field values to set. Example: [{ id: '31d9c43d-...', value: 'SA Acme-Corp_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
         ),
       document_template_id: z
         .string()
@@ -874,7 +874,7 @@ export function registerInvoiceTools(
         .array(
           z.object({
             section: z
-              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement JaRa-Tailormade_202605 (70%)'") })
+              .object({ title: z.string().describe("Section title (required when section is present), e.g. 'Service Agreement Acme-Corp_202605 (70%)'") })
               .optional()
               .describe("Optional section header for this group of line items"),
             line_items: z.array(updateLineItemSchema).describe("Line items in this section"),
@@ -882,7 +882,7 @@ export function registerInvoiceTools(
         )
         .optional()
         .describe(
-          "Replace all line items using explicit groups with optional section titles. Example: [{ section: { title: 'Service Agreement JaRa-Tailormade_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
+          "Replace all line items using explicit groups with optional section titles. Example: [{ section: { title: 'Service Agreement Acme-Corp_202605 (70%)' }, line_items: [...] }]. Takes precedence over line_items when both are provided."
         ),
       custom_fields: z
         .array(
@@ -906,7 +906,7 @@ export function registerInvoiceTools(
         )
         .optional()
         .describe(
-          "Custom field values to set on the booked invoice. Example: [{ id: '31d9c43d-...', value: 'SA JaRa-Tailormade_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
+          "Custom field values to set on the booked invoice. Example: [{ id: '31d9c43d-...', value: 'SA Acme-Corp_202604' }]. Use string for text fields, number for numeric fields, boolean for yes/no, string[] for multi-select, or { id, type } for linked record references."
         ),
     },
     async (params) => {

@@ -4,6 +4,13 @@ All notable changes to this extended fork of globodai-mcp-teamleader.
 
 ---
 
+## [3.7.3] - 2026-05-03
+
+### Fixed (roundup — PII fix completed)
+- Completed B7.4.1: removed remaining 11 `JaRa-Tailormade_*` PII strings from `src/tools/invoices.ts` (the previous task only fixed test files, not the production source)
+
+---
+
 ## [3.7.2] - 2026-05-03
 
 ### Fixed (B7.4.1 — PII removal)
