@@ -8,12 +8,25 @@
 import { TeamleaderAuth } from "./auth.js";
 
 const BASE_URL = "https://api.focus.teamleader.eu";
+const MAX_RETRIES = 3;
 
 export interface ApiRequestOptions {
   /** Endpoint path, e.g. "contacts.list" */
   endpoint: string;
   /** JSON body to send */
   body?: Record<string, unknown>;
+}
+
+/** Exported for testing. Returns delay in ms for a given retry attempt (1-indexed). */
+export function getRetryDelay(attempt: number, retryAfterHeader: string | null): number {
+  if (retryAfterHeader) {
+    const numeric = Number(retryAfterHeader.trim());
+    if (!isNaN(numeric) && numeric >= 0) return numeric * 1000;
+    const date = new Date(retryAfterHeader);
+    if (!isNaN(date.getTime())) return Math.max(0, date.getTime() - Date.now());
+  }
+  // Exponential backoff: 1s, 2s, 4s
+  return Math.pow(2, attempt - 1) * 1000;
 }
 
 export class TeamleaderClient {
@@ -25,33 +38,46 @@ export class TeamleaderClient {
 
   /**
    * Make an authenticated POST request to the Teamleader Focus API.
+   * Retries up to 3 times on HTTP 429, respecting Retry-After header.
    */
   async request<T = unknown>(options: ApiRequestOptions): Promise<T> {
     const accessToken = await this.auth.getAccessToken();
     const url = `${BASE_URL}/${options.endpoint}`;
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+    for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(
-        `Teamleader API error [${options.endpoint}]: ${response.status} ${response.statusText} - ${errorBody}`
-      );
+      if (response.status === 429 && attempt <= MAX_RETRIES) {
+        const delay = getRetryDelay(attempt, response.headers.get("Retry-After"));
+        console.warn(`Teamleader rate limit [${options.endpoint}]: attempt ${attempt}/${MAX_RETRIES}, retrying in ${delay}ms`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(
+          `Teamleader API error [${options.endpoint}]: ${response.status} ${response.statusText} - ${errorBody}`
+        );
+      }
+
+      // Some endpoints return 204 No Content
+      if (response.status === 204) {
+        return {} as T;
+      }
+
+      return (await response.json()) as T;
     }
 
-    // Some endpoints return 204 No Content
-    if (response.status === 204) {
-      return {} as T;
-    }
-
-    return (await response.json()) as T;
+    // Should not reach here, but TypeScript requires it
+    throw new Error(`Teamleader API error [${options.endpoint}]: max retries exceeded`);
   }
 }
