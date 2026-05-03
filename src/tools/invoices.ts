@@ -1105,7 +1105,7 @@ export function registerInvoiceTools(
   // ── List Payment Methods ─────────────────────────────────────────────────
   server.tool(
     "teamleader_list_payment_methods",
-    "List available payment methods. Returns numbered list: 'N. name [status] (id)'. Use the IDs for registering invoice payments (teamleader_register_payment payment_method_id param).",
+    "List available payment methods. Returns numbered list: 'N. name [status] — ID: id'. Use the IDs for registering invoice payments (teamleader_register_payment payment_method_id param).",
     {
       status: z
         .array(z.enum(["active", "archived"]))
